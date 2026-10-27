@@ -3,6 +3,7 @@ import { readSession, clearSession } from "./auth.js";
 import { showMessage } from "./common.js";
 import { makeIcon, fillIcons } from "./icons.js";
 import { setReactionArticle } from "./reactions.js";
+import { setCommentArticle } from "./comments.js";
 
 const welcome = document.getElementById("welcome");
 const guestLinks = document.getElementById("guest-links");
@@ -588,6 +589,7 @@ function toggleTopics() {
 // 根据链接中的文章 ID 读取详情，支持直接打开链接和刷新
 async function readArticleHash() {
     setReactionArticle(null);
+    setCommentArticle(null);
     const hash = new URLSearchParams(window.location.hash.slice(1));
     currentArticleId = hash.get("article") || "";
     detailRequest = detailRequest + 1;
@@ -635,6 +637,7 @@ async function readArticleHash() {
         detailStatus.textContent = "";
         detailContent.hidden = false;
         setReactionArticle(note);
+        setCommentArticle(note);
     } catch (error) {
         if (requestNumber !== detailRequest) {
             return;
@@ -652,6 +655,7 @@ async function readArticleHash() {
 // 关闭阅读窗口时移除文章地址，避免刷新又打开已关闭的文章
 function closeArticle() {
     setReactionArticle(null);
+    setCommentArticle(null);
     detailRequest = detailRequest + 1;
     const address = window.location.pathname + window.location.search;
     window.history.replaceState(null, "", address);
@@ -707,6 +711,7 @@ window.addEventListener("hashchange", readArticleHash);
 window.addEventListener("scroll", updateTopbar, { passive: true });
 document.addEventListener("click", closeAccountMenu);
 document.addEventListener("article-reaction", updateArticleReaction);
+document.addEventListener("article-comment-count", updateArticleReaction);
 confirmDeleteButton.addEventListener("click", deleteArticle);
 document.getElementById("cancel-delete").addEventListener("click", cancelDelete);
 deleteDialog.addEventListener("cancel", function closeDeleteDialog(event) {
