@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>登录 - 小B书</title>
+    <link rel="stylesheet" href="/styles/common.css">
+    <script type="module" src="/scripts/account.js"></script>
+</head>
+<!-- 共用账号脚本，根据 data-mode 选择登录接口 -->
+<body data-mode="login">
+    <header class="site-header">
+        <a href="/index.html">小B书</a>
+    </header>
+    <main class="account-page">
+        <h1>登录</h1>
+        <p id="message" class="message" role="status" tabindex="-1"></p>
+        <form id="account-form">
+            <!-- 请求期间通过 fieldset 统一禁用表单 -->
+            <fieldset id="account-fields">
+                <legend class="visually-hidden">登录信息</legend>
+                <label for="username">用户名</label>
+                <!-- 用户名以字母开头，其余只能用字母、数字或下划线 -->
+                <input id="username" name="username" type="text" autocomplete="username" autocapitalize="none" spellcheck="false" required minlength="3" maxlength="24" pattern="[a-zA-Z][a-zA-Z0-9_]{2,23}" aria-describedby="username-hint">
+                <p id="username-hint" class="hint">3～24 位，以英文字母开头，只能包含英文字母、数字和下划线。</p>
+                <label for="password">密码</label>
+                <input id="password" name="password" type="password" autocomplete="current-password" required minlength="8" maxlength="128" aria-describedby="password-hint">
+                <p id="password-hint" class="hint">8～128 个字符。</p>
+                <button id="submit-button" type="submit">登录</button>
+            </fieldset>
+        </form>
+        <p>还没有账号？<a href="/register.html">注册</a></p>
+    </main>
+</body>
+</html>

@@ -1,0 +1,274 @@
+<!doctype html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>首页 - 小B书</title>
+        <link rel="stylesheet" href="/styles/common.css" />
+        <link rel="stylesheet" href="/styles/home.css" />
+        <!-- 模块脚本在 HTML 解析完成后执行 -->
+        <script type="module" src="/scripts/home.js"></script>
+    </head>
+    <body class="home-page">
+        <a class="skip-link" href="#content">跳到文章</a>
+        <header class="home-header">
+            <div class="topbar" id="topbar">
+                <nav class="primary-nav" aria-label="主导航">
+                    <a class="top-home" href="/index.html"
+                        ><span data-icon="home"></span>首页</a
+                    >
+                    <a class="desktop-entry" href="/index.html?feed=following"
+                        >关注</a
+                    >
+                    <a class="desktop-entry" href="/index.html?feed=favorites"
+                        >收藏</a
+                    >
+                </nav>
+                <form id="search-form" class="search-form" role="search">
+                    <label class="visually-hidden" for="search-input"
+                        >搜索文章</label
+                    >
+                    <input
+                        id="search-input"
+                        name="q"
+                        type="search"
+                        placeholder="搜索感兴趣的文章"
+                        maxlength="100"
+                        autocomplete="off"
+                    />
+                    <button
+                        type="submit"
+                        class="icon-button"
+                        aria-label="搜索"
+                        title="搜索"
+                    >
+                        <span data-icon="search"></span>
+                    </button>
+                </form>
+                <nav class="account-nav" aria-label="账号导航">
+                    <a class="primary-button publish-link" href="/publish.html"><span data-icon="write"></span>发布文章</a>
+                    <span id="guest-links" hidden
+                        ><a href="/login.html">登录</a
+                        ><a href="/register.html" class="primary-button"
+                            >注册</a
+                        ></span
+                    >
+                    <details id="account-menu" class="account-menu" hidden>
+                        <summary aria-label="账号菜单">
+                            <span id="avatar" class="avatar">B</span>
+                            <span id="account-name" class="account-name"></span>
+                            <span data-icon="down"></span>
+                        </summary>
+                        <div class="account-dropdown">
+                            <p id="welcome" class="account-welcome"></p>
+                            <a href="/index.html?feed=mine"
+                                ><span data-icon="article"></span>我的文章</a
+                            >
+                            <a href="/index.html?feed=favorites"
+                                ><span data-icon="bookmark"></span>我的收藏</a
+                            >
+                            <button id="logout-button" type="button">
+                                <span data-icon="logout"></span>退出登录
+                            </button>
+                        </div>
+                    </details>
+                    <a
+                        id="my-articles"
+                        class="top-account-link"
+                        href="/index.html?feed=mine"
+                        hidden
+                        ><span data-icon="article"></span
+                        ><span>我的文章</span></a
+                    >
+                </nav>
+            </div>
+            <div class="banner">
+                <img
+                    class="banner-image"
+                    src="/assets/images/forest-banner.jpg"
+                    alt=""
+                    fetchpriority="high"
+                />
+                <div class="banner-inner">
+                    <a class="wordmark" href="/index.html"
+                        >小B书<span class="wordmark-dot"></span
+                    ></a>
+                </div>
+            </div>
+        </header>
+        <main id="content" class="home-main">
+            <section class="channel-bar" aria-label="文章分类">
+                <nav class="channel-shortcuts" aria-label="内容来源">
+                    <a href="/index.html" data-feed="latest"
+                        ><span
+                            class="channel-circle discover-circle"
+                            data-icon="discover"
+                        ></span
+                        ><span>发现</span></a
+                    >
+                    <a href="/index.html?feed=following" data-feed="following"
+                        ><span
+                            class="channel-circle following-circle"
+                            data-icon="following"
+                        ></span
+                        ><span>关注</span></a
+                    >
+                </nav>
+                <div class="topic-region">
+                    <div
+                        id="topic-list"
+                        class="topic-list"
+                        aria-label="公开话题"
+                    ></div>
+                    <p id="topic-status" class="topic-status" role="status">
+                        正在读取话题
+                    </p>
+                    <button
+                        id="more-topics"
+                        class="topic-button more-topics"
+                        type="button"
+                        aria-expanded="false"
+                        hidden
+                    >
+                        更多话题<span data-icon="down"></span>
+                    </button>
+                    <button
+                        id="retry-topics"
+                        class="text-button"
+                        type="button"
+                        hidden
+                    >
+                        重试话题
+                    </button>
+                </div>
+                <nav class="channel-links" aria-label="个人内容">
+                    <a href="/index.html?feed=favorites" data-feed="favorites"
+                        ><span data-icon="bookmark"></span>我的收藏</a
+                    >
+                    <a href="/index.html?feed=mine" data-feed="mine"
+                        ><span data-icon="article"></span>我的文章</a
+                    >
+                </nav>
+            </section>
+            <section class="feed-section" aria-labelledby="feed-title">
+                <div class="feed-heading">
+                    <div class="feed-title-group">
+                        <h1 id="feed-title">最新文章</h1>
+                        <span id="result-count" class="result-count"></span>
+                    </div>
+                    <button
+                        id="refresh-button"
+                        class="refresh-button"
+                        type="button"
+                    >
+                        <span data-icon="refresh"></span>刷新
+                    </button>
+                </div>
+                <div class="account-status">
+                    <p
+                        id="message"
+                        class="message"
+                        role="status"
+                        tabindex="-1"
+                    ></p>
+                    <button
+                        id="retry-button"
+                        class="text-button"
+                        type="button"
+                        hidden
+                    >
+                        重试登录状态
+                    </button>
+                </div>
+                <p id="feed-status" class="feed-status" role="status"></p>
+                <a
+                    id="feed-login"
+                    class="primary-button feed-login"
+                    href="/login.html"
+                    hidden
+                    >去登录</a
+                >
+                <div
+                    id="article-grid"
+                    class="article-grid"
+                    aria-busy="true"
+                ></div>
+                <nav
+                    id="pagination"
+                    class="pagination"
+                    aria-label="文章分页"
+                    hidden
+                >
+                    <a
+                        id="previous-page"
+                        class="page-button"
+                        aria-label="上一页"
+                        title="上一页"
+                        ><span data-icon="previous"></span
+                    ></a>
+                    <span id="page-info"></span>
+                    <a
+                        id="next-page"
+                        class="page-button"
+                        aria-label="下一页"
+                        title="下一页"
+                        ><span data-icon="next"></span
+                    ></a>
+                </nav>
+            </section>
+            <footer class="home-footer">
+                <span>小B书 · biliblog</span><span>学习 · 生活 · 分享</span
+                ><a href="#content">回到顶部<span data-icon="top"></span></a>
+            </footer>
+        </main>
+        <dialog
+            id="article-dialog"
+            class="article-dialog"
+            aria-labelledby="detail-title"
+        >
+            <div class="dialog-top">
+                <span>文章阅读</span
+                ><button
+                    id="close-detail"
+                    class="icon-button"
+                    type="button"
+                    aria-label="关闭文章"
+                    title="关闭文章"
+                >
+                    <span data-icon="close"></span>
+                </button>
+            </div>
+            <p id="detail-status" role="status"></p>
+            <div id="detail-content" hidden>
+                <h2 id="detail-title"></h2>
+                <p id="detail-author" class="detail-author"></p>
+                <div id="detail-body" class="detail-body"></div>
+                <div id="detail-gallery" class="detail-gallery"></div>
+                <p id="detail-counts" class="detail-counts"></p>
+                <div class="reaction-bar" aria-label="文章互动">
+                    <button id="like-button" class="reaction-button" type="button" aria-pressed="false"><span data-icon="heart"></span><span id="like-label">点赞</span></button>
+                    <button id="favorite-button" class="reaction-button" type="button" aria-pressed="false"><span data-icon="bookmark"></span><span id="favorite-label">收藏</span></button>
+                </div>
+                <p id="reaction-message" class="message reaction-message" role="status" tabindex="-1"></p>
+                <a id="reaction-login" class="text-button" href="/login.html" target="_blank" rel="noopener" hidden>登录后重新读取文章</a>
+            </div>
+            <button
+                id="retry-detail"
+                class="secondary-button"
+                type="button"
+                hidden
+            >
+                重新读取
+            </button>
+        </dialog>
+        <dialog id="delete-dialog" class="delete-dialog" aria-labelledby="delete-title">
+            <h2 id="delete-title">删除这篇文章？</h2>
+            <p id="delete-description"></p>
+            <p id="delete-status" class="message" role="status" tabindex="-1"></p>
+            <div class="delete-actions">
+                <button id="cancel-delete" class="secondary-button" type="button">取消</button>
+                <button id="confirm-delete" class="danger-button" type="button">删除文章</button>
+            </div>
+        </dialog>
+    </body>
+</html>

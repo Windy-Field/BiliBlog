@@ -1,0 +1,254 @@
+@import url("./tokens.css");
+
+.publish-page {
+    background: var(--color-page);
+    color: var(--color-text);
+    font-family: var(--font-body);
+    font-size: 14px;
+    line-height: 1.6;
+}
+.publish-page a {
+    color: var(--color-link);
+    text-decoration: none;
+}
+.publish-page :focus-visible {
+    outline: 2px solid var(--color-focus);
+    outline-offset: 2px;
+}
+.editor-header {
+    height: 64px;
+    border-bottom: 1px solid var(--color-border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 32px;
+}
+.editor-header .editor-brand {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--color-text);
+}
+.editor-header nav {
+    display: flex;
+    gap: 24px;
+}
+.editor-header nav a + a {
+    margin-left: 0;
+}
+.publish-page .editor-main {
+    max-width: 840px;
+    margin: 32px auto 64px;
+    padding: 0 32px;
+}
+.editor-heading, .image-heading, .field-caption, .media-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+}
+.editor-heading {
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+}
+.editor-heading h1 {
+    font-size: 28px;
+    font-weight: 600;
+    line-height: 40px;
+    margin: 0;
+}
+#author-name, .optional, .field-caption, #image-count {
+    color: var(--color-text-secondary);
+    font-size: 13px;
+}
+#author-name {
+    overflow-wrap: anywhere;
+}
+.publish-page label {
+    margin: 20px 0 8px;
+    font-weight: 500;
+}
+.publish-page input, .publish-page textarea {
+    width: 100%;
+    border: 1px solid var(--color-input-border);
+    border-radius: var(--radius-control);
+    padding: 10px 12px;
+    color: var(--color-text);
+    background: var(--color-page);
+    font-family: inherit;
+    font-size: 16px;
+}
+.publish-page textarea {
+    display: block;
+    line-height: 28px;
+    resize: vertical;
+    min-height: 280px;
+}
+.publish-page button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 44px;
+    padding: 8px 16px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-control);
+    color: var(--color-text);
+    background: var(--color-page);
+    font: inherit;
+}
+.publish-page button:hover {
+    background: var(--color-surface);
+}
+.publish-page button svg, .publish-page label svg {
+    vertical-align: middle;
+    flex-shrink: 0;
+}
+.publish-page .message[data-error="true"] {
+    color: var(--color-error);
+}
+.field-caption {
+    margin-top: 8px;
+}
+.field-hint {
+    margin: 4px 0 16px;
+    color: var(--color-text-secondary);
+    font-size: 13px;
+}
+.image-tools {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+.publish-page .image-select {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+    padding: 8px 16px;
+    min-height: 44px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-control);
+    cursor: pointer;
+}
+.image-select:hover {
+    background: var(--color-surface);
+}
+.publish-page .file-input {
+    width: 100%;
+    font-size: 13px;
+    order: 3;
+    padding: 8px;
+}
+.image-previews, .media-list {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+}
+.image-preview {
+    min-width: 0;
+    margin: 0;
+}
+.image-preview img, .media-choice img {
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    object-fit: cover;
+    border-radius: var(--radius-card);
+    display: block;
+    background: var(--color-surface);
+}
+.image-preview figcaption {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-top: 4px;
+    font-size: 13px;
+}
+.publish-page .icon-button {
+    width: 44px;
+    height: 44px;
+    padding: 0;
+}
+.editor-actions {
+    margin-top: 32px;
+    padding-top: 24px;
+    border-top: 1px solid var(--color-border);
+    display: flex;
+    justify-content: flex-end;
+}
+.publish-page .publish-button {
+    width: 160px;
+    margin: 0;
+    background: var(--color-brand);
+    border-color: var(--color-brand);
+    font-weight: 500;
+}
+.publish-page .publish-button:hover {
+    background: var(--color-brand-hover);
+}
+.login-actions, .uncertain-panel {
+    margin: 16px 0;
+    padding: 16px 0;
+    border-block: 1px solid var(--color-border);
+}
+.login-actions a, .uncertain-panel a {
+    display: inline-block;
+    margin-right: 16px;
+}
+.publish-page dialog {
+    width: calc(100% - 32px);
+    max-width: 640px;
+    max-height: calc(100dvh - 48px);
+    padding: 24px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-menu);
+    color: var(--color-text);
+    background: var(--color-page);
+    box-shadow: var(--shadow-menu);
+}
+.publish-page dialog::backdrop {
+    background: var(--color-overlay);
+}
+.media-heading h2 {
+    margin: 0;
+    font-size: 20px;
+}
+.publish-page .media-choice {
+    display: block;
+    padding: 4px;
+    min-width: 0;
+    font-size: 12px;
+}
+.media-choice[aria-pressed="true"] {
+    border-color: var(--color-focus);
+    background: var(--color-selected);
+}
+.media-pagination {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 12px;
+    margin-top: 24px;
+}
+@media (max-width: 767px) {
+    .editor-header {
+        height: 56px;
+        padding: 0 16px;
+    }
+    .publish-page .editor-main {
+        margin-top: 24px;
+        padding: 0 16px;
+    }
+    .editor-heading h1 {
+        font-size: 24px;
+        line-height: 34px;
+    }
+    .image-previews, .media-list {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+    }
+    .publish-page dialog {
+        padding: 16px;
+    }
+}
