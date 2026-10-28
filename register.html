@@ -5,14 +5,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>注册 - 小B书</title>
     <link rel="stylesheet" href="/styles/common.css">
+    <link rel="stylesheet" href="/styles/account.css">
+    <link rel="stylesheet" href="/styles/feedback.css">
     <script type="module" src="/scripts/account.js"></script>
 </head>
 <!-- 共用账号脚本，根据 data-mode 选择注册接口 -->
 <body data-mode="register">
     <header class="site-header">
         <a href="/index.html">小B书</a>
+        <a class="account-return" href="/index.html">返回首页</a>
     </header>
+    <div class="account-masthead"><a href="/index.html">小B书<span>biliblog</span></a></div>
+    <div class="account-surface">
     <main class="account-page">
+        <nav class="account-tabs" aria-label="账号页面"><a href="/login.html">登录</a><a href="/register.html" aria-current="page">注册</a></nav>
         <h1>注册</h1>
         <p id="message" class="message" role="status" tabindex="-1"></p>
         <form id="account-form">
@@ -37,5 +43,7 @@
         </form>
         <p>已有账号？<a href="/login.html">登录</a></p>
     </main>
+    </div>
+    <footer class="account-footer">小B书 · biliblog<span class="footer-copy">© 2026 Octorange</span></footer>
 </body>
 </html>

@@ -9,6 +9,7 @@
     --color-page: #ffffff;
     --color-surface: #f6f7f8;
     --color-surface-hover: #edeff2;
+    --color-workspace: #fafafa;
     --color-text: #18191c;
     --color-text-secondary: #61666d;
     --color-muted: #9499a0;
@@ -16,6 +17,9 @@
     --color-input-border: #7a8087;
     --color-on-dark: #ffffff;
     --color-error: #b42318;
+    --color-error-soft: #fff1f0;
+    --color-success: #18794e;
+    --color-success-soft: #edf8f1;
     --color-focus: #00759e;
     --color-banner-shade: rgba(0, 0, 0, 0.48);
     --color-image-shade: rgba(0, 0, 0, 0.72);
@@ -28,19 +32,15 @@
     --color-cover-purple: #edeaf7;
     --font-body: "PingFang SC", "Microsoft YaHei", Arial, sans-serif;
     --font-mono: Consolas, monospace;
-    --space-xs: 4px;
-    --space-sm: 8px;
-    --space-md: 12px;
-    --space-lg: 16px;
-    --space-xl: 20px;
-    --space-2xl: 24px;
-    --space-3xl: 32px;
-    --space-4xl: 40px;
-    --radius-control: 6px;
-    --radius-card: 6px;
-    --radius-menu: 8px;
-    --shadow-menu: 0 4px 20px rgba(24, 25, 28, 0.12);
-    --shadow-nav: 0 2px 4px rgba(0, 0, 0, 0.08);
+    --radius-control: 8px;
+    --radius-card: 10px;
+    --radius-menu: 12px;
+    --shadow-card: 0 1px 3px rgba(24, 25, 28, 0.04), 0 4px 12px rgba(24, 25, 28, 0.07);
+    --shadow-card-hover: 0 4px 12px rgba(24, 25, 28, 0.08), 0 12px 32px rgba(24, 25, 28, 0.12);
+    --shadow-menu: 0 8px 24px rgba(24, 25, 28, 0.14);
     --duration-fast: 150ms;
-    --ease-out: ease-out;
+    --duration-press: 120ms;
+    --duration-panel: 200ms;
+    --duration-modal: 220ms;
+    --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
 }

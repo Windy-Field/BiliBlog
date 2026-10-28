@@ -1,11 +1,12 @@
 const SESSION_KEY = "sdu-blog-session";
 
-// 保存 session 中的凭证和有效期，不保存密码；格式不对或保存失败时抛出错误
+// 从 session 中保存 token 和过期时间，密码只用于提交登录请求
+// 本页脚本可以读取 localStorage，凭证在有效期内也需要妥善保护
 export function saveSession(session) {
     if (!session || typeof session.token !== "string" || !session.token) {
         throw new Error("登录响应缺少凭证，请重试。");
     }
-    // 日期转成毫秒数，检查有效期
+    // 将日期转成毫秒数才能和当前时间比较，过期或无法解析的凭证都停止使用
     const expiresAt = Date.parse(session.expiresAt);
     if (!Number.isFinite(expiresAt) || expiresAt <= Date.now()) {
         throw new Error("登录凭证的有效期异常，请重试。");
@@ -15,14 +16,14 @@ export function saveSession(session) {
         expiresAt: session.expiresAt
     };
     try {
-        // localStorage 只能保存文本，刷新后仍可读取
+        // 将对象转成 JSON 文本保存，刷新页面后仍能读取登录凭证
         localStorage.setItem(SESSION_KEY, JSON.stringify(savedSession));
     } catch {
         throw new Error("浏览器无法保存登录状态，请允许此网站使用本地存储后重试。");
     }
 }
 
-// 读取本地凭证，没有可用凭证时返回 null；是否有效仍需后端确认
+// 读取并校验本地凭证，缺失或过期时返回 null，实际登录状态由后端确认
 export function readSession() {
     let savedSession;
     try {
@@ -37,7 +38,7 @@ export function readSession() {
         return null;
     }
 
-    // 本地存储可能被改动，读取后也要检查格式和有效期
+    // 用户可以修改本地存储，读取后要重新检查凭证格式和有效期
     if (!savedSession || typeof savedSession.token !== "string" || !savedSession.token) {
         clearSession();
         return null;
@@ -51,7 +52,8 @@ export function readSession() {
     return savedSession;
 }
 
-// 删除本地凭证，成功返回 true；后端会话需要另调退出接口注销
+// 清理本地凭证，成功返回 true，后端会话由退出接口注销
+// 两处都清理后，本机和服务器才会结束这次登录
 export function clearSession() {
     try {
         localStorage.removeItem(SESSION_KEY);

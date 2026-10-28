@@ -1,0 +1,194 @@
+@import url("./tokens.css");
+
+body[data-mode] {
+    font-family: var(--font-body);
+    color: var(--color-text);
+    background: var(--color-workspace);
+    font-size: 14px;
+}
+
+body[data-mode] .site-header {
+    height: 64px;
+    padding: 0 32px;
+    border-color: var(--color-border);
+    background: var(--color-page);
+}
+
+body[data-mode] .site-header > a:first-child {
+    color: var(--color-brand-active);
+    font-size: 24px;
+    font-weight: 700;
+    text-decoration: none;
+}
+
+body[data-mode] .site-header > a:first-child::after {
+    content: "biliblog";
+    margin-left: 12px;
+    font-size: 13px;
+    font-weight: 400;
+    color: var(--color-text-secondary);
+}
+
+body[data-mode] .account-page {
+    margin: 0 auto;
+    padding: 32px 24px 16px;
+}
+.account-masthead {
+    height: 112px;
+    background: url("/assets/images/forest-banner.jpg") center 48% / cover;
+}
+.account-masthead > a {
+    display: flex;
+    align-items: baseline;
+    gap: 16px;
+    height: 100%;
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 24px 32px;
+    color: var(--color-on-dark) !important;
+    font-size: 32px;
+    font-weight: 700;
+    text-decoration: none;
+    background: var(--color-banner-shade);
+}
+.account-masthead span {
+    font-size: 16px;
+    font-weight: 400;
+}
+.account-surface {
+    max-width: 1000px;
+    margin: 24px auto 0;
+    background: var(--color-page);
+    border-bottom: 1px solid var(--color-border);
+}
+.account-tabs {
+    display: flex;
+    justify-content: center;
+    gap: 48px;
+    margin-bottom: 28px;
+    border-bottom: 1px solid var(--color-border);
+}
+.account-tabs a {
+    position: relative;
+    padding: 0 8px 16px;
+    text-decoration: none;
+    color: var(--color-text-secondary) !important;
+    font-size: 18px;
+}
+.account-tabs a + a {
+    margin-left: 0;
+}
+.account-tabs a[aria-current="page"] {
+    color: var(--color-text) !important;
+    font-weight: 500;
+}
+.account-tabs a[aria-current="page"]::after {
+    content: "";
+    height: 3px;
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: var(--color-brand);
+}
+.account-footer {
+    padding: 24px;
+    text-align: center;
+    color: var(--color-text-secondary);
+    font-size: 12px;
+}
+.account-footer .footer-copy {
+    display: block;
+    margin-top: 4px;
+    color: var(--color-muted);
+}
+body[data-mode] .site-header .account-return {
+    color: var(--color-text-secondary);
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 400;
+}
+
+body[data-mode] h1 {
+    margin-bottom: 24px;
+    font-size: 28px;
+    font-weight: 600;
+    line-height: 40px;
+}
+
+body[data-mode] label {
+    margin-bottom: 8px;
+}
+
+body[data-mode] input {
+    min-height: 44px;
+    border-color: var(--color-input-border);
+    border-radius: var(--radius-control);
+    padding: 10px 12px;
+    font-size: 16px;
+    color: var(--color-text);
+    background: var(--color-surface);
+}
+
+body[data-mode] input:focus-visible {
+    outline: 2px solid var(--color-focus);
+    outline-offset: 2px;
+}
+
+body[data-mode] .hint {
+    margin: 6px 0 20px;
+    color: var(--color-text-secondary);
+    font-size: 13px;
+    line-height: 22px;
+}
+
+body[data-mode] button[type="submit"] {
+    background: var(--color-brand);
+    color: var(--color-text);
+    border-color: var(--color-brand);
+    border-radius: var(--radius-control);
+    font-weight: 500;
+}
+
+body[data-mode] button[type="submit"]:hover {
+    background: var(--color-brand-hover);
+}
+
+body[data-mode] a {
+    color: var(--color-link);
+}
+
+body[data-mode] .account-page > p:last-child {
+    margin: 24px 0;
+    color: var(--color-text-secondary);
+    text-align: center;
+}
+
+@media (max-width: 767px) {
+    body[data-mode] .site-header {
+        height: 56px;
+        padding: 0 16px;
+    }
+    body[data-mode] .account-page {
+        margin: 0 auto;
+        padding: 0 24px;
+    }
+    .account-surface {
+        margin: 16px 12px 0;
+        padding-top: 24px;
+    }
+    .account-masthead {
+        height: 96px;
+    }
+    .account-masthead > a {
+        padding: 20px 24px;
+        font-size: 28px;
+    }
+    .account-tabs {
+        gap: 32px;
+    }
+    body[data-mode] h1 {
+        font-size: 24px;
+        line-height: 34px;
+    }
+}

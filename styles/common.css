@@ -3,6 +3,10 @@
     box-sizing: border-box;
 }
 
+/* 预留滚动条槽位，加载中骨架撑高页面时不再挤动内容 */
+html {
+    scrollbar-gutter: stable;
+}
 body {
     margin: 0;
     background: #ffffff;
@@ -11,6 +15,17 @@ body {
     font-size: 16px;
     line-height: 1.6;
     letter-spacing: 0;
+}
+
+/* 图标由脚本注入，预留占位避免加载时导航项跳动 */
+[data-icon] {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+    vertical-align: middle;
 }
 
 /* 窄屏时允许导航换行 */
@@ -22,10 +37,6 @@ body {
     gap: 16px;
     padding: 16px 24px;
     border-bottom: 1px solid #cccccc;
-}
-
-nav a + a {
-    margin-left: 16px;
 }
 
 /* 限制内容宽度，长文字允许换行 */
@@ -94,6 +105,7 @@ button[type="submit"] {
 
 a {
     color: #175db0;
+    text-decoration: none;
     text-underline-offset: 3px;
 }
 
@@ -122,7 +134,7 @@ a {
     color: #a31616;
 }
 
-/* 隐藏分组标题，但保留给辅助阅读工具 */
+/* 视觉上隐藏分组标题，同时保留给辅助阅读工具，方便识别表单用途 */
 .visually-hidden {
     position: absolute;
     width: 1px;

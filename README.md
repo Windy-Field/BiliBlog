@@ -4,6 +4,8 @@
 
 本项目选择前端大作业路线二，使用原生 HTML、CSS、JavaScript 和 Vite 开发，学校提供的后端负责保存账号、文章和互动数据
 
+![首页效果图](screenshots/home.png)
+
 ## 当前功能
 
 | 模块 | 功能 |
@@ -24,6 +26,8 @@
 建议使用 Node.js 24，项目依赖通过 npm 安装
 
 在项目目录打开终端，依次运行：
+
+安装依赖后，用户也可以双击项目根目录的 `start.cmd`，脚本会在后台启动服务，确认首页可访问后打开浏览器；服务已运行时，脚本直接复用现有服务
 
 ```powershell
 npm install
@@ -71,6 +75,7 @@ Vite 将构建结果写入 `dist/`，预览服务同样使用 `5173` 端口，�
 
 ```text
 Blog/
+├── start.cmd               双击启动服务并打开首页
 ├── index.html              首页与文章阅读窗口
 ├── login.html              登录页面
 ├── register.html           注册页面

@@ -1,6 +1,6 @@
 import { requestApi } from "./api.js";
 import { readSession, clearSession } from "./auth.js";
-import { showMessage } from "./common.js";
+import { showMessage, showToast, setBusy } from "./common.js";
 
 const likeButton = document.getElementById("like-button");
 const favoriteButton = document.getElementById("favorite-button");
@@ -8,8 +8,10 @@ const message = document.getElementById("reaction-message");
 const loginLink = document.getElementById("reaction-login");
 let currentNote = null;
 let busy = false;
+let busyKind = "";
 
-// 按后端状态更新按钮，数量不能只在前端自行累加
+// 用后端返回的状态和数量更新按钮
+// 使用服务器结果能让重复设置保持一致，避免前端累加出错误计数
 function renderReactions() {
     if (!currentNote) {
         return;
@@ -28,12 +30,15 @@ function renderReactions() {
     favoriteButton.setAttribute("aria-pressed", String(currentNote.favorited));
     likeButton.disabled = busy;
     favoriteButton.disabled = busy;
+    setBusy(likeButton, busy && busyKind === "like");
+    setBusy(favoriteButton, busy && busyKind === "favorite");
 }
 
 // 详情加载后接收最新文章，关闭或切换文章时传 null，防止迟到的响应改错文章
 export function setReactionArticle(note) {
     currentNote = note;
     busy = false;
+    busyKind = "";
     showMessage(message, "", false);
     loginLink.hidden = true;
     renderReactions();
@@ -56,6 +61,7 @@ async function changeReaction(kind) {
         active = !note.favorited;
     }
     busy = true;
+    busyKind = kind;
     renderReactions();
     showMessage(message, "", false);
     try {
@@ -72,6 +78,7 @@ async function changeReaction(kind) {
             note.favoriteCount = result.count;
         }
         notifyReactionChange(note);
+        // 按钮已显示最新状态，减少连续互动时反复弹出的提示
     } catch (error) {
         if (currentNote !== note) {
             return;
@@ -91,7 +98,7 @@ async function changeReaction(kind) {
                 note.likeCount = latest.likeCount;
                 note.favoriteCount = latest.favoriteCount;
                 notifyReactionChange(note);
-                showMessage(message, "已重新读取互动状态", false);
+                // 读取后端最新状态后更新按钮
                 return;
             } catch {
                 if (currentNote !== note) {
@@ -99,7 +106,7 @@ async function changeReaction(kind) {
                 }
             }
         }
-        showMessage(message, error.message + "，请重新读取文章确认状态", true);
+        showToast(error.message + "，请重新读取文章确认状态", true);
     } finally {
         if (currentNote === note) {
             busy = false;

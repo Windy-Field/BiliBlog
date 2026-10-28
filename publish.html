@@ -6,13 +6,25 @@
     <title>发布文章 - 小B书</title>
     <link rel="stylesheet" href="/styles/common.css">
     <link rel="stylesheet" href="/styles/publish.css">
+    <link rel="stylesheet" href="/styles/feedback.css">
     <script type="module" src="/scripts/publish.js"></script>
 </head>
 <body class="publish-page">
     <header class="editor-header">
-        <a class="editor-brand" href="/index.html">小B书</a>
-        <nav aria-label="创作导航"><a href="/index.html">首页</a><a href="/index.html?feed=mine" target="_blank" rel="noopener">我的文章</a></nav>
+        <div class="editor-identity"><a class="editor-brand" href="/index.html">小B书</a><span class="editor-divider"></span><span>创作中心</span></div>
+        <nav aria-label="创作导航"><a href="/index.html"><span data-icon="home"></span>返回首页</a></nav>
     </header>
+    <aside class="creator-sidebar" aria-label="创作中心导航">
+        <a class="creator-publish" href="/publish.html" aria-current="page"><span data-icon="write"></span>发布文章</a>
+        <nav>
+            <a href="/index.html?feed=mine"><span data-icon="article"></span>我的文章</a>
+            <a href="/index.html?feed=favorites"><span data-icon="bookmark"></span>我的收藏</a>
+            <a href="/index.html"><span data-icon="discover"></span>发现文章</a>
+        </nav>
+        <a class="creator-home" href="/index.html">小B书<span>biliblog</span></a>
+    </aside>
+    <div class="creator-workspace">
+        <div class="creator-tabs"><a href="/publish.html" aria-current="page">图文发布</a></div>
     <main class="editor-main">
         <div class="editor-heading"><h1>发布文章</h1><span id="author-name"></span></div>
         <p id="publish-message" class="message" role="status" tabindex="-1">正在确认登录状态</p>
@@ -26,8 +38,8 @@
                 <label for="article-title">标题</label>
                 <input id="article-title" name="title" required maxlength="100" placeholder="给文章起个名字">
                 <label for="article-body">正文</label>
-                <textarea id="article-body" name="body" required maxlength="12000" rows="14" placeholder="记录今天的学习和生活"></textarea>
-                <div class="field-caption"><span id="save-status" role="status"></span><span id="body-count">0 / 12000</span></div>
+                <textarea id="article-body" name="body" required maxlength="12000" rows="10" placeholder="记录今天的学习和生活"></textarea>
+                <div class="field-caption"><span id="body-count">0 / 12000</span></div>
                 <label for="article-tags">话题 <span class="optional">选填</span></label>
                 <input id="article-tags" name="tags" placeholder="校园生活，前端学习" aria-describedby="tags-hint">
                 <p id="tags-hint" class="field-hint">最多 5 个，用逗号分隔，每个不超过 20 个字符</p>
@@ -35,8 +47,8 @@
                 <div class="image-tools">
                     <label class="image-select" for="article-images"><span data-icon="image"></span>添加图片</label>
                     <input id="article-images" class="file-input" type="file" accept="image/jpeg,image/png,image/webp" multiple>
-                    <button id="upload-selected" class="plain-button" type="button" disabled>上传选中图片</button>
-                    <button id="open-library" class="plain-button" type="button">已上传图片</button>
+                    <button id="upload-selected" type="button" disabled>上传选中图片</button>
+                    <button id="open-library" type="button">已上传图片</button>
                 </div>
                 <p class="field-hint">JPEG、PNG 或 WebP，每张不超过 5 MiB，上传图片为公开可见</p>
                 <p id="upload-status" class="message" role="status" tabindex="-1"></p>
@@ -50,6 +62,8 @@
             <button id="retry-publish" type="button">确认未发布，允许重新提交</button>
         </section>
     </main>
+    <footer class="creator-footer">小B书 · biliblog<span class="footer-copy">© 2026 Octorange</span></footer>
+    </div>
     <dialog id="media-dialog" aria-labelledby="media-title">
         <div class="media-heading"><h2 id="media-title">已上传图片</h2><button id="close-library" class="icon-button" type="button" aria-label="关闭素材库" title="关闭"><span data-icon="close"></span></button></div>
         <p id="media-status" role="status"></p>

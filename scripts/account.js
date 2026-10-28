@@ -1,7 +1,7 @@
 // 引入请求、登录状态和提示函数，两个账号页面共用
 import { requestApi } from "./api.js";
 import { saveSession } from "./auth.js";
-import { showMessage } from "./common.js";
+import { showMessage, setBusy } from "./common.js";
 
 const form = document.getElementById("account-form");
 const fields = document.getElementById("account-fields");
@@ -59,11 +59,12 @@ async function submitAccount(event) {
     // 等待响应时禁用表单，避免重复提交
     submitting = true;
     fields.disabled = true;
+    setBusy(submitButton, true);
     submitButton.textContent = "正在提交……";
     showMessage(message, "", false);
 
     try {
-        // 登录和注册不携带旧凭证
+        // 登录和注册省略旧凭证，避免失效凭证干扰新的身份验证
         const session = await requestApi(path, "POST", credentials, null);
         saveSession(session);
         window.location.replace("/index.html");
@@ -73,6 +74,7 @@ async function submitAccount(event) {
     } finally {
         submitting = false;
         fields.disabled = false;
+        setBusy(submitButton, false);
         submitButton.textContent = idleText;
     }
 }

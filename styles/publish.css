@@ -1,7 +1,7 @@
 @import url("./tokens.css");
 
 .publish-page {
-    background: var(--color-page);
+    background: var(--color-workspace);
     color: var(--color-text);
     font-family: var(--font-body);
     font-size: 14px;
@@ -22,11 +22,25 @@
     align-items: center;
     justify-content: space-between;
     padding: 0 32px;
+    background: var(--color-page);
+    position: relative;
+    z-index: 3;
 }
 .editor-header .editor-brand {
     font-size: 24px;
     font-weight: 700;
-    color: var(--color-text);
+    color: var(--color-brand-active);
+}
+.editor-identity {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    white-space: nowrap;
+}
+.editor-divider {
+    height: 20px;
+    width: 1px;
+    background: var(--color-border);
 }
 .editor-header nav {
     display: flex;
@@ -35,10 +49,130 @@
 .editor-header nav a + a {
     margin-left: 0;
 }
-.publish-page .editor-main {
-    max-width: 840px;
-    margin: 32px auto 64px;
+.editor-header nav a {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 44px;
+    color: var(--color-text-secondary);
+}
+.creator-sidebar {
+    position: absolute;
+    top: 64px;
+    bottom: 0;
+    left: 0;
+    width: 200px;
+    padding: 32px 20px;
+    background: var(--color-page);
+    border-right: 1px solid var(--color-border);
+    min-height: calc(100vh - 64px);
+}
+.creator-sidebar .creator-publish {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 44px;
+    border-radius: var(--radius-control);
+    color: #fff;
+    background: linear-gradient(135deg, var(--color-brand) 0%, var(--color-brand-active) 100%);
+    font-weight: 600;
+    box-shadow: 0 2px 8px rgba(232, 75, 133, 0.28);
+    transition: box-shadow 200ms var(--ease-out), transform 120ms var(--ease-out);
+}
+.creator-sidebar .creator-publish:hover {
+    box-shadow: 0 4px 14px rgba(232, 75, 133, 0.36);
+    transform: translateY(-1px);
+}
+.creator-sidebar nav {
+    margin: 32px -20px 0;
+}
+.creator-sidebar nav a {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    min-height: 52px;
+    padding: 12px 28px;
+    color: var(--color-text-secondary);
+    border-radius: 0;
+    transition: background-color 150ms var(--ease-out), color 150ms var(--ease-out);
+}
+.creator-sidebar nav a:hover {
+    background: var(--color-brand-soft);
+    color: var(--color-brand-active);
+}
+.creator-sidebar nav a[aria-current="page"] {
+    background: var(--color-brand-soft);
+    color: var(--color-brand-active);
+    font-weight: 500;
+    box-shadow: inset 3px 0 0 var(--color-brand);
+}
+.creator-home {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-top: 48px;
+    padding-top: 24px;
+    border-top: 1px solid var(--color-border);
+    font-weight: 600;
+    color: var(--color-muted) !important;
+}
+.creator-home span {
+    font-size: 12px;
+    font-weight: 400;
+}
+.creator-workspace {
+    margin-left: 200px;
+    padding: 24px 32px 0;
+    min-height: calc(100vh - 64px);
+}
+.creator-tabs {
+    display: flex;
+    background: var(--color-page);
     padding: 0 32px;
+    border-bottom: 1px solid var(--color-border);
+}
+.creator-tabs a {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    height: 60px;
+    color: var(--color-brand-active);
+    font-size: 16px;
+    font-weight: 500;
+}
+.creator-tabs a::after {
+    content: "";
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    border-radius: 2px;
+    background: var(--color-brand);
+}
+.publish-page .editor-main {
+    max-width: none;
+    margin: 0;
+    padding: 32px;
+    min-height: calc(100vh - 220px);
+    background: var(--color-page);
+}
+.editor-main > * {
+    max-width: 940px;
+    margin-left: auto;
+    margin-right: auto;
+}
+.creator-footer {
+    padding: 24px;
+    color: var(--color-text-secondary);
+    text-align: center;
+    font-size: 12px;
+}
+.creator-footer .footer-copy {
+    display: block;
+    margin-top: 4px;
+    color: var(--color-muted);
 }
 .editor-heading, .image-heading, .field-caption, .media-heading {
     display: flex;
@@ -63,27 +197,46 @@
 #author-name {
     overflow-wrap: anywhere;
 }
-.publish-page label {
+.publish-page label,
+.settings-page label {
     margin: 20px 0 8px;
     font-weight: 500;
 }
-.publish-page input, .publish-page textarea {
+.publish-page input,
+.publish-page textarea,
+.settings-page input,
+.settings-page textarea {
     width: 100%;
-    border: 1px solid var(--color-input-border);
+    border: 1.5px solid var(--color-border);
     border-radius: var(--radius-control);
-    padding: 10px 12px;
+    padding: 10px 14px;
     color: var(--color-text);
-    background: var(--color-page);
+    background: var(--color-surface);
     font-family: inherit;
     font-size: 16px;
+    transition: border-color 150ms var(--ease-out), box-shadow 150ms var(--ease-out), background-color 150ms var(--ease-out);
 }
-.publish-page textarea {
+.publish-page textarea,
+.settings-page textarea {
     display: block;
     line-height: 28px;
     resize: vertical;
+    min-height: 120px;
+}
+.publish-page textarea {
     min-height: 280px;
 }
-.publish-page button {
+.publish-page input:focus,
+.publish-page textarea:focus,
+.settings-page input:focus,
+.settings-page textarea:focus {
+    background: var(--color-page);
+    border-color: var(--color-brand);
+    box-shadow: 0 0 0 3px rgba(255, 102, 153, 0.12);
+    outline: none;
+}
+.publish-page button,
+.settings-page button {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -96,14 +249,19 @@
     background: var(--color-page);
     font: inherit;
 }
-.publish-page button:hover {
+.publish-page button:hover,
+.settings-page button:hover {
     background: var(--color-surface);
 }
-.publish-page button svg, .publish-page label svg {
+.publish-page button svg,
+.publish-page label svg,
+.settings-page button svg,
+.settings-page label svg {
     vertical-align: middle;
     flex-shrink: 0;
 }
-.publish-page .message[data-error="true"] {
+.publish-page .message[data-error="true"],
+.settings-page .message[data-error="true"] {
     color: var(--color-error);
 }
 .field-caption {
@@ -119,6 +277,10 @@
     align-items: center;
     flex-wrap: wrap;
     gap: 12px;
+    padding: 20px;
+    border: 1px dashed var(--color-input-border);
+    border-radius: var(--radius-control);
+    background: var(--color-surface);
 }
 .publish-page .image-select {
     display: inline-flex;
@@ -134,11 +296,24 @@
 .image-select:hover {
     background: var(--color-surface);
 }
-.publish-page .file-input {
-    width: 100%;
-    font-size: 13px;
-    order: 3;
-    padding: 8px;
+.publish-page .file-input,
+.settings-page .file-input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    min-height: 0;
+    padding: 0;
+    opacity: 0;
+    clip-path: inset(50%);
+}
+.image-tools:has(.file-input:focus-visible) .image-select,
+.avatar-editor:has(.file-input:focus-visible) .image-select,
+.cover-editor:has(.file-input:focus-visible) .image-select {
+    outline: 2px solid var(--color-focus);
+    outline-offset: 2px;
+}
+.image-heading {
+    margin-top: 8px;
 }
 .image-previews, .media-list {
     display: grid;
@@ -165,6 +340,35 @@
     margin-top: 4px;
     font-size: 13px;
 }
+.image-preview figcaption > span {
+    min-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+.image-preview figcaption > button {
+    flex-shrink: 0;
+}
+.editor-heading h1::before {
+    content: "";
+    display: inline-block;
+    width: 4px;
+    height: 22px;
+    margin-right: 12px;
+    border-radius: 2px;
+    background: var(--color-brand);
+    vertical-align: -1px;
+}
+.publish-page .media-choice[aria-pressed="true"]::after {
+    content: "已选择";
+    display: block;
+    color: var(--color-link);
+}
+.media-choice::after {
+    content: "选择图片";
+    display: block;
+    color: var(--color-text-secondary);
+}
 .publish-page .icon-button {
     width: 44px;
     height: 44px;
@@ -180,12 +384,22 @@
 .publish-page .publish-button {
     width: 160px;
     margin: 0;
-    background: var(--color-brand);
-    border-color: var(--color-brand);
-    font-weight: 500;
+    background: linear-gradient(135deg, var(--color-brand) 0%, var(--color-brand-active) 100%);
+    border-color: transparent;
+    color: #fff;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    box-shadow: 0 2px 8px rgba(232, 75, 133, 0.30);
+    transition: box-shadow 200ms var(--ease-out), transform 120ms var(--ease-out), background 200ms var(--ease-out);
 }
 .publish-page .publish-button:hover {
-    background: var(--color-brand-hover);
+    background: linear-gradient(135deg, var(--color-brand-hover) 0%, var(--color-brand) 100%);
+    box-shadow: 0 4px 16px rgba(232, 75, 133, 0.40);
+    transform: translateY(-1px);
+}
+.publish-page .publish-button:active {
+    transform: scale(0.97);
+    box-shadow: 0 2px 6px rgba(232, 75, 133, 0.25);
 }
 .login-actions, .uncertain-panel {
     margin: 16px 0;
@@ -237,8 +451,8 @@
         padding: 0 16px;
     }
     .publish-page .editor-main {
-        margin-top: 24px;
-        padding: 0 16px;
+        margin: 0;
+        padding: 24px 16px;
     }
     .editor-heading h1 {
         font-size: 24px;
@@ -250,5 +464,55 @@
     }
     .publish-page dialog {
         padding: 16px;
+    }
+    .editor-identity {
+        gap: 12px;
+        font-size: 13px;
+    }
+    .editor-header .editor-brand {
+        font-size: 21px;
+    }
+    .editor-header nav a {
+        font-size: 13px;
+        gap: 4px;
+    }
+    .creator-sidebar {
+        display: none;
+    }
+    .creator-workspace {
+        margin-left: 0;
+        padding: 16px 12px 0;
+    }
+    .creator-tabs {
+        padding: 0 16px;
+    }
+    .creator-tabs a {
+        height: 48px;
+        font-size: 14px;
+    }
+    .image-tools {
+        padding: 12px;
+        gap: 8px;
+    }
+}
+@media (min-width: 768px) and (max-width: 1023px) {
+    .creator-sidebar {
+        width: 160px;
+        padding: 24px 16px;
+    }
+    .creator-workspace {
+        margin-left: 160px;
+        padding: 20px;
+    }
+    .creator-sidebar nav {
+        margin-left: -16px;
+        margin-right: -16px;
+    }
+    .creator-sidebar nav a {
+        padding-left: 20px;
+        padding-right: 20px;
+    }
+    .publish-page .editor-main {
+        padding: 24px;
     }
 }

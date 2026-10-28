@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>主页 - 小B书</title>
+  <link rel="stylesheet" href="/styles/common.css" />
+  <link rel="stylesheet" href="/styles/home.css" />
+  <link rel="stylesheet" href="/styles/profile.css" />
+  <link rel="stylesheet" href="/styles/comments.css" />
+  <link rel="stylesheet" href="/styles/feedback.css" />
+  <script type="module" src="/scripts/profile.js"></script>
+</head>
+<body class="home-page profile-page">
+  <a class="skip-link" href="#content">跳过导航</a>
+  <header class="home-header">
+    <div class="topbar" id="topbar">
+      <nav class="primary-nav" aria-label="主导航">
+        <a class="top-home" href="/index.html"
+          ><span data-icon="home"></span>首页</a
+        >
+        <a class="desktop-entry" href="/index.html?feed=following"><span data-icon="following"></span>关注</a>
+        <a class="desktop-entry" href="/index.html?feed=favorites"><span data-icon="bookmark"></span>收藏</a>
+      </nav>
+      <nav class="account-nav" aria-label="账号导航">
+        <a class="primary-button publish-link" href="/publish.html"
+          ><span data-icon="write"></span>发布文章</a
+        >
+        <span id="guest-links" hidden
+          ><a href="/login.html">登录</a
+          ><a href="/register.html" class="primary-button">注册</a></span
+        >
+        <details id="account-menu" class="account-menu" hidden>
+          <summary aria-label="账号菜单">
+            <span id="avatar" class="avatar">B</span>
+            <span id="account-name" class="account-name"></span>
+            <span data-icon="down"></span>
+          </summary>
+          <div class="account-dropdown">
+            <p id="welcome" class="account-welcome"></p>
+            <a id="my-profile-link" href="/profile.html"
+              ><span data-icon="user"></span>我的主页</a
+            >
+            <a href="/index.html?feed=mine"
+              ><span data-icon="article"></span>我的文章</a
+            >
+            <a href="/index.html?feed=favorites"
+              ><span data-icon="bookmark"></span>我的收藏</a
+            >
+            <a href="/settings.html"
+              ><span data-icon="write"></span>资料设置</a
+            >
+            <button id="logout-button" type="button">
+              <span data-icon="logout"></span>退出登录
+            </button>
+          </div>
+        </details>
+        <a
+          id="my-articles"
+          class="top-account-link"
+          href="/index.html?feed=mine"
+          hidden
+          ><span data-icon="article"></span><span>我的文章</span></a
+        >
+      </nav>
+    </div>
+  </header>
+  <!-- 封面区 -->
+  <div class="profile-hero">
+    <div id="cover-wrap" class="cover-wrap">
+      <img id="profile-cover" class="profile-cover" src="" alt="" hidden />
+      <div class="cover-placeholder" id="cover-placeholder"></div>
+    </div>
+    <div class="cover-gradient"></div>
+    <div id="profile-card" class="profile-hero-info" hidden>
+      <div class="profile-hero-inner">
+        <div class="avatar-wrap">
+          <span id="profile-avatar" class="profile-avatar" aria-hidden="true"></span>
+        </div>
+        <div class="profile-text">
+          <h1 id="profile-name" class="profile-name"></h1>
+          <p id="profile-handle" class="profile-handle"></p>
+          <p id="profile-bio" class="profile-bio" hidden></p>
+        </div>
+        <div class="profile-actions">
+          <button id="follow-button" class="primary-button" type="button" hidden></button>
+          <a id="own-settings-link" href="/settings.html" class="hero-edit-btn" hidden>编辑资料</a>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- 粘性导航栏 -->
+  <div id="profile-navbar" class="profile-navbar" hidden>
+    <div class="profile-navbar-inner">
+      <div class="profile-tabs">
+        <span class="profile-tab is-active">文章</span>
+        <nav id="archives-nav" class="archives-nav" aria-label="按月筛选" hidden></nav>
+      </div>
+      <div class="profile-stats">
+        <div class="stat-item">
+          <strong id="stat-notes-num"></strong>
+          <span>文章</span>
+        </div>
+        <a class="stat-item" id="stat-followers" href="#followers">
+          <strong></strong>
+          <span>关注者</span>
+        </a>
+        <a class="stat-item" id="stat-following" href="#following">
+          <strong></strong>
+          <span>关注中</span>
+        </a>
+      </div>
+    </div>
+  </div>
+  <p id="profile-error" class="message profile-error" role="status" tabindex="-1" hidden></p>
+  <main id="content" class="profile-main">
+    <div id="profile-links" class="profile-links" hidden></div>
+    <div id="profile-about" class="profile-about" hidden>
+      <div id="about-content" class="about-content"></div>
+    </div>
+    <section class="profile-articles" aria-labelledby="articles-heading">
+      <h2 id="articles-heading" class="visually-hidden">文章列表</h2>
+      <p id="profile-status" class="feed-status" role="status"></p>
+      <div id="profile-grid" class="article-grid" aria-busy="true"></div>
+      <nav id="pagination" class="pagination" aria-label="文章分页" hidden>
+        <a id="previous-page" class="page-button" aria-label="上一页" title="上一页"
+          ><span data-icon="previous"></span
+        ></a>
+        <span id="page-info"></span>
+        <a id="next-page" class="page-button" aria-label="下一页" title="下一页"
+          ><span data-icon="next"></span
+        ></a>
+      </nav>
+    </section>
+  </main>
+  <footer class="profile-footer">
+    <span>小B书 · biliblog</span>
+    <span>学习 · 生活 · 分享</span>
+    <span class="footer-copy">© 2026 Octorange</span>
+  </footer>
+</body>
+</html>

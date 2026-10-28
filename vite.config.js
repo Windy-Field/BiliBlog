@@ -6,7 +6,9 @@ export default {
                 home: "index.html",
                 login: "login.html",
                 register: "register.html",
-                publish: "publish.html"
+                publish: "publish.html",
+                profile: "profile.html",
+                settings: "settings.html"
             }
         }
     }

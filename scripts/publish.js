@@ -1,6 +1,6 @@
 import { requestApi } from "./api.js";
 import { readSession, clearSession } from "./auth.js";
-import { showMessage } from "./common.js";
+import { showMessage, showToast, setBusy } from "./common.js";
 import { makeIcon, fillIcons } from "./icons.js";
 
 const form = document.getElementById("publish-form");
@@ -28,11 +28,10 @@ let readingLibrary = false;
 let libraryPage = 1;
 let libraryPageCount = 1;
 
-// 显示登录状态，并在登录失效时允许先去登录再回来继续写
+// 确认登录身份，凭证失效时显示重新登录入口
 async function checkLogin() {
     editorFields.disabled = true;
     loginActions.hidden = true;
-    showMessage(publishMessage, "正在确认登录状态", false);
     const session = readSession();
     if (!session) {
         showLoginRequired("请先登录，再发布文章");
@@ -50,12 +49,11 @@ async function checkLogin() {
             showLoginRequired("登录已失效，请重新登录");
             return;
         }
-        showMessage(publishMessage, error.message, true);
-        loginActions.hidden = false;
+        showToast(error.message, true);
     }
 }
 
-// 暂停编辑并显示登录入口，重新登录后输入内容仍保留
+// 显示 text 中的登录提示，暂停编辑并保留当前输入
 function showLoginRequired(text) {
     sessionToken = null;
     editorFields.disabled = true;
@@ -103,7 +101,6 @@ function renderSelectedImages() {
         name.textContent = selectedImage.file ? selectedImage.file.name : "素材库图片";
         const removeButton = document.createElement("button");
         removeButton.type = "button";
-        removeButton.className = "remove-image";
         removeButton.textContent = "移除";
         removeButton.setAttribute("aria-label", "移除第 " + (index + 1) + " 张图片");
         removeButton.addEventListener("click", function removeSelectedImage() {
@@ -130,23 +127,24 @@ function hasPendingImages() {
     return false;
 }
 
-// 选择图片后立即预览，并检查格式、大小和文章图片数量
+// 整组选中文件通过格式、大小和数量检查后，一起加入预览列表
+// 中途发现无效文件时保持原列表，方便用户分清本次是否添加成功
 function handleFileSelection() {
     showMessage(uploadMessage, "", false);
     const files = fileInput.files;
     if (selectedImages.length + files.length > 9) {
-        showMessage(uploadMessage, "一篇文章最多添加 9 张图片", true);
+        showToast("一篇文章最多添加 9 张图片", true);
         fileInput.value = "";
         return;
     }
     for (const file of files) {
         if (!isAllowedImage(file)) {
-            showMessage(uploadMessage, file.name + " 不是 JPEG、PNG 或 WebP 图片", true);
+            showToast(file.name + " 不是 JPEG、PNG 或 WebP 图片", true);
             fileInput.value = "";
             return;
         }
         if (file.size > 5 * 1024 * 1024) {
-            showMessage(uploadMessage, file.name + " 超过 5 MiB，请选择较小的图片", true);
+            showToast(file.name + " 超过 5 MiB，请选择较小的图片", true);
             fileInput.value = "";
             return;
         }
@@ -165,11 +163,13 @@ function isAllowedImage(file) {
 }
 
 // 逐张上传图片，成功的图片保留，失败的图片留在列表中供重试
+// 每次只发送尚未取得 ID 的文件，避免整组重试时重复上传成功图片
 async function uploadPendingImages() {
     if (uploading || !sessionToken) {
         return;
     }
     uploading = true;
+    setBusy(uploadButton, true);
     uploadButton.disabled = true;
     fileInput.disabled = true;
     let failed = false;
@@ -179,7 +179,6 @@ async function uploadPendingImages() {
             if (!selectedImage.file || selectedImage.id) {
                 continue;
             }
-            showMessage(uploadMessage, "正在上传第 " + (index + 1) + " 张图片", false);
             const formData = new FormData();
             formData.append("file", selectedImage.file);
             const uploadedImage = await requestApi("/media", "POST", formData, sessionToken);
@@ -188,7 +187,7 @@ async function uploadPendingImages() {
             selectedImage.file = null;
             renderSelectedImages();
         }
-        showMessage(uploadMessage, "图片已上传，可以发布文章", false);
+        showToast("图片已上传，可以发布文章");
     } catch (error) {
         failed = true;
         if (error.status === 401) {
@@ -196,12 +195,13 @@ async function uploadPendingImages() {
             showLoginRequired("登录已失效，请重新登录；已选图片仍保留");
         }
         if (error.uncertain && error.status !== 401) {
-            showMessage(uploadMessage, error.message + "。请打开素材库确认上传结果，避免重复上传", true);
+            showToast(error.message + "。请打开素材库确认上传结果，避免重复上传", true);
         } else {
-            showMessage(uploadMessage, error.message + "。已上传图片会保留", true);
+            showToast(error.message + "。已上传图片会保留", true);
         }
     } finally {
         uploading = false;
+        setBusy(uploadButton, false);
         fileInput.disabled = !sessionToken;
         uploadButton.disabled = !sessionToken || !hasPendingImages();
         if (failed) {
@@ -285,7 +285,7 @@ function isImageSelected(imageId) {
     return false;
 }
 
-// 从文章中移除素材引用，但不删除用户素材库里的文件
+// 根据 imageId 移出文章图片列表，素材库里的文件继续保留
 function removeSelectedImage(imageId) {
     for (let index = selectedImages.length - 1; index >= 0; index = index - 1) {
         if (selectedImages[index].id === imageId) {
@@ -294,7 +294,9 @@ function removeSelectedImage(imageId) {
     }
 }
 
-// 检查表单后真实发布文章；结果不明确时先让用户核对，避免重复创建
+// 处理表单提交并发布文章，输入和图片在失败时保留
+// 请求结果不明时暂停提交，用户核对“我的文章”后再决定是否重试
+// 后端可能已经创建文章但响应丢失，直接重发会产生重复文章
 async function publishArticle(event) {
     event.preventDefault();
     if (publishing || !sessionToken) {
@@ -304,7 +306,7 @@ async function publishArticle(event) {
         return;
     }
     if (hasPendingImages()) {
-        showMessage(uploadMessage, "请先上传选中的图片", true);
+        showToast("请先上传选中的图片", true);
         uploadButton.focus();
         return;
     }
@@ -312,7 +314,7 @@ async function publishArticle(event) {
     try {
         tags = readTags();
     } catch (error) {
-        showMessage(publishMessage, error.message, true);
+        showToast(error.message, true);
         tagsInput.focus();
         return;
     }
@@ -329,15 +331,21 @@ async function publishArticle(event) {
         }
     }
     publishing = true;
+    setBusy(publishButton, true);
     editorFields.disabled = true;
     document.getElementById("publish-button").textContent = "正在发布";
-    showMessage(publishMessage, "正在发布文章", false);
     uncertainPanel.hidden = true;
     try {
         const note = await requestApi("/notes", "POST", body, sessionToken);
-        showMessage(publishMessage, "文章已发布，正在打开文章", false);
-        window.location.replace("/index.html?feed=mine#article=" + encodeURIComponent(note.id));
+        showToast("文章已发布，正在打开文章");
+        // 短暂显示成功提示后打开文章
+        window.setTimeout(function openPublishedArticle() {
+            window.location.replace("/index.html?feed=mine#article=" + encodeURIComponent(note.id));
+        }, 700);
     } catch (error) {
+        publishing = false;
+        setBusy(publishButton, false);
+        publishButton.replaceChildren(makeIcon("send"), document.createTextNode("发布文章"));
         if (error.status === 401) {
             clearSession();
             showLoginRequired("登录已失效，请重新登录；文章内容和图片已保留");

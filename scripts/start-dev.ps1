@@ -1,4 +1,8 @@
-﻿# 登录 Windows 后启动本地开发服务，端口已占用时直接结束
+﻿# 启动本地服务，传入 OpenBrowser 时在服务就绪后打开首页
+param(
+    [switch]$OpenBrowser
+)
+
 $projectDirectory = Split-Path -Parent $PSScriptRoot
 $vitePath = Join-Path $projectDirectory 'node_modules\vite\bin\vite.js'
 $nodePath = 'D:\node\node.exe'
@@ -6,12 +10,14 @@ $nodePath = 'D:\node\node.exe'
 if (-not (Test-Path -LiteralPath $nodePath)) {
     $nodeCommand = Get-Command node.exe -ErrorAction SilentlyContinue
     if ($null -eq $nodeCommand) {
+        Write-Host '找不到 Node.js，请安装 Node.js 后重试'
         exit 1
     }
     $nodePath = $nodeCommand.Source
 }
 
 if (-not (Test-Path -LiteralPath $vitePath)) {
+    Write-Host '找不到 Vite，请先在项目目录运行 npm install'
     exit 1
 }
 
@@ -27,16 +33,53 @@ try {
     $connection.Dispose()
 }
 
-if ($portOccupied) {
-    exit 0
+if (-not $portOccupied) {
+    $logDirectory = Join-Path $env:LOCALAPPDATA 'biliblog'
+    $outputLog = Join-Path $logDirectory 'dev-server.log'
+    $errorLog = Join-Path $logDirectory 'dev-server-error.log'
+    $quotedVitePath = '"' + $vitePath + '"'
+    $serverArguments = @($quotedVitePath, '--host', '127.0.0.1', '--port', '5173', '--strictPort')
+
+    # 复用开机启动方式，在后台运行并记录日志
+    try {
+        New-Item -ItemType Directory -Path $logDirectory -Force -ErrorAction Stop | Out-Null
+        Start-Process -FilePath $nodePath -ArgumentList $serverArguments -WorkingDirectory $projectDirectory -WindowStyle Hidden -RedirectStandardOutput $outputLog -RedirectStandardError $errorLog -ErrorAction Stop
+    } catch {
+        Write-Host '启动失败，请检查 Node.js 和本机日志目录'
+        Write-Host $_.Exception.Message
+        exit 1
+    }
 }
 
-$logDirectory = Join-Path $env:LOCALAPPDATA 'biliblog'
-New-Item -ItemType Directory -Path $logDirectory -Force | Out-Null
-$outputLog = Join-Path $logDirectory 'dev-server.log'
-$errorLog = Join-Path $logDirectory 'dev-server-error.log'
-$quotedVitePath = '"' + $vitePath + '"'
-$serverArguments = @($quotedVitePath, '--host', '127.0.0.1', '--port', '5173', '--strictPort')
+# 确认端口提供的是小B书首页，避免误打开占用相同端口的其他项目
+$homeUrl = 'http://127.0.0.1:5173/index.html'
+$ready = $false
+for ($attempt = 0; $attempt -lt 20; $attempt = $attempt + 1) {
+    try {
+        $response = Invoke-WebRequest -Uri $homeUrl -UseBasicParsing -TimeoutSec 2 -ErrorAction Stop
+        if ($response.StatusCode -eq 200 -and $response.Content -match '<title>首页 - 小B书</title>') {
+            $ready = $true
+            break
+        }
+        Write-Host '5173 端口已被其他页面占用，请先关闭对应服务'
+        exit 1
+    } catch {
+        Start-Sleep -Milliseconds 250
+    }
+}
 
-# 后台启动并记录输出，不弹终端窗口；严格固定端口，不自动改用其他端口
-Start-Process -FilePath $nodePath -ArgumentList $serverArguments -WorkingDirectory $projectDirectory -WindowStyle Hidden -RedirectStandardOutput $outputLog -RedirectStandardError $errorLog
+if (-not $ready) {
+    Write-Host '首页暂时无法打开，请查看 %LOCALAPPDATA%\biliblog 中的启动日志'
+    exit 1
+}
+
+if ($OpenBrowser) {
+    try {
+        Start-Process -FilePath $homeUrl -ErrorAction Stop
+    } catch {
+        Write-Host "服务已经启动，请在浏览器打开 $homeUrl"
+        exit 1
+    }
+}
+
+exit 0

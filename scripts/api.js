@@ -1,11 +1,12 @@
-// 接口统一地址，调用时只填写 /auth/login 等路径
+// 接口共用这个地址，调用时填写 /auth/login 等路径
 const BASE_URL = "https://dev.muyufly.com/api/v1";
 
-// 按路径和方法发送请求，body 是提交内容，token 是登录凭证，不需要时传 null
+// 按指定路径和方法发送请求，body 为提交内容，token 为登录凭证，空值传 null
 // 成功返回 data，失败抛出错误，由页面显示提示
+// 请求集中在这里处理，页面可以复用同一套超时和错误规则
 export async function requestApi(path, method, body, token) {
     const controller = new AbortController();
-    // 15 秒后取消请求，避免一直等待
+    // 请求超过 15 秒后取消，避免网络卡住时界面一直等待
     const timeout = window.setTimeout(function cancelRequest() {
         controller.abort();
     }, 15000);
@@ -16,7 +17,7 @@ export async function requestApi(path, method, body, token) {
     };
 
     if (body instanceof FormData) {
-        // 文件表单的 Content-Type 由浏览器生成，包含文件分隔信息
+        // 浏览器会为文件表单补上分隔信息，手动填写 Content-Type 容易导致后端解析失败
         options.body = body;
     } else if (body !== null) {
         // 请求内容转成 JSON 文本，并声明格式
@@ -51,12 +52,8 @@ export async function requestApi(path, method, body, token) {
             const apiError = new Error(message);
             // 保留状态码，让页面区分 401 登录失效和其他错误
             apiError.status = response.status;
+            // 5xx 时操作可能已经完成，uncertain 提醒页面先核对后端结果再重试
             apiError.uncertain = response.status >= 500;
-            apiError.requestId = result.requestId;
-            if (result.error) {
-                apiError.code = result.error.code;
-                apiError.details = result.error.details;
-            }
             throw apiError;
         }
 
@@ -68,14 +65,14 @@ export async function requestApi(path, method, body, token) {
             throw timeoutError;
         }
         if (error instanceof TypeError) {
-            // 连接失败时，不能据此判断后端是否已经保存数据
+            // 断网或跨域拦截也可能发生在请求发出之后，页面需要先核对保存结果
             const networkError = new Error("无法连接后端，请检查校园网，并将 dev.muyufly.com 设为直连");
             networkError.uncertain = true;
             throw networkError;
         }
         throw error;
     } finally {
-        // 请求结束后清除定时器
+        // 请求结束后清除定时器，避免完成后又执行取消回调
         window.clearTimeout(timeout);
     }
 }

@@ -1,6 +1,5 @@
 import {
     createElement,
-    BookOpen,
     Search,
     X,
     House,
@@ -20,10 +19,10 @@ import {
     PenLine,
     ImagePlus,
     Send,
+    Megaphone,
 } from "lucide";
 
 const iconShapes = {
-    book: BookOpen,
     search: Search,
     close: X,
     home: House,
@@ -43,6 +42,7 @@ const iconShapes = {
     write: PenLine,
     image: ImagePlus,
     send: Send,
+    notice: Megaphone,
 };
 
 // 根据名称创建 Lucide 图标，图标旁的按钮或文字负责说明用途

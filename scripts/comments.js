@@ -1,6 +1,6 @@
 import { requestApi } from "./api.js";
 import { readSession, clearSession } from "./auth.js";
-import { showMessage } from "./common.js";
+import { showMessage, showToast, setBusy, confirmAction } from "./common.js";
 import { makeIcon } from "./icons.js";
 
 const section = document.getElementById("comments-section");
@@ -8,7 +8,9 @@ const drafts = new Map();
 const pageSize = 10;
 let current = null;
 
-// 打开文章时建立独立评论区，关闭或切换后忽略旧请求
+// 为 note 建立评论区，关闭时传 null，切换文章后忽略旧请求
+// 列表重建时更新 renderVersion，回复请求只写入对应版本的列表
+// 这样旧回复晚到时，也能保留新列表里的内容
 export function setCommentArticle(note) {
     current = null;
     section.replaceChildren();
@@ -59,6 +61,7 @@ function actionButton(text, handler) {
 }
 
 // 创建评论输入区和列表，刷新列表不会清空正在输入的内容
+// 输入单独保存在 draft 中，用户刷新评论或重新登录后可以接着写
 function buildSection(state) {
     const heading = textElement("div", "comments-heading", "");
     state.heading = textElement("h3", "", "评论 " + state.note.commentCount);
@@ -127,7 +130,7 @@ function buildSection(state) {
     updateComposer(state);
 }
 
-// 读取本人身份后再展示删除入口，游客仍可阅读评论
+// 先向后端确认本人身份，再按作者显示删除入口，避免把操作按钮给错用户
 async function initializeComments(state) {
     state.submit.disabled = true;
     if (state.token) {
@@ -170,12 +173,15 @@ function updateComposer(state) {
     state.login.hidden = Boolean(state.username);
     state.retryPost.hidden = !state.draft.uncertain;
     state.retryPost.disabled = pending;
+    setBusy(state.submit, pending);
+    setBusy(state.refresh, state.loading || state.identifying);
     if (!state.token) {
         state.login.textContent = "去登录，回来后刷新评论";
     }
 }
 
 // 创建独立分页控件，主评论和每条主评论的回复分别翻页
+// 两类列表使用不同接口，分别记录页码才能互不影响
 function makePager(onChange) {
     const pager = { page: 1, count: 1 };
     pager.element = textElement("nav", "comment-pagination", "");
@@ -260,6 +266,19 @@ async function loadComments(state, page) {
 function makeComment(state, comment, isReply) {
     const row = textElement("article", "comment-item", "");
     row.dataset.commentId = comment.id;
+    const avatar = textElement("span", "comment-avatar", comment.author.displayName.slice(0, 1));
+    avatar.setAttribute("aria-hidden", "true");
+    if (comment.author.avatarUrl) {
+        const image = document.createElement("img");
+        image.src = comment.author.avatarUrl;
+        image.alt = "";
+        image.loading = "lazy";
+        // 头像加载失败时回到昵称首字
+        image.addEventListener("error", function restoreCommentAvatar() {
+            avatar.textContent = comment.author.displayName.slice(0, 1);
+        }, { once: true });
+        avatar.replaceChildren(image);
+    }
     const header = textElement("div", "comment-meta", "");
     header.appendChild(textElement("strong", "comment-author", comment.author.displayName));
     const time = document.createElement("time");
@@ -293,7 +312,7 @@ function makeComment(state, comment, isReply) {
         remove.classList.add("comment-delete");
         actions.appendChild(remove);
     }
-    row.append(header, content, actions);
+    row.append(avatar, header, content, actions);
     if (!isReply && comment.replyCount > 0) {
         addReplyList(state, row, actions, comment);
     }
@@ -326,6 +345,7 @@ function addReplyList(state, row, actions, comment) {
         }
     });
     toggle.dataset.replyRoot = comment.id;
+    toggle.appendChild(makeIcon("down"));
     toggle.setAttribute("aria-expanded", "false");
     actions.appendChild(toggle);
     row.appendChild(replyState.root);
@@ -373,6 +393,7 @@ async function loadReplies(state, parentId, replies, page) {
 }
 
 // 写操作前核对当前凭证，切换账号时先刷新评论身份
+// 页面可能在另一个标签页重新登录，这里要避免沿用上一账号的作者判断
 function checkWriteSession(state) {
     const session = readSession();
     if (!session || session.token !== state.token || !state.username) {
@@ -383,7 +404,8 @@ function checkWriteSession(state) {
     return true;
 }
 
-// 发布评论或回复，发送失败时保留原文，结果不明时阻止直接重发
+// 发送当前评论或回复，后端确认成功后清空输入，失败时保留原文
+// 响应丢失时评论可能已经保存，先核对列表再重试可以避免重复发送
 async function sendComment(state) {
     if (state.busy || state.draft.pending || state.loading || !state.available || state.draft.uncertain || !checkWriteSession(state)) {
         return;
@@ -407,7 +429,6 @@ async function sendComment(state) {
     state.draft.pending = true;
     const parentId = state.draft.parentId;
     updateComposer(state);
-    showMessage(state.feedback, "正在发送", false);
     try {
         await requestApi("/notes/" + encodeURIComponent(state.note.id) + "/comments", "POST", body, state.token);
         state.draft.text = "";
@@ -417,7 +438,7 @@ async function sendComment(state) {
             return;
         }
         state.input.value = "";
-        showMessage(state.feedback, "已发送", false);
+        showToast("已发送");
         let page = 1;
         if (parentId) {
             page = state.page;
@@ -426,7 +447,7 @@ async function sendComment(state) {
         if (current !== state) {
             return;
         }
-        // 回复成功后展开所属主评论，让用户立即核对后端返回的回复列表
+        // 回复成功后展开对应主评论，方便核对发送结果
         if (parentId) {
             const toggles = state.list.querySelectorAll("[data-reply-root]");
             for (const toggle of toggles) {
@@ -461,21 +482,27 @@ async function sendComment(state) {
 }
 
 // 删除本人评论，后端保留主评论与回复结构，前端重新读取结果
+// 重新读取能保留其他人的回复，也能更新当前页和总数
 async function deleteComment(state, comment) {
     if (state.busy || state.draft.pending || state.loading || !checkWriteSession(state)) {
         return;
     }
-    if (!window.confirm("删除这条评论？删除后无法恢复")) {
-        return;
-    }
     state.busy = true;
     updateComposer(state);
+    const confirmed = await confirmAction("删除这条评论后无法恢复，主评论下已有的回复会保留");
+    if (!confirmed || current !== state) {
+        state.busy = false;
+        if (current === state) {
+            updateComposer(state);
+        }
+        return;
+    }
     try {
         await requestApi("/comments/" + encodeURIComponent(comment.id), "DELETE", null, state.token);
         if (current !== state) {
             return;
         }
-        showMessage(state.feedback, "评论已删除", false);
+        showToast("评论已删除");
         await loadComments(state, state.page);
         await refreshCommentCount(state);
     } catch (error) {
@@ -495,7 +522,7 @@ async function deleteComment(state, comment) {
     }
 }
 
-// 从文章详情获取真实评论总数，通知首页和阅读区更新
+// 从文章详情获取评论总数，主评论和回复分别分页，本页条数无法代表文章总数
 async function refreshCommentCount(state) {
     try {
         const note = await requestApi("/notes/" + encodeURIComponent(state.note.id), "GET", null, state.token);

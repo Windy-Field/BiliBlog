@@ -1,0 +1,294 @@
+@import url("./tokens.css");
+
+/* 各页面共用等待和按压反馈，按钮及链接保留原有尺寸 */
+body button,
+body .primary-button,
+body .page-button,
+body .image-select,
+body .back-to-top,
+body .comment-button,
+body .comment-submit {
+    position: relative;
+    transition:
+        transform var(--duration-press) var(--ease-out),
+        background-color var(--duration-fast) var(--ease-out),
+        color var(--duration-fast) var(--ease-out),
+        border-color var(--duration-fast) var(--ease-out);
+}
+
+body button:not(:disabled):active,
+body .primary-button:active,
+body .page-button:not([aria-disabled="true"]):active,
+body .back-to-top:active,
+body .comment-button:not(:disabled):active,
+body .comment-submit:not(:disabled):active {
+    transform: scale(0.97);
+}
+
+body button:disabled {
+    opacity: 0.55;
+}
+
+body .is-busy {
+    position: relative;
+    cursor: wait;
+}
+
+body .is-busy::after {
+    content: "";
+    position: absolute;
+    left: 10px;
+    top: calc(50% - 7px);
+    width: 12px;
+    height: 12px;
+    border: 2px solid currentColor;
+    border-right-color: transparent;
+    border-radius: 50%;
+    animation: feedback-spin 800ms linear infinite;
+    pointer-events: none;
+}
+
+body .is-busy svg {
+    opacity: 0;
+}
+
+body .message:not(:empty) {
+    padding: 10px 12px;
+    border: 1px solid var(--color-border);
+    box-shadow: inset 3px 0 0 var(--color-accent);
+    border-radius: var(--radius-control);
+    background: var(--color-selected);
+    color: var(--color-text);
+    font-size: 14px;
+    line-height: 24px;
+    overflow-wrap: anywhere;
+    transition: opacity var(--duration-fast) var(--ease-out);
+}
+
+body .message[data-tone="error"]:not(:empty),
+body .message[data-error="true"]:not(:empty) {
+    border-color: var(--color-error);
+    background: var(--color-error-soft);
+    color: var(--color-error);
+}
+
+body .message[data-tone="success"]:not(:empty) {
+    border-color: var(--color-success);
+    background: var(--color-success-soft);
+    color: var(--color-success);
+}
+
+/* 删除等操作的结果在浮层中短暂显示，页面布局保持原位 */
+.toast {
+    /* 覆盖 popover 默认定位，将提示放在屏幕底部居中 */
+    inset: auto auto 32px 50%;
+    width: max-content;
+    max-width: calc(100vw - 32px);
+    margin: 0;
+    padding: 10px 20px;
+    border: 0;
+    border-radius: 999px;
+    background: var(--color-text);
+    color: var(--color-on-dark);
+    font-size: 14px;
+    line-height: 22px;
+    box-shadow: var(--shadow-menu);
+    opacity: 0;
+    transform: translate(-50%, 12px);
+    pointer-events: none;
+    overflow: visible;
+    transition:
+        opacity var(--duration-panel) var(--ease-out),
+        transform var(--duration-panel) var(--ease-out);
+}
+
+.toast.is-visible {
+    opacity: 1;
+    transform: translate(-50%, 0);
+}
+
+.toast[data-tone="error"] {
+    background: var(--color-error);
+}
+
+body input,
+body textarea {
+    transition: border-color var(--duration-fast) var(--ease-out);
+}
+
+body input:user-invalid,
+body textarea:user-invalid {
+    border-color: var(--color-error);
+}
+
+/* 关闭时延后移出顶层，让对话框与遮罩完成淡出，焦点仍由浏览器管理 */
+body dialog {
+    opacity: 0;
+    transform: translateY(6px) scale(0.98);
+    transition:
+        opacity var(--duration-modal) var(--ease-out),
+        transform var(--duration-modal) var(--ease-out),
+        display var(--duration-modal) allow-discrete,
+        overlay var(--duration-modal) allow-discrete;
+}
+
+body dialog[open] {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+}
+
+body dialog::backdrop {
+    opacity: 0;
+    transition:
+        opacity var(--duration-modal) var(--ease-out),
+        display var(--duration-modal) allow-discrete,
+        overlay var(--duration-modal) allow-discrete;
+}
+
+body dialog[open]::backdrop {
+    opacity: 1;
+}
+
+.account-dropdown {
+    transform-origin: top right;
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    transition:
+        opacity var(--duration-panel) var(--ease-out),
+        transform var(--duration-panel) var(--ease-out);
+}
+
+body .confirmation-dialog {
+    width: calc(100% - 32px);
+    max-width: 480px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-menu);
+    padding: 24px;
+    background: var(--color-page);
+    color: var(--color-text);
+    box-shadow: var(--shadow-menu);
+}
+
+.confirmation-dialog::backdrop {
+    background: var(--color-overlay);
+}
+
+.confirmation-dialog h2 {
+    margin: 0 0 12px;
+    font-size: 20px;
+    line-height: 28px;
+}
+
+.confirmation-dialog p {
+    margin: 0;
+    font-size: 14px;
+    line-height: 24px;
+}
+
+.confirmation-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 24px;
+}
+
+body .confirmation-actions button {
+    width: auto;
+    margin: 0;
+    min-width: 76px;
+    min-height: 44px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-control);
+    color: var(--color-text);
+    background: var(--color-page);
+}
+
+body .confirmation-actions .confirm-danger {
+    color: var(--color-on-dark);
+    background: var(--color-error);
+    border-color: var(--color-error);
+}
+
+@starting-style {
+    body dialog[open] {
+        opacity: 0;
+        transform: translateY(6px) scale(0.98);
+    }
+    body dialog[open]::backdrop {
+        opacity: 0;
+    }
+    .account-menu[open] .account-dropdown {
+        opacity: 0;
+        transform: translateY(-5px) scale(0.97);
+    }
+    body .message:not(:empty) {
+        opacity: 0;
+    }
+}
+
+@supports selector(details::details-content) {
+    .account-menu::details-content {
+        opacity: 0;
+        transition:
+            opacity var(--duration-panel) var(--ease-out),
+            content-visibility var(--duration-panel) allow-discrete;
+    }
+    .account-menu[open]::details-content {
+        opacity: 1;
+    }
+    .account-menu:not([open]) .account-dropdown {
+        opacity: 0;
+        transform: translateY(-5px) scale(0.97);
+        pointer-events: none;
+    }
+}
+
+@keyframes feedback-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@media (hover: hover) and (pointer: fine) {
+    body button:not(:disabled):hover {
+        border-color: var(--color-brand);
+    }
+}
+
+/* 减少动态效果时不再移动位置，等待状态由文字和静态图形表达 */
+@media (prefers-reduced-motion: reduce) {
+    body button,
+    body .primary-button,
+    body .page-button,
+    body .image-select,
+    body .message,
+    body input,
+    body textarea,
+    .account-menu::details-content,
+    .account-dropdown {
+        transition: none !important;
+    }
+    body button:not(:disabled):active,
+    body .primary-button:active,
+    body .page-button:active,
+    body dialog,
+    body dialog[open],
+    .account-menu .account-dropdown {
+        transform: none;
+    }
+    body dialog,
+    body dialog::backdrop {
+        transition-duration: 100ms;
+    }
+    body .is-busy::after {
+        animation: none;
+    }
+    @starting-style {
+        body dialog[open] {
+            transform: none;
+        }
+        .account-menu[open] .account-dropdown {
+            transform: none;
+        }
+    }
+}
