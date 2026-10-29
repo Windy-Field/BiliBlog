@@ -12,13 +12,17 @@ let selfUsername = "";
 let followState = false;
 let followCount = 0;
 let followLoading = false;
+let viewerToken = null;
+let followKnown = false;
 
-// Topbar 账号状态
+// 确认当前账号后再允许关注，避免把自己的主页当成其他人的主页
 async function loadTopbarProfile() {
     const guestLinks = document.getElementById("guest-links");
     const accountMenu = document.getElementById("account-menu");
     guestLinks.hidden = true;
     accountMenu.hidden = true;
+    selfUsername = "";
+    viewerToken = null;
     const session = readSession();
     if (!session) {
         guestLinks.hidden = false;
@@ -26,7 +30,14 @@ async function loadTopbarProfile() {
     }
     try {
         const user = await requestApi("/me", "GET", null, session.token);
+        const currentSession = readSession();
+        if (!currentSession || currentSession.token !== session.token) {
+            guestLinks.hidden = false;
+            showFollowMessage("登录账号已变化，请重新检查登录状态", true);
+            return;
+        }
         selfUsername = user.username;
+        viewerToken = session.token;
         const avatar = document.getElementById("avatar");
         const accountName = document.getElementById("account-name");
         const welcome = document.getElementById("welcome");
@@ -47,33 +58,15 @@ async function loadTopbarProfile() {
             avatar.replaceChildren(img);
         }
         accountMenu.hidden = false;
-        document.getElementById("logout-button").addEventListener("click", function () {
-            clearSession();
-            window.location.href = "/login.html";
-        });
-        accountMenu.addEventListener("toggle", function () {
-            if (accountMenu.open) {
-                document.addEventListener("click", function close(event) {
-                    if (!accountMenu.contains(event.target)) {
-                        accountMenu.open = false;
-                    }
-                }, { once: true });
-            }
-        });
-    } catch {
+    } catch (error) {
         guestLinks.hidden = false;
+        if (error.status === 401) {
+            resetViewer(session.token);
+        } else {
+            showFollowMessage("登录状态检查失败：" + error.message, true);
+        }
     }
 }
-
-const COVER_GRADIENTS = [
-    "linear-gradient(135deg, #4a1942, #2d1b4e)",
-    "linear-gradient(135deg, #1a3a5c, #0d2137)",
-    "linear-gradient(135deg, #1b3a2d, #0f2318)",
-    "linear-gradient(135deg, #3d2000, #5c3500)",
-    "linear-gradient(135deg, #2d1b5e, #1a0f3d)",
-    "linear-gradient(135deg, #004d4d, #002b2b)",
-    "linear-gradient(135deg, #3b2000, #2a1500)",
-];
 
 // 从地址栏读取目标用户名，参数为 u
 function readTargetUsername() {
@@ -88,7 +81,18 @@ async function loadUserProfile(username) {
     const profileError = document.getElementById("profile-error");
     profileError.hidden = true;
     try {
-        const user = await requestApi("/users/" + encodeURIComponent(username), "GET", null, null);
+        const path = "/users/" + encodeURIComponent(username);
+        let user;
+        try {
+            user = await requestApi(path, "GET", null, viewerToken);
+        } catch (error) {
+            if (error.status !== 401 || !viewerToken) {
+                throw error;
+            }
+            resetViewer(viewerToken);
+            showFollowMessage("登录已失效，请重新登录后关注", true);
+            user = await requestApi(path, "GET", null, null);
+        }
         showProfile(user);
         profileCard.hidden = false;
         return user;
@@ -123,21 +127,23 @@ function showProfile(user) {
         coverImg.src = user.coverUrl;
         coverImg.hidden = false;
     } else {
-        const placeholder = document.getElementById("cover-placeholder");
-        placeholder.style.background = COVER_GRADIENTS[Math.floor(Math.random() * COVER_GRADIENTS.length)];
+        const coverImg = document.getElementById("profile-cover");
+        document.getElementById("cover-placeholder").hidden = true;
+        coverImg.src = "/assets/images/forest-banner.jpg";
+        coverImg.hidden = false;
     }
     document.getElementById("profile-name").textContent = user.displayName;
+    document.getElementById("profile-name").title = user.displayName;
     document.getElementById("profile-handle").textContent = "@" + user.username;
+    document.getElementById("profile-handle").title = "@" + user.username;
     if (user.bio) {
         const bioEl = document.getElementById("profile-bio");
         bioEl.textContent = user.bio;
         bioEl.hidden = false;
     }
     document.getElementById("stat-notes-num").textContent = user.noteCount;
-    document.querySelector("#stat-followers strong").textContent = user.followerCount;
     document.querySelector("#stat-following strong").textContent = user.followingCount;
-    followState = user.followed;
-    followCount = user.followerCount;
+    updateFollowState(user);
     document.getElementById("profile-navbar").hidden = false;
     if (user.homepage && user.homepage.links && user.homepage.links.length > 0) {
         const linksEl = document.getElementById("profile-links");
@@ -145,6 +151,7 @@ function showProfile(user) {
             const a = document.createElement("a");
             a.href = link.url;
             a.textContent = link.label;
+            a.title = link.label;
             a.target = "_blank";
             a.rel = "noopener noreferrer";
             linksEl.appendChild(a);
@@ -157,52 +164,181 @@ function showProfile(user) {
         document.getElementById("about-content").innerHTML = user.homepage.aboutHtml;
         aboutEl.hidden = false;
     }
-    const followBtn = document.getElementById("follow-button");
+    renderFollowControl();
+}
+
+// 将关注错误保留在页面上，方便用户核对后再操作
+function showFollowMessage(text, isError) {
+    const message = document.getElementById("follow-message");
+    message.hidden = false;
+    showMessage(message, text, isError);
+}
+
+// 只清理发生失效的那次登录，保留其他标签页新登录的账号
+function resetViewer(token) {
+    const session = readSession();
+    if (session && session.token === token) {
+        clearSession();
+    }
+    viewerToken = null;
+    selfUsername = "";
+    followKnown = false;
+    document.getElementById("guest-links").hidden = false;
+    document.getElementById("account-menu").hidden = true;
+    renderFollowControl();
+}
+
+// 资料接口带登录凭证时，followed 才代表当前账号与作者的关注关系
+function updateFollowState(user) {
+    followState = user.followed === true;
+    followCount = user.followerCount;
+    followKnown = Boolean(viewerToken);
+    document.querySelector("#stat-followers strong").textContent = followCount;
+}
+
+// 按登录、关注和等待状态更新同一个按钮，保持按钮尺寸和操作语义稳定
+function renderFollowControl() {
+    const button = document.getElementById("follow-button");
     const ownLink = document.getElementById("own-settings-link");
-    if (selfUsername && selfUsername !== user.username) {
-        followBtn.textContent = followState ? "已关注" : "关注";
-        followBtn.dataset.following = followState ? "true" : "false";
-        followBtn.hidden = false;
-        followBtn.addEventListener("click", toggleFollow);
-    } else if (selfUsername === user.username) {
-        ownLink.hidden = false;
+    const isSelf = selfUsername === currentUsername;
+    ownLink.hidden = !isSelf;
+    button.hidden = isSelf;
+    button.disabled = followLoading;
+    button.dataset.following = "false";
+    button.removeAttribute("aria-pressed");
+    button.removeAttribute("title");
+    setBusy(button, followLoading);
+    if (viewerToken && followKnown) {
+        button.setAttribute("aria-pressed", String(followState));
+        button.dataset.following = String(followState);
+        if (followState) {
+            button.textContent = "已关注";
+            button.title = "点击取消关注";
+        } else {
+            button.textContent = "关注";
+        }
+    } else if (viewerToken) {
+        button.textContent = "核对关注状态";
+    } else if (readSession()) {
+        button.textContent = "重试登录检查";
+    } else {
+        button.textContent = "登录后关注";
     }
 }
 
-// 关注 / 取消关注
+// 请求返回时再核对账号，避免把旧账号的关注结果显示给新账号
+function checkViewer(token) {
+    const session = readSession();
+    if (session && session.token === token && viewerToken === token) {
+        return true;
+    }
+    resetViewer(token);
+    showFollowMessage("登录账号已变化，请重新检查登录状态", true);
+    return false;
+}
+
+// 请求结果未知时只读取服务器状态，核对成功前继续阻止新的关注提交
+async function refreshFollowState(token) {
+    const path = "/users/" + encodeURIComponent(currentUsername);
+    try {
+        const user = await requestApi(path, "GET", null, token);
+        if (!checkViewer(token)) {
+            return;
+        }
+        updateFollowState(user);
+        showFollowMessage("已重新读取服务器上的关注状态，请查看按钮和粉丝数", false);
+    } catch (error) {
+        if (!checkViewer(token)) {
+            return;
+        }
+        followKnown = false;
+        if (error.status === 401) {
+            resetViewer(token);
+            showFollowMessage("登录已失效，请重新登录后关注", true);
+        } else {
+            showFollowMessage("暂时无法确认关注状态，请点击「核对关注状态」后再操作", true);
+        }
+    }
+}
+
+// 切换关注关系，以服务器返回值更新按钮和粉丝数
 async function toggleFollow() {
     if (followLoading) {
         return;
     }
     const session = readSession();
     if (!session) {
+        resetViewer(viewerToken);
         window.location.href = "/login.html";
         return;
     }
     followLoading = true;
-    const followBtn = document.getElementById("follow-button");
-    setBusy(followBtn, true);
-    const newActive = !followState;
+    document.getElementById("follow-message").hidden = true;
+    renderFollowControl();
+    let token = viewerToken;
     try {
+        // 账号变化或上次检查失败时，本次点击只检查身份和状态
+        if (!viewerToken || viewerToken !== session.token) {
+            followKnown = false;
+            await loadTopbarProfile();
+        }
+        if (!viewerToken || selfUsername === currentUsername) {
+            return;
+        }
+        token = viewerToken;
+        if (!followKnown) {
+            await refreshFollowState(token);
+            return;
+        }
+        const newActive = !followState;
         const result = await requestApi(
             "/users/" + encodeURIComponent(currentUsername) + "/follow",
             "POST",
             { active: newActive },
-            session.token,
+            token,
         );
+        if (!checkViewer(token)) {
+            return;
+        }
         followState = result.active;
         followCount = result.count;
-        followBtn.textContent = followState ? "已关注" : "关注";
-        followBtn.dataset.following = followState ? "true" : "false";
         document.querySelector("#stat-followers strong").textContent = followCount;
+        if (followState) {
+            showToast("已关注，可在首页「关注」查看对方的文章");
+        } else {
+            showToast("已取消关注");
+        }
     } catch (error) {
+        if (token && !checkViewer(token)) {
+            return;
+        }
         if (error.status === 401) {
-            window.location.href = "/login.html";
+            resetViewer(token);
+            showFollowMessage("登录已失效，请重新登录后关注", true);
+        } else if (error.uncertain) {
+            followKnown = false;
+            await refreshFollowState(token);
+        } else {
+            showFollowMessage("关注操作失败：" + error.message, true);
         }
     } finally {
         followLoading = false;
-        setBusy(followBtn, false);
+        renderFollowControl();
     }
+}
+
+// 账号检查可重试，菜单事件只绑定一次，避免重复响应同一次点击
+function closeAccountMenu(event) {
+    const accountMenu = document.getElementById("account-menu");
+    if (!accountMenu.contains(event.target)) {
+        accountMenu.open = false;
+    }
+}
+
+// 沿用个人主页的本地退出流程，清理后跳转登录页
+function logout() {
+    clearSession();
+    window.location.href = "/login.html";
 }
 
 // 加载按月归档并生成筛选按钮
@@ -399,6 +535,7 @@ function handlePageNav(event) {
     }
 }
 
+// 先确认浏览者身份，再读取作者资料，保证刷新后的关注状态对应当前账号
 async function init() {
     const username = readTargetUsername();
     if (!username) {
@@ -410,6 +547,9 @@ async function init() {
     }
     currentUsername = username;
     fillIcons();
+    document.getElementById("follow-button").addEventListener("click", toggleFollow);
+    document.getElementById("logout-button").addEventListener("click", logout);
+    document.addEventListener("click", closeAccountMenu);
     await loadTopbarProfile();
     const user = await loadUserProfile(username);
     if (!user) {

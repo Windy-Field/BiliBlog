@@ -13,21 +13,6 @@ let pendingAvatarId = null;
 let pendingCoverId = null;
 let pendingCoverDeleted = false;
 
-// 深色渐变，用于无封面图时的占位
-const COVER_GRADIENTS = [
-    "linear-gradient(135deg, #4a1942, #2d1b4e)",
-    "linear-gradient(135deg, #1a3a5c, #0d2137)",
-    "linear-gradient(135deg, #1b3a2d, #0f2318)",
-    "linear-gradient(135deg, #3d2000, #5c3500)",
-    "linear-gradient(135deg, #2d1b5e, #1a0f3d)",
-    "linear-gradient(135deg, #004d4d, #002b2b)",
-    "linear-gradient(135deg, #3b2000, #2a1500)",
-];
-
-function getRandomGradient() {
-    return COVER_GRADIENTS[Math.floor(Math.random() * COVER_GRADIENTS.length)];
-}
-
 // 未登录时跳转到登录页
 function checkAuth() {
     const session = readSession();
@@ -76,9 +61,9 @@ function populateForm(user) {
         document.getElementById("remove-cover").hidden = false;
         document.getElementById("refresh-cover-gradient").hidden = true;
     } else {
-        const preview = document.getElementById("cover-preview");
-        preview.style.background = getRandomGradient();
-        document.getElementById("refresh-cover-gradient").hidden = false;
+        setImagePreview("cover-preview", "/assets/images/forest-banner.jpg");
+        document.getElementById("refresh-cover-gradient").hidden = true;
+        document.getElementById("remove-cover").hidden = true;
     }
     const links = user.homepage && user.homepage.links ? user.homepage.links : [];
     renderLinkRows(links);
@@ -174,21 +159,25 @@ async function handleCoverChange() {
 function handleRemoveCover() {
     pendingCoverId = null;
     pendingCoverDeleted = true;
-    const previewEl = document.getElementById("cover-preview");
-    previewEl.replaceChildren();
-    previewEl.style.background = getRandomGradient();
+    setImagePreview("cover-preview", "/assets/images/forest-banner.jpg");
     document.getElementById("remove-cover").hidden = true;
-    document.getElementById("refresh-cover-gradient").hidden = false;
+    document.getElementById("refresh-cover-gradient").hidden = true;
     document.getElementById("cover-input").value = "";
 }
 
-// 刷新封面渐变配色
+// 恢复默认封面（森林图）
 function handleRefreshGradient() {
     if (pendingCoverId !== null) {
-        return;
+        pendingCoverId = null;
     }
+    pendingCoverDeleted = true;
     const previewEl = document.getElementById("cover-preview");
-    previewEl.style.background = getRandomGradient();
+    const img = document.createElement("img");
+    img.src = "/assets/images/forest-banner.jpg";
+    img.alt = "";
+    previewEl.replaceChildren(img);
+    document.getElementById("refresh-cover-gradient").hidden = true;
+    document.getElementById("remove-cover").hidden = false;
 }
 
 // 渲染链接输入行列表

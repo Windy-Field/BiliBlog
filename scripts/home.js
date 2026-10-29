@@ -241,7 +241,11 @@ function makeCard(note, index, isFeature) {
     }
     const info = document.createElement("div");
     info.className = "card-info";
-    const title = document.createElement("h2");
+    let titleTag = "h2";
+    if (feed === "following") {
+        titleTag = "h3";
+    }
+    const title = document.createElement(titleTag);
     title.className = "card-title";
     const titleLink = document.createElement("a");
     titleLink.href = cover.href;
@@ -284,6 +288,86 @@ function makeCard(note, index, isFeature) {
     }
     card.append(cover, info);
     return card;
+}
+
+// 按用户名整理本页文章，同名昵称也能区分，作者与文章都保留首次出现的顺序
+function groupFollowingNotes(notes) {
+    const groups = [];
+    for (const note of notes) {
+        let authorGroup = null;
+        for (const group of groups) {
+            if (group.author.username === note.author.username) {
+                authorGroup = group;
+                break;
+            }
+        }
+        if (!authorGroup) {
+            authorGroup = {
+                author: note.author,
+                notes: []
+            };
+            groups.push(authorGroup);
+        }
+        authorGroup.notes.push(note);
+    }
+    return groups;
+}
+
+// 为每位作者创建独立分区，内部复用文章网格，屏幕变窄时在分区内换行
+function makeFollowingGroup(group, index) {
+    const section = document.createElement("section");
+    section.className = "following-author-row";
+    section.dataset.username = group.author.username;
+    const heading = document.createElement("h2");
+    heading.className = "following-author-heading";
+    heading.id = "following-author-" + index;
+    section.setAttribute("aria-labelledby", heading.id);
+    const link = document.createElement("a");
+    link.className = "following-author-link";
+    link.href = "/profile.html?u=" + encodeURIComponent(group.author.username);
+    const avatar = document.createElement("span");
+    avatar.className = "following-author-avatar";
+    avatar.setAttribute("aria-hidden", "true");
+    avatar.textContent = group.author.displayName.slice(0, 1);
+    if (group.author.avatarUrl) {
+        const image = document.createElement("img");
+        image.src = group.author.avatarUrl;
+        image.alt = "";
+        image.loading = "lazy";
+        // 头像地址失效时保留昵称首字，作者入口仍能辨认
+        image.addEventListener("error", function showAuthorLetter() {
+            avatar.textContent = group.author.displayName.slice(0, 1);
+        }, { once: true });
+        avatar.replaceChildren(image);
+    }
+    const identity = document.createElement("span");
+    identity.className = "following-author-identity";
+    const name = document.createElement("span");
+    name.className = "following-author-name";
+    name.textContent = group.author.displayName;
+    name.title = group.author.displayName;
+    const handle = document.createElement("span");
+    handle.className = "following-author-handle";
+    handle.textContent = "@" + group.author.username;
+    identity.append(name, handle);
+    link.append(avatar, identity);
+    heading.appendChild(link);
+    const articles = document.createElement("div");
+    articles.className = "article-grid";
+    for (let noteIndex = 0; noteIndex < group.notes.length; noteIndex = noteIndex + 1) {
+        const card = makeCard(group.notes[noteIndex], noteIndex, false);
+        articles.appendChild(card);
+    }
+    section.append(heading, articles);
+    return section;
+}
+
+// 每组占满一行，分页仍使用后端返回的文章总数
+function renderFollowingFeed(notes) {
+    const groups = groupFollowingNotes(notes);
+    for (let index = 0; index < groups.length; index = index + 1) {
+        grid.appendChild(makeFollowingGroup(groups[index], index));
+    }
 }
 
 // 打开确认框并记录准备删除的文章
@@ -589,11 +673,15 @@ async function loadFeed() {
                 makeCard(result.items[featureIndex], featureIndex, true),
             );
         }
-        for (let index = 0; index < result.items.length; index = index + 1) {
-            if (useFeature && index === featureIndex) {
-                continue;
+        if (feed === "following") {
+            renderFollowingFeed(result.items);
+        } else {
+            for (let index = 0; index < result.items.length; index = index + 1) {
+                if (useFeature && index === featureIndex) {
+                    continue;
+                }
+                grid.appendChild(makeCard(result.items[index], index));
             }
-            grid.appendChild(makeCard(result.items[index], index));
         }
         if (feed === "latest" && currentPage === 1) {
             renderNotices(result.items);
@@ -927,6 +1015,13 @@ window.addEventListener("popstate", function handleHistory() {
     updateFeedHeading();
     loadFeed();
     readArticleHash();
+});
+// 从作者主页返回时，浏览器可能直接恢复旧页面，需要重新读取关注文章
+window.addEventListener("pageshow", function refreshFollowing(event) {
+    if (event.persisted && feed === "following") {
+        loadProfile();
+        loadFeed();
+    }
 });
 document.addEventListener("click", handleRouteClick);
 window.addEventListener("scroll", updateTopbar, { passive: true });

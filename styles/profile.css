@@ -10,14 +10,16 @@
 
 /* ── 封面区 ── */
 .profile-hero {
+    --profile-cover-height: 180px;
     position: relative;
-    height: 190px;
+    min-height: var(--profile-cover-height);
     width: 100%;
 }
 
 .cover-wrap {
     position: absolute;
-    inset: 0;
+    inset: 0 0 auto;
+    height: var(--profile-cover-height);
     overflow: hidden;
 }
 
@@ -36,7 +38,8 @@
 
 .cover-gradient {
     position: absolute;
-    inset: 0;
+    inset: 0 0 auto;
+    height: var(--profile-cover-height);
     background: linear-gradient(
         to bottom,
         rgba(0,0,0,0.08) 0%,
@@ -91,21 +94,22 @@
     color: #fff;
 }
 
-/* ── 封面底部用户信息 ── */
+/* 封面高度与首页一致，资料区给导航留出空间，头像适配下方可用高度 */
 .profile-hero-info {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
+    position: relative;
     z-index: 2;
-    padding: 0 40px 28px;
+    min-height: var(--profile-cover-height);
+    padding: 64px 40px 4px;
+    display: flex;
+    align-items: center;
     box-sizing: border-box;
 }
 
 .profile-hero-inner {
     display: flex;
-    align-items: flex-end;
-    gap: 20px;
+    align-items: center;
+    gap: 24px;
+    width: 100%;
     max-width: 1400px;
     margin: 0 auto;
     min-width: 0;
@@ -117,8 +121,8 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 110px;
-    height: 110px;
+    width: 112px;
+    height: 112px;
     border-radius: 50%;
     border: 4px solid rgba(255,255,255,0.9);
     background: linear-gradient(135deg, var(--color-brand), var(--color-brand-active));
@@ -139,22 +143,30 @@
 .profile-text {
     flex: 1;
     min-width: 0;
-    padding-bottom: 4px;
+    overflow-wrap: anywhere;
 }
 
-.profile-name {
-    font-size: 28px;
+/* 使用页面范围覆盖首页的通用 h1 字号，保证个人昵称的显示层级 */
+.profile-page .profile-name {
+    font-size: 36px;
     font-weight: 700;
     color: #fff;
     text-shadow: 0 1px 6px rgba(0,0,0,0.4);
-    margin: 0 0 4px;
-    line-height: 1.25;
+    margin: 0;
+    line-height: 44px;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
 }
 
 .profile-handle {
-    font-size: 14px;
-    color: rgba(255,255,255,0.75);
-    margin: 0 0 6px;
+    font-size: 18px;
+    line-height: 26px;
+    color: rgba(255,255,255,0.9);
+    margin: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
 }
 
 .profile-bio {
@@ -173,7 +185,43 @@
     display: flex;
     gap: 8px;
     align-items: center;
-    padding-bottom: 4px;
+}
+
+/* 等待标记和较长提示共用固定宽度，切换状态时保持资料区稳定 */
+#follow-button {
+    width: 152px;
+    min-height: 44px;
+    padding: 0 12px;
+    border: 1px solid transparent;
+    border-radius: var(--radius-control);
+    background: var(--gradient-brand);
+    color: var(--color-text);
+    box-shadow: none;
+    white-space: nowrap;
+}
+
+#follow-button:not(:disabled):hover {
+    background: var(--gradient-brand-hover);
+    box-shadow: none;
+    transform: none;
+}
+
+#follow-button:not(:disabled):active {
+    background: var(--gradient-brand-active);
+}
+
+#follow-button[data-following="true"] {
+    color: var(--color-text);
+    background: var(--gradient-selected-soft);
+    border: 1px solid var(--color-brand);
+}
+
+#follow-button[data-following="true"]:not(:disabled):hover {
+    background: var(--gradient-selected-soft);
+}
+
+#follow-message:not([hidden]) {
+    margin: 0 0 24px;
 }
 
 .hero-edit-btn {
@@ -292,8 +340,8 @@
 
 .archive-btn[aria-current="true"] {
     border-color: var(--color-brand);
-    background: var(--color-brand);
-    color: #fff;
+    background: var(--gradient-selected);
+    color: var(--color-text);
 }
 
 /* 右侧统计数字 */
@@ -343,48 +391,64 @@ a.stat-item:hover strong {
     padding: 28px 40px 48px;
 }
 
-/* 个人链接 */
+/* 个人链接跟随昵称展示，链接较多时在资料区内滚动，保持封面高度 */
 .profile-links {
     display: flex;
-    flex-wrap: wrap;
     gap: 8px;
-    margin-bottom: 20px;
+    max-width: 100%;
+    margin: 0;
+    overflow-x: auto;
+    scrollbar-width: none;
 }
 
 .profile-links a {
     display: inline-flex;
     align-items: center;
-    gap: 4px;
+    flex-shrink: 0;
+    max-width: 100%;
     font-size: 12px;
-    color: var(--color-link);
-    padding: 4px 12px;
-    border-radius: 20px;
-    border: 1px solid var(--color-border);
-    background: var(--color-surface);
+    line-height: 20px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: var(--color-on-dark);
+    padding: 0 8px;
+    border-radius: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.55);
+    background: rgba(0, 0, 0, 0.24);
     transition: border-color 150ms, background-color 150ms;
 }
 
 .profile-links a:hover {
-    border-color: var(--color-brand);
-    background: var(--color-brand-soft);
-    color: var(--color-brand-active);
+    border-color: var(--color-on-dark);
+    background: rgba(0, 0, 0, 0.4);
+    color: var(--color-on-dark);
 }
 
 /* 关于我区域 */
 .profile-about {
-    margin-bottom: 24px;
-    padding: 20px 24px;
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 24px 40px;
     background: var(--color-page);
-    border-radius: var(--radius-card);
-    box-shadow: var(--shadow-card);
+}
+
+.profile-about > h2 {
+    margin: 0 0 12px;
+    font-size: 20px;
+    font-weight: 600;
+    line-height: 28px;
 }
 
 .about-content {
     font-size: 14px;
     line-height: 24px;
     color: var(--color-text);
+    overflow-wrap: anywhere;
 }
 
+.about-content img { max-width: 100%; height: auto; }
+.about-content pre { max-width: 100%; overflow-x: auto; }
 .about-content h1, .about-content h2, .about-content h3 {
     margin: 16px 0 8px;
     font-weight: 600;
@@ -447,16 +511,20 @@ a.stat-item:hover strong {
 
 /* 响应式 */
 @media (max-width: 767px) {
-    .profile-hero { height: 240px; }
+    .profile-hero { --profile-cover-height: 160px; }
     .profile-topbar { padding: 0 16px; }
     .profile-nav { display: none; }
-    .profile-hero-info { padding: 0 16px 16px; }
+    .profile-hero-info {
+        padding: 56px 16px 8px;
+    }
     .profile-hero-inner { gap: 12px; }
-    .profile-avatar { width: 60px; height: 60px; font-size: 22px; }
-    .profile-name { font-size: 18px; }
+    .profile-avatar { width: 88px; height: 88px; font-size: 32px; }
+    .profile-page .profile-name { font-size: 24px; line-height: 34px; }
+    .profile-handle { font-size: 16px; line-height: 24px; }
     .profile-navbar-inner { padding: 0 16px; gap: 12px; }
     .profile-stats { gap: 16px; }
     .profile-main { padding: 16px 16px 32px; }
+    .profile-about { padding: 16px; }
     .profile-page .article-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
         gap: 14px 10px;
@@ -464,6 +532,23 @@ a.stat-item:hover strong {
 }
 
 @media (max-width: 479px) {
+    .profile-hero-inner { flex-wrap: wrap; }
+    /* 操作换到封面下方，避免挤压头像和昵称，图片仍保持固定高度 */
+    .profile-actions {
+        flex-basis: 100%;
+        padding-top: 8px;
+    }
+    .profile-actions .hero-edit-btn {
+        background: var(--color-page);
+        border-color: var(--color-border);
+        color: var(--color-text) !important;
+        backdrop-filter: none;
+    }
+    .profile-text { overflow-wrap: anywhere; }
+    .profile-tabs {
+        flex-shrink: 1;
+        min-width: 0;
+    }
     .profile-page .article-grid {
         grid-template-columns: minmax(0, 1fr);
     }

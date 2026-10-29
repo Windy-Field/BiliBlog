@@ -49,14 +49,17 @@
     margin: 0;
     min-height: 44px;
     padding: 8px 16px;
-    background: var(--color-brand);
+    background: var(--gradient-brand);
     color: var(--color-text);
     border: 1px solid var(--color-brand);
     border-radius: var(--radius-control);
     font-weight: 500;
 }
-.home-page .comment-submit:hover {
-    background: var(--color-brand-hover);
+.home-page .comment-submit:not(:disabled):hover {
+    background: var(--gradient-brand-hover);
+}
+.home-page .comment-submit:not(:disabled):active {
+    background: var(--gradient-brand-active);
 }
 .home-page .comment-button {
     display: inline-flex;

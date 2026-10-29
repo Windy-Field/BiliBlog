@@ -81,6 +81,7 @@
           <h1 id="profile-name" class="profile-name"></h1>
           <p id="profile-handle" class="profile-handle"></p>
           <p id="profile-bio" class="profile-bio" hidden></p>
+          <nav id="profile-links" class="profile-links" aria-label="作者的个人链接" hidden></nav>
         </div>
         <div class="profile-actions">
           <button id="follow-button" class="primary-button" type="button" hidden></button>
@@ -89,6 +90,10 @@
       </div>
     </div>
   </div>
+  <section id="profile-about" class="profile-about" aria-labelledby="about-heading" hidden>
+    <h2 id="about-heading">个人介绍</h2>
+    <div id="about-content" class="about-content"></div>
+  </section>
   <!-- 粘性导航栏 -->
   <div id="profile-navbar" class="profile-navbar" hidden>
     <div class="profile-navbar-inner">
@@ -114,10 +119,7 @@
   </div>
   <p id="profile-error" class="message profile-error" role="status" tabindex="-1" hidden></p>
   <main id="content" class="profile-main">
-    <div id="profile-links" class="profile-links" hidden></div>
-    <div id="profile-about" class="profile-about" hidden>
-      <div id="about-content" class="about-content"></div>
-    </div>
+    <p id="follow-message" class="message" role="status" tabindex="-1" hidden></p>
     <section class="profile-articles" aria-labelledby="articles-heading">
       <h2 id="articles-heading" class="visually-hidden">文章列表</h2>
       <p id="profile-status" class="feed-status" role="status"></p>

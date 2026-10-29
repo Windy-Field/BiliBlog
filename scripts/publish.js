@@ -8,11 +8,84 @@ const editorFields = document.getElementById("editor-fields");
 const titleInput = document.getElementById("article-title");
 const bodyInput = document.getElementById("article-body");
 const tagsInput = document.getElementById("article-tags");
+const tagsTextField = document.getElementById("tags-text");
+const tagsChips = document.getElementById("tags-chips");
+const tagsFieldEl = document.getElementById("tags-field");
 const fileInput = document.getElementById("article-images");
 const imagePreviews = document.getElementById("image-previews");
 const uploadButton = document.getElementById("upload-selected");
 const publishButton = document.getElementById("publish-button");
 const publishMessage = document.getElementById("publish-message");
+
+// 胶囊标签管理
+const chipTags = [];
+
+function syncTagsInput() {
+    tagsInput.value = chipTags.join(",");
+}
+
+function addChip(raw) {
+    const tag = raw.replace(/^#+/, "").trim();
+    if (!tag) return;
+    if (chipTags.includes(tag)) {
+        tagsTextField.value = "";
+        return;
+    }
+    if (chipTags.length >= 5) {
+        showToast("最多添加 5 个话题", true);
+        tagsTextField.value = "";
+        return;
+    }
+    if (tag.length > 20) {
+        showToast("每个话题不超过 20 个字符", true);
+        return;
+    }
+    chipTags.push(tag);
+    const chip = document.createElement("span");
+    chip.className = "tag-chip";
+    chip.textContent = tag;
+    const removeBtn = document.createElement("button");
+    removeBtn.type = "button";
+    removeBtn.className = "tag-remove";
+    removeBtn.textContent = "×";
+    removeBtn.setAttribute("aria-label", "移除话题：" + tag);
+    removeBtn.addEventListener("click", function () {
+        chipTags.splice(chipTags.indexOf(tag), 1);
+        chip.remove();
+        syncTagsInput();
+    });
+    chip.appendChild(removeBtn);
+    tagsChips.appendChild(chip);
+    tagsTextField.value = "";
+    syncTagsInput();
+}
+
+tagsTextField.addEventListener("keydown", function (event) {
+    if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        addChip(tagsTextField.value);
+    } else if (event.key === "Backspace" && tagsTextField.value === "" && chipTags.length > 0) {
+        const lastChip = tagsChips.lastElementChild;
+        if (lastChip) lastChip.querySelector(".tag-remove").click();
+    }
+});
+
+tagsTextField.addEventListener("input", function () {
+    const val = tagsTextField.value;
+    if (val.endsWith(" ") || val.endsWith("，") || val.endsWith(",")) {
+        addChip(val.slice(0, -1));
+    }
+});
+
+tagsTextField.addEventListener("blur", function () {
+    if (tagsTextField.value.trim()) {
+        addChip(tagsTextField.value);
+    }
+});
+
+tagsFieldEl.addEventListener("click", function () {
+    tagsTextField.focus();
+});
 const uploadMessage = document.getElementById("upload-status");
 const loginActions = document.getElementById("login-actions");
 const uncertainPanel = document.getElementById("publish-uncertain");

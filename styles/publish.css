@@ -74,15 +74,19 @@
     gap: 8px;
     min-height: 44px;
     border-radius: var(--radius-control);
-    color: #fff;
-    background: linear-gradient(135deg, var(--color-brand) 0%, var(--color-brand-active) 100%);
+    color: var(--color-text);
+    background: var(--gradient-brand);
     font-weight: 600;
     box-shadow: 0 2px 8px rgba(232, 75, 133, 0.28);
     transition: box-shadow 200ms var(--ease-out), transform 120ms var(--ease-out);
 }
 .creator-sidebar .creator-publish:hover {
+    background: var(--gradient-brand-hover);
     box-shadow: 0 4px 14px rgba(232, 75, 133, 0.36);
     transform: translateY(-1px);
+}
+.creator-sidebar .creator-publish:active {
+    background: var(--gradient-brand-active);
 }
 .creator-sidebar nav {
     margin: 32px -20px 0;
@@ -98,11 +102,11 @@
     transition: background-color 150ms var(--ease-out), color 150ms var(--ease-out);
 }
 .creator-sidebar nav a:hover {
-    background: var(--color-brand-soft);
+    background: var(--gradient-brand-soft);
     color: var(--color-brand-active);
 }
 .creator-sidebar nav a[aria-current="page"] {
-    background: var(--color-brand-soft);
+    background: var(--gradient-selected-soft);
     color: var(--color-brand-active);
     font-weight: 500;
     box-shadow: inset 3px 0 0 var(--color-brand);
@@ -249,8 +253,8 @@
     background: var(--color-page);
     font: inherit;
 }
-.publish-page button:hover,
-.settings-page button:hover {
+.publish-page button:not(:disabled):hover,
+.settings-page button:not(:disabled):hover {
     background: var(--color-surface);
 }
 .publish-page button svg,
@@ -271,6 +275,68 @@
     margin: 4px 0 16px;
     color: var(--color-text-secondary);
     font-size: 13px;
+}
+.tags-field {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    min-height: 42px;
+    padding: 6px 12px;
+    border: 1px solid var(--color-input-border);
+    border-radius: var(--radius-control);
+    background: var(--color-page);
+    cursor: text;
+}
+.tags-field:focus-within {
+    outline: 2px solid var(--color-focus);
+    outline-offset: 2px;
+    border-color: var(--color-focus);
+}
+.tags-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+.tag-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    height: 26px;
+    padding: 0 10px;
+    background: var(--color-brand-soft);
+    color: var(--color-brand-active);
+    border-radius: 13px;
+    font-size: 13px;
+    white-space: nowrap;
+}
+.tag-chip .tag-remove {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: transparent;
+    border: none;
+    color: var(--color-brand-active);
+    font-size: 14px;
+    line-height: 1;
+    cursor: pointer;
+    padding: 0;
+    opacity: 0.7;
+}
+.tag-chip .tag-remove:hover { opacity: 1; }
+.tags-text-input {
+    flex: 1;
+    min-width: 120px;
+    border: none;
+    outline: none;
+    background: transparent;
+    font: inherit;
+    font-size: 14px;
+    color: var(--color-text);
+    padding: 0;
 }
 .image-tools {
     display: flex;
@@ -381,25 +447,44 @@
     display: flex;
     justify-content: flex-end;
 }
-.publish-page .publish-button {
+.publish-page .publish-button,
+.settings-page .publish-button {
     width: 160px;
     margin: 0;
-    background: linear-gradient(135deg, var(--color-brand) 0%, var(--color-brand-active) 100%);
+    background: var(--gradient-brand);
     border-color: transparent;
-    color: #fff;
+    color: var(--color-text);
     font-weight: 600;
     letter-spacing: 0.02em;
     box-shadow: 0 2px 8px rgba(232, 75, 133, 0.30);
     transition: box-shadow 200ms var(--ease-out), transform 120ms var(--ease-out), background 200ms var(--ease-out);
 }
-.publish-page .publish-button:hover {
-    background: linear-gradient(135deg, var(--color-brand-hover) 0%, var(--color-brand) 100%);
+.publish-page .publish-button:not(:disabled):hover,
+.settings-page .publish-button:not(:disabled):hover {
+    background: var(--gradient-brand-hover);
     box-shadow: 0 4px 16px rgba(232, 75, 133, 0.40);
     transform: translateY(-1px);
 }
-.publish-page .publish-button:active {
+.publish-page .publish-button:not(:disabled):active,
+.settings-page .publish-button:not(:disabled):active {
+    background: var(--gradient-brand-active);
     transform: scale(0.97);
     box-shadow: 0 2px 6px rgba(232, 75, 133, 0.25);
+}
+/* 发布页入口和提交按钮沿用同一套白字半透明渐变 */
+.publish-page .creator-publish,
+.publish-page .publish-button {
+    background: var(--gradient-publish);
+    color: var(--color-on-dark);
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.18);
+}
+.publish-page .creator-publish:hover,
+.publish-page .publish-button:not(:disabled):hover {
+    background: var(--gradient-publish-hover);
+}
+.publish-page .creator-publish:active,
+.publish-page .publish-button:not(:disabled):active {
+    background: var(--gradient-publish-active);
 }
 .login-actions, .uncertain-panel {
     margin: 16px 0;

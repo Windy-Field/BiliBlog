@@ -3,6 +3,17 @@
     --color-brand-hover: #ff8cb0;
     --color-brand-active: #e84b85;
     --color-brand-soft: #ffecf1;
+    /* 按钮共用渐变，页面只选择正常、悬停、按下或浅色状态 */
+    --gradient-brand: linear-gradient(135deg, var(--color-brand-hover) 0%, var(--color-brand) 45%, var(--color-brand-active) 100%);
+    --gradient-brand-hover: linear-gradient(135deg, var(--color-brand-soft) 0%, var(--color-brand-hover) 35%, var(--color-brand) 100%);
+    --gradient-brand-active: linear-gradient(135deg, var(--color-brand) 0%, var(--color-brand-active) 100%);
+    --gradient-brand-soft: linear-gradient(135deg, var(--color-page) 0%, var(--color-brand-soft) 100%);
+    /* 发布入口只降低背景的不透明度，文字和图标继续保持清晰 */
+    --gradient-publish: linear-gradient(135deg, rgba(255, 140, 176, 0.9) 0%, rgba(255, 102, 153, 0.88) 45%, rgba(232, 75, 133, 0.84) 100%);
+    --gradient-publish-hover: linear-gradient(135deg, rgba(255, 140, 176, 0.96) 0%, rgba(255, 102, 153, 0.94) 100%);
+    --gradient-publish-active: linear-gradient(135deg, rgba(255, 102, 153, 0.94) 0%, rgba(232, 75, 133, 0.9) 100%);
+    --gradient-selected: var(--gradient-publish);
+    --gradient-selected-soft: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(255, 236, 241, 0.84) 100%);
     --color-accent: #00aeec;
     --color-link: #00759e;
     --color-selected: #dff6fd;

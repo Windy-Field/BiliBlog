@@ -40,9 +40,13 @@
                 <label for="article-body">正文</label>
                 <textarea id="article-body" name="body" required maxlength="12000" rows="10" placeholder="记录今天的学习和生活"></textarea>
                 <div class="field-caption"><span id="body-count">0 / 12000</span></div>
-                <label for="article-tags">话题 <span class="optional">选填</span></label>
-                <input id="article-tags" name="tags" placeholder="校园生活，前端学习" aria-describedby="tags-hint">
-                <p id="tags-hint" class="field-hint">最多 5 个，用逗号分隔，每个不超过 20 个字符</p>
+                <label>话题 <span class="optional">选填</span></label>
+                <div id="tags-field" class="tags-field" role="group" aria-label="话题标签">
+                    <div id="tags-chips" class="tags-chips"></div>
+                    <input id="tags-text" class="tags-text-input" type="text" placeholder="输入话题，按空格或回车确认" maxlength="20" autocomplete="off" aria-label="输入话题" />
+                </div>
+                <input id="article-tags" name="tags" type="hidden" />
+                <p id="tags-hint" class="field-hint">最多 5 个，每个不超过 20 个字符</p>
                 <div class="image-heading"><label for="article-images">图片 <span class="optional">选填</span></label><span id="image-count">0 / 9</span></div>
                 <div class="image-tools">
                     <label class="image-select" for="article-images"><span data-icon="image"></span>添加图片</label>
