@@ -4,6 +4,7 @@ import { showMessage, showToast, setBusy } from "./common.js";
 import { makeIcon, fillIcons } from "./icons.js";
 import { PROFILE_PAGE_SIZE, DEFAULT_COVER_URL } from "./config.js";
 import { scrollPage } from "./motion.js";
+import { makePinButton, makePinBadge } from "./pins.js";
 
 const pageSize = PROFILE_PAGE_SIZE;
 let currentUsername = "";
@@ -16,6 +17,12 @@ let followLoading = false;
 let viewerToken = null;
 let followKnown = false;
 let notesRequest = 0;
+let notesPage = 1;
+
+// 置顶改变后保留当前月份和页码，按后端排序重新读取文章
+function refreshPinnedNotes() {
+    loadNotes(currentUsername, notesPage, currentYear, currentMonth);
+}
 
 // 确认当前账号后再允许关注，避免把自己的主页当成其他人的主页
 async function loadTopbarProfile() {
@@ -439,6 +446,7 @@ async function loadNotes(username, page, year, month) {
             grid.appendChild(renderNoteCard(note));
         }
         const pageCount = Math.max(1, Math.ceil(result.total / pageSize));
+        notesPage = page;
         renderPagination(page, pageCount);
     } catch (error) {
         if (requestNumber === notesRequest) {
@@ -494,6 +502,9 @@ function renderNoteCard(note) {
     cover.appendChild(stats);
     const info = document.createElement("div");
     info.className = "card-info";
+    if (note.pinnedAt) {
+        info.appendChild(makePinBadge(note));
+    }
     const title = document.createElement("h2");
     title.className = "card-title";
     const titleLink = document.createElement("a");
@@ -512,6 +523,12 @@ function renderNoteCard(note) {
     date.textContent = "· " + (createdDate.getMonth() + 1) + "/" + createdDate.getDate();
     author.append(authorName, date);
     info.append(title, author);
+    if (selfUsername === currentUsername && viewerToken && !note.hidden) {
+        const actions = document.createElement("div");
+        actions.className = "article-owner-actions";
+        actions.appendChild(makePinButton(note, refreshPinnedNotes));
+        info.appendChild(actions);
+    }
     article.append(cover, info);
     return article;
 }

@@ -21,6 +21,11 @@ import {
     Send,
     Megaphone,
     Bell,
+    Save,
+    Eye,
+    Columns2,
+    Pin,
+    Trash2,
 } from "lucide";
 
 const ICON_SIZE = 20;
@@ -47,6 +52,11 @@ const iconShapes = {
     send: Send,
     notice: Megaphone,
     bell: Bell,
+    save: Save,
+    preview: Eye,
+    split: Columns2,
+    pin: Pin,
+    trash: Trash2,
 };
 
 // 根据名称创建 Lucide 图标，图标旁的按钮或文字负责说明用途

@@ -81,6 +81,10 @@ async function sendRequest(path, method, body, token) {
             const apiError = new Error(message);
             // 保留状态码，让页面区分 401 登录失效和其他错误
             apiError.status = response.status;
+            // 编辑器根据错误码区分版本冲突，再主动读取服务器最新文章供用户对比
+            if (result.error) {
+                apiError.code = result.error.code;
+            }
             // 服务器报错不代表操作一定没执行，例如文章可能已保存但返回结果失败
             // uncertain 提醒页面先查一次实际结果，避免用户重试时重复发布
             apiError.uncertain = response.status >= 500;

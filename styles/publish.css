@@ -74,19 +74,13 @@
     gap: 8px;
     min-height: 44px;
     border-radius: var(--radius-control);
-    color: var(--color-text);
-    background: var(--gradient-brand);
     font-weight: 600;
     box-shadow: 0 2px 8px rgba(232, 75, 133, 0.28);
     transition: box-shadow 200ms var(--ease-out), transform 120ms var(--ease-out);
 }
 .creator-sidebar .creator-publish:hover {
-    background: var(--gradient-brand-hover);
     box-shadow: 0 4px 14px rgba(232, 75, 133, 0.36);
     transform: translateY(-1px);
-}
-.creator-sidebar .creator-publish:active {
-    background: var(--gradient-brand-active);
 }
 .creator-sidebar nav {
     margin: 32px -20px 0;
@@ -126,6 +120,7 @@
 }
 .creator-tabs {
     display: flex;
+    gap: 24px;
     background: var(--color-page);
     padding: 0 32px;
     border-bottom: 1px solid var(--color-border);
@@ -149,6 +144,12 @@
     border-radius: 2px;
     background: var(--color-brand);
 }
+.creator-tabs a:not([aria-current="page"]) {
+    color: var(--color-text-secondary);
+}
+.creator-tabs a:not([aria-current="page"])::after {
+    display: none;
+}
 .publish-page .editor-main {
     max-width: none;
     margin: 0;
@@ -157,7 +158,7 @@
     background: var(--color-page);
 }
 .editor-main > * {
-    max-width: 940px;
+    max-width: var(--editor-content-width);
     margin-left: auto;
     margin-right: auto;
 }
@@ -195,15 +196,12 @@
 #author-name {
     overflow-wrap: anywhere;
 }
-.publish-page label,
-.settings-page label {
+.publish-page label {
     margin: 20px 0 8px;
     font-weight: 500;
 }
 .publish-page input,
-.publish-page textarea,
-.settings-page input,
-.settings-page textarea {
+.publish-page textarea {
     width: 100%;
     border: 1.5px solid var(--color-border);
     border-radius: var(--radius-control);
@@ -214,27 +212,20 @@
     font-size: 16px;
     transition: border-color 150ms var(--ease-out), box-shadow 150ms var(--ease-out), background-color 150ms var(--ease-out);
 }
-.publish-page textarea,
-.settings-page textarea {
+.publish-page textarea {
     display: block;
     line-height: 28px;
     resize: vertical;
-    min-height: 120px;
-}
-.publish-page textarea {
     min-height: 280px;
 }
 .publish-page input:focus,
-.publish-page textarea:focus,
-.settings-page input:focus,
-.settings-page textarea:focus {
+.publish-page textarea:focus {
     background: var(--color-page);
     border-color: var(--color-brand);
     box-shadow: 0 0 0 3px rgba(255, 102, 153, 0.12);
     outline: none;
 }
-.publish-page button,
-.settings-page button {
+.publish-page button {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -247,19 +238,15 @@
     background: var(--color-page);
     font: inherit;
 }
-.publish-page button:not(:disabled):hover,
-.settings-page button:not(:disabled):hover {
+.publish-page button:not(:disabled):hover {
     background: var(--color-surface);
 }
 .publish-page button svg,
-.publish-page label svg,
-.settings-page button svg,
-.settings-page label svg {
+.publish-page label svg {
     vertical-align: middle;
     flex-shrink: 0;
 }
-.publish-page .message[data-error="true"],
-.settings-page .message[data-error="true"] {
+.publish-page .message[data-error="true"] {
     color: var(--color-error);
 }
 .field-caption {
@@ -360,8 +347,7 @@
 .image-select:hover {
     background: var(--color-surface);
 }
-.publish-page .file-input,
-.settings-page .file-input {
+.publish-page .file-input {
     position: absolute;
     width: 1px;
     height: 1px;
@@ -443,27 +429,20 @@
     display: flex;
     justify-content: flex-end;
 }
-.publish-page .publish-button,
-.settings-page .publish-button {
+.publish-page .publish-button {
     width: 160px;
     margin: 0;
-    background: var(--gradient-brand);
     border-color: transparent;
-    color: var(--color-text);
     font-weight: 600;
     letter-spacing: 0.02em;
     box-shadow: 0 2px 8px rgba(232, 75, 133, 0.30);
     transition: box-shadow 200ms var(--ease-out), transform 120ms var(--ease-out), background 200ms var(--ease-out);
 }
-.publish-page .publish-button:not(:disabled):hover,
-.settings-page .publish-button:not(:disabled):hover {
-    background: var(--gradient-brand-hover);
+.publish-page .publish-button:not(:disabled):hover {
     box-shadow: 0 4px 16px rgba(232, 75, 133, 0.40);
     transform: translateY(-1px);
 }
-.publish-page .publish-button:not(:disabled):active,
-.settings-page .publish-button:not(:disabled):active {
-    background: var(--gradient-brand-active);
+.publish-page .publish-button:not(:disabled):active {
     transform: scale(0.97);
     box-shadow: 0 2px 6px rgba(232, 75, 133, 0.25);
 }
@@ -522,6 +501,7 @@
 .media-pagination {
     display: flex;
     flex-wrap: wrap;
+    align-items: center;
     justify-content: center;
     gap: 12px;
     margin-top: 24px;
@@ -532,7 +512,6 @@
         padding: 0 16px;
     }
     .publish-page .editor-main {
-        margin: 0;
         padding: 24px 16px;
     }
     .editor-heading h1 {

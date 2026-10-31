@@ -54,17 +54,21 @@
     margin: 0;
     min-height: 44px;
     padding: 8px 16px;
-    background: var(--gradient-brand);
-    color: var(--color-text);
-    border: 1px solid var(--color-brand);
+    background: var(--gradient-publish);
+    color: var(--color-on-dark);
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.18);
+    border: 1px solid var(--color-transparent);
     border-radius: var(--radius-control);
-    font-weight: 500;
 }
 .home-page .comment-submit:not(:disabled):hover {
-    background: var(--gradient-brand-hover);
+    background: var(--gradient-publish-hover);
 }
 .home-page .comment-submit:not(:disabled):active {
-    background: var(--gradient-brand-active);
+    background: var(--gradient-publish-active);
+}
+/* 刷新评论不改变提交按钮的明暗，真正不可提交时仍沿用禁用提示 */
+.home-page .comment-submit[data-refreshing="true"]:disabled {
+    opacity: 1;
 }
 .home-page .comment-button {
     display: inline-flex;

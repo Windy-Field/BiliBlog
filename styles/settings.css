@@ -27,8 +27,8 @@
 }
 
 .avatar-preview {
-    width: 64px;
-    height: 64px;
+    width: var(--settings-avatar-size);
+    height: var(--settings-avatar-size);
     border-radius: 50%;
     background: linear-gradient(135deg, var(--color-brand), var(--color-brand-active));
     display: flex;
@@ -79,8 +79,8 @@
 }
 
 .image-hint-desc {
-    font-size: 12px;
-    color: var(--color-muted);
+    font-size: 13px;
+    color: var(--color-text-secondary);
     margin: 0 0 6px;
 }
 
@@ -107,12 +107,14 @@
 .cover-editor-wrap {
     position: relative;
     display: inline-block;
+    width: var(--settings-cover-width);
+    max-width: 100%;
 }
 
 .cover-preview {
-    width: 280px;
-    height: 105px;
-    border-radius: var(--radius-card);
+    width: 100%;
+    aspect-ratio: 8 / 3;
+    border-radius: var(--radius-control);
     background: linear-gradient(135deg, var(--color-brand-soft), #dff6fd);
     overflow: hidden;
     display: block;
@@ -129,7 +131,7 @@
 .cover-overlay {
     position: absolute;
     inset: 0;
-    border-radius: var(--radius-card);
+    border-radius: var(--radius-control);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -154,19 +156,16 @@
     outline-offset: 2px;
 }
 .settings-section {
-    background: var(--color-page);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-card);
-    padding: 24px;
-    margin-bottom: 20px;
+    padding: 0 0 32px;
+    margin-bottom: 32px;
+    border-bottom: 1px solid var(--color-border);
 }
 
 .settings-section h2 {
-    font-size: 16px;
+    font-size: 20px;
+    line-height: 28px;
     font-weight: 600;
     margin: 0 0 20px;
-    padding-bottom: 12px;
-    border-bottom: 1px solid var(--color-border);
 }
 
 /* 区块标题行（链接区：标题 + 添加按钮同行） */
@@ -175,14 +174,12 @@
     align-items: center;
     justify-content: space-between;
     margin-bottom: 20px;
-    padding-bottom: 12px;
-    border-bottom: 1px solid var(--color-border);
+    gap: 16px;
+    flex-wrap: wrap;
 }
 
 .section-head h2 {
     margin: 0;
-    padding: 0;
-    border: 0;
 }
 
 /* 单条链接行 */
@@ -195,6 +192,7 @@
 
 .link-row input {
     flex: 1;
+    min-width: 0;
 }
 
 .link-row .link-label {
@@ -227,20 +225,33 @@
     padding-top: 4px;
 }
 
-/* 设置页主体最大宽度 */
-.settings-main {
-    max-width: 760px;
-}
-
-/* 发布页的 editor-heading 样式复用 */
-.settings-page .editor-heading {
-    padding: 20px 0 16px;
-    border-bottom: 1px solid var(--color-border);
-    margin-bottom: 24px;
-}
-
-.settings-page .editor-heading h1 {
-    font-size: 22px;
-    font-weight: 700;
+/* 头像和封面上的操作层需要覆盖整个预览，不沿用普通表单标签的间距 */
+.settings-page .avatar-overlay,
+.settings-page .cover-overlay {
     margin: 0;
+}
+
+.settings-page #bio {
+    min-height: 120px;
+}
+
+@media (max-width: 767px) {
+    .avatar-editor {
+        gap: 16px;
+    }
+    .link-row {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 44px;
+    }
+    .link-row .link-label {
+        grid-column: 1;
+    }
+    .link-row input[type="url"] {
+        grid-column: 1;
+        grid-row: 2;
+    }
+    .link-row .remove-link {
+        grid-column: 2;
+        grid-row: 1 / 3;
+    }
 }

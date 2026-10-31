@@ -225,6 +225,11 @@
     background: var(--gradient-brand-active);
     transform: scale(0.97);
 }
+/* 发布文章与发表评论共用文字样式，按钮尺寸由各自组件决定 */
+.home-page .publish-link,
+.home-page .comment-submit {
+    font: var(--font-publish-action);
+}
 .home-page .publish-link {
     gap: 8px;
     min-height: 40px;
@@ -237,92 +242,6 @@
 }
 .home-page .publish-link:not(:disabled):active {
     background: var(--gradient-publish-active);
-}
-.account-menu {
-    position: relative;
-}
-.account-menu summary {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    cursor: pointer;
-    list-style: none;
-    min-height: 44px;
-}
-.account-menu summary::-webkit-details-marker {
-    display: none;
-}
-.avatar {
-    width: 28px;
-    height: 28px;
-    display: inline-flex;
-    justify-content: center;
-    align-items: center;
-    border-radius: 50%;
-    background: linear-gradient(135deg, var(--color-brand-soft) 0%, var(--color-brand) 40%);
-    color: #fff;
-    font-size: 13px;
-    font-weight: 700;
-    overflow: hidden;
-    box-shadow: 0 2px 6px rgba(232, 75, 133, 0.24);
-}
-.avatar img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-}
-.account-name {
-    max-width: 100px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-.account-dropdown {
-    position: absolute;
-    right: 0;
-    top: 52px;
-    width: 240px;
-    padding: 16px;
-    background: var(--color-page);
-    color: var(--color-text);
-    border: 1px solid var(--color-border);
-    border-radius: 8px;
-    box-shadow: var(--shadow-menu);
-    opacity: 0;
-    transform: translateY(-6px);
-    transition: opacity 180ms var(--ease-out), transform 180ms var(--ease-out);
-    pointer-events: none;
-}
-.account-menu[open] .account-dropdown {
-    opacity: 1;
-    transform: translateY(0);
-    pointer-events: auto;
-}
-.account-welcome {
-    margin: 0 0 12px;
-    padding-bottom: 12px;
-    border-bottom: 1px solid var(--color-border);
-    line-height: 22px;
-    overflow-wrap: anywhere;
-}
-.account-dropdown a,
-.account-dropdown button {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 10px 8px;
-    width: 100%;
-    min-height: 40px;
-    font: inherit;
-    background: var(--color-transparent);
-    border: 0;
-    border-radius: 6px;
-    text-align: left;
-    color: var(--color-text);
-}
-.account-dropdown a:hover,
-.account-dropdown button:hover {
-    background: var(--color-surface);
 }
 .home-page .home-main {
     max-width: 2100px;
@@ -362,7 +281,6 @@
 .channel-circle svg {
     width: 25px;
     height: 25px;
-    transition: transform 180ms var(--ease-out);
 }
 .channel-shortcuts a:hover .channel-circle {
     transform: translateY(-2px);
@@ -789,7 +707,8 @@
     text-decoration: none;
     color: inherit;
 }
-.card-title a:hover {
+.card-title a:hover,
+a.card-author-name:hover {
     color: var(--color-brand-active);
 }
 .card-author {
@@ -817,6 +736,8 @@
 .article-owner-actions {
     display: flex;
     justify-content: flex-end;
+    flex-wrap: wrap;
+    gap: 8px;
     margin-top: 8px;
 }
 .home-page .delete-article-button {

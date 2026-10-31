@@ -28,6 +28,7 @@ export default {
                 login: "login.html",
                 register: "register.html",
                 publish: "publish.html",
+                drafts: "drafts.html",
                 profile: "profile.html",
                 settings: "settings.html"
             }

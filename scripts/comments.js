@@ -68,12 +68,22 @@ function actionButton(text, handler) {
 function buildSection(state) {
     const heading = textElement("div", "comments-heading", "");
     state.heading = textElement("h3", "", "评论 " + state.note.commentCount);
-    // 重新建立评论区，保留当前文章的输入草稿
+    // 同一账号只更新评论列表，保留输入框、文章正文和当前评论页
     const refresh = actionButton("刷新评论", function refreshComments() {
-        if (state.busy || state.draft.pending) {
+        if (state.busy || state.draft.pending || state.loading || state.identifying) {
             return;
         }
-        setCommentArticle(state.note, state.targetCommentId);
+        const session = readSession();
+        let token = null;
+        if (session) {
+            token = session.token;
+        }
+        // 重新登录后需要核对评论身份，避免沿用旧账号的删除权限
+        if (token !== state.token || (token && !state.username)) {
+            setCommentArticle(state.note, state.targetCommentId);
+            return;
+        }
+        loadComments(state, state.page);
     });
     state.refresh = refresh;
     heading.append(state.heading, refresh);
@@ -217,8 +227,11 @@ function updateComposer(state) {
     state.counter.textContent = state.draft.text.length + " / " + MAX_COMMENT_LENGTH;
     const pending = state.busy || state.draft.pending;
     state.input.disabled = pending;
-    state.refresh.disabled = pending;
-    state.submit.disabled = pending || state.loading || state.identifying || !state.username || state.draft.uncertain || !state.available;
+    state.refresh.disabled = pending || state.loading || state.identifying;
+    const submitUnavailable = pending || state.identifying || !state.username || state.draft.uncertain || !state.available;
+    state.submit.disabled = submitUnavailable || state.loading;
+    // 仅因刷新列表而暂停提交时保留按钮外观，避免禁用透明度来回变化
+    state.submit.dataset.refreshing = String(state.loading && !submitUnavailable);
     state.submit.textContent = "发表评论";
     if (state.draft.parentId) {
         state.submit.textContent = "发送回复";
@@ -276,7 +289,10 @@ async function loadComments(state, page) {
     }
     state.loading = true;
     updateComposer(state);
-    state.listStatus.textContent = "正在读取评论";
+    // 已有评论时保留原列表，用刷新按钮表示等待，避免加载文字把阅读位置顶动
+    if (!state.list.hasChildNodes()) {
+        state.listStatus.textContent = "正在读取评论";
+    }
     updatePager(state.pager, state.page, state.pageCount, true);
     try {
         const path = "/notes/" + encodeURIComponent(state.note.id) + "/comments?page=" + page + "&pageSize=" + pageSize;
@@ -601,7 +617,7 @@ async function refreshCommentCount(state) {
         state.note.commentCount = note.commentCount;
         state.heading.textContent = "评论 " + note.commentCount;
         document.dispatchEvent(new CustomEvent("article-comment-count", { detail: state.note }));
-    } catch (error) {
+    } catch {
         if (current === state) {
             showMessage(state.feedback, "操作已完成，评论数量暂时读取失败，可刷新文章确认", true);
         }

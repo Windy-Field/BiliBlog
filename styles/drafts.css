@@ -1,0 +1,118 @@
+.drafts-page .drafts-main {
+    max-width: none;
+    margin: 0;
+    padding: 32px;
+    min-height: calc(100vh - 220px);
+    background: var(--color-page);
+}
+.drafts-main > * { max-width: 1100px; margin-left: auto; margin-right: auto; }
+.drafts-title,
+.drafts-toolbar,
+.draft-new,
+.draft-meta,
+.draft-actions,
+.draft-pagination {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+.drafts-title { flex-wrap: wrap; }
+#draft-total,
+#draft-owner { color: var(--color-text-secondary); font-size: 13px; }
+.publish-page .draft-new {
+    justify-content: center;
+    min-height: 44px;
+    padding: 8px 16px;
+    border-radius: 6px;
+    background: var(--gradient-publish);
+    color: var(--color-on-dark);
+    white-space: nowrap;
+    font-size: 14px;
+}
+.drafts-toolbar { flex-wrap: wrap; margin-bottom: 20px; }
+.drafts-toolbar form {
+    display: flex;
+    align-items: center;
+    flex: 1;
+    max-width: 480px;
+    min-width: 180px;
+}
+.drafts-page #draft-query { border-radius: 6px 0 0 6px; min-width: 0; }
+.drafts-page .drafts-toolbar button { white-space: nowrap; }
+.drafts-page .drafts-toolbar form button { width: 44px; flex-shrink: 0; margin: 0; padding: 8px; border-radius: 0 6px 6px 0; }
+.drafts-toolbar #draft-owner { margin-left: auto; }
+.draft-list { transition: opacity var(--duration-fast) var(--ease-out); }
+.draft-list[aria-busy="true"] { opacity: 0.55; }
+.draft-row {
+    display: grid;
+    grid-template-columns: 112px minmax(0, 1fr) auto;
+    gap: 20px;
+    align-items: center;
+    padding: 24px 0;
+    border-bottom: 1px solid var(--color-border);
+}
+.draft-cover {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 112px;
+    height: 84px;
+    border-radius: 6px;
+    overflow: hidden;
+    background: var(--color-surface);
+    color: var(--color-text-secondary);
+}
+.draft-cover svg { width: 28px; height: 28px; }
+.draft-cover img { width: 100%; height: 100%; object-fit: cover; }
+.draft-info { min-width: 0; }
+.draft-info h2 { margin: 0 0 8px; font-size: 18px; line-height: 26px; overflow-wrap: anywhere; }
+.publish-page .draft-info h2 a { color: var(--color-text); }
+.publish-page .draft-info h2 a:hover { color: var(--color-brand-active); }
+.draft-excerpt {
+    margin: 0 0 12px;
+    color: var(--color-text-secondary);
+    font-size: 14px;
+    line-height: 24px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    overflow-wrap: anywhere;
+}
+.draft-meta { flex-wrap: wrap; gap: 4px 16px; color: var(--color-text-secondary); font-size: 12px; line-height: 20px; }
+.draft-actions { flex-wrap: wrap; gap: 8px; }
+.publish-page .draft-edit,
+.publish-page .draft-actions button,
+.draft-pagination a {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-height: 44px;
+    padding: 8px 12px;
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    background: var(--color-page);
+    color: var(--color-text);
+    font-size: 13px;
+    white-space: nowrap;
+}
+.publish-page .draft-actions button { color: var(--color-error); }
+.draft-pagination { justify-content: center; margin-top: 24px; }
+.draft-pagination a { width: 44px; padding: 0; }
+.draft-pagination [aria-disabled="true"] { opacity: 0.5; pointer-events: none; }
+.creator-sidebar nav a[aria-current="page"] { color: var(--color-link); background: var(--color-selected); }
+.drafts-skip { position: absolute; top: -100px; left: 16px; z-index: 30; padding: 8px; background: var(--color-page); }
+.drafts-skip:focus { top: 8px; }
+@media (max-width: 767px) {
+    .drafts-page .drafts-main { padding: 24px 16px; }
+    .draft-row { grid-template-columns: 80px minmax(0, 1fr); gap: 12px; padding: 20px 0; }
+    .draft-cover { width: 80px; height: 64px; align-self: start; }
+    .draft-actions { grid-column: 1 / -1; justify-content: flex-end; }
+    .draft-info h2 { font-size: 16px; line-height: 24px; }
+    .drafts-toolbar form { flex-basis: 100%; max-width: none; }
+    .drafts-toolbar #draft-owner { margin-left: 0; margin-right: auto; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .draft-list { transition: none; }
+}

@@ -12,7 +12,8 @@
     --gradient-publish: linear-gradient(135deg, rgba(255, 140, 176, 0.9) 0%, rgba(255, 102, 153, 0.88) 45%, rgba(232, 75, 133, 0.84) 100%);
     --gradient-publish-hover: linear-gradient(135deg, rgba(255, 140, 176, 0.96) 0%, rgba(255, 102, 153, 0.94) 100%);
     --gradient-publish-active: linear-gradient(135deg, rgba(255, 102, 153, 0.94) 0%, rgba(232, 75, 133, 0.9) 100%);
-    --gradient-selected: var(--gradient-publish);
+    /* 话题、月份和发现入口共用通透背景，文字和边框保持清晰 */
+    --gradient-selected: linear-gradient(135deg, rgba(255, 140, 176, 0.6) 0%, rgba(255, 102, 153, 0.55) 45%, rgba(232, 75, 133, 0.5) 100%);
     --gradient-selected-soft: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(255, 236, 241, 0.84) 100%);
     --color-accent: #00aeec;
     --color-link: #00759e;
@@ -41,12 +42,23 @@
     --color-cover-purple: #edeaf7;
     --font-body: "PingFang SC", "Microsoft YaHei", Arial, sans-serif;
     --font-mono: Consolas, monospace;
+    --font-publish-action: 600 14px / 20px var(--font-body);
+    --editor-content-width: 940px;
+    --settings-avatar-size: 80px;
+    --settings-cover-width: 420px;
     --radius-control: 8px;
     --radius-card: 10px;
     --radius-menu: 12px;
     --shadow-card: 0 1px 3px rgba(24, 25, 28, 0.04), 0 4px 12px rgba(24, 25, 28, 0.07);
     --shadow-card-hover: 0 4px 12px rgba(24, 25, 28, 0.08), 0 12px 32px rgba(24, 25, 28, 0.12);
     --shadow-menu: 0 8px 24px rgba(24, 25, 28, 0.14);
+    --select-height: 44px;
+    --select-option-height: 40px;
+    --select-padding: 8px 12px;
+    --select-menu-padding: 6px;
+    --select-menu-gap: 8px;
+    --select-menu-height: 288px;
+    --select-option-radius: 4px;
     --duration-fast: 150ms;
     --duration-press: 120ms;
     --duration-panel: 200ms;

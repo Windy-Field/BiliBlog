@@ -452,8 +452,6 @@ a.stat-item:hover strong {
     border-top: 1px solid var(--color-border);
 }
 
-.profile-footer .footer-copy { color: var(--color-muted); }
-
 /* 跳过导航 */
 .skip-link {
     position: fixed;

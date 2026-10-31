@@ -1,7 +1,7 @@
 import { IMAGE_TYPES, MAX_IMAGE_BYTES } from "./config.js";
 
 // 检查 file 的图片格式，返回是否属于接口支持的类型
-export function isAllowedImage(file) {
+function isAllowedImage(file) {
     return IMAGE_TYPES.includes(file.type);
 }
 

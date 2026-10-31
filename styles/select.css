@@ -1,0 +1,154 @@
+/* 所有页面共用选择框外观，选项值和键盘操作继续由原生控件管理 */
+body select {
+    min-height: var(--select-height);
+    min-width: 0;
+    max-width: 100%;
+    padding: var(--select-padding);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-control);
+    background: var(--color-page);
+    color: var(--color-text);
+    font: inherit;
+    line-height: 20px;
+    cursor: pointer;
+    transition:
+        border-color var(--duration-fast) var(--ease-out),
+        background-color var(--duration-fast) var(--ease-out);
+}
+
+body select:not(:disabled):hover {
+    border-color: var(--color-input-border);
+    background-color: var(--color-surface);
+}
+
+body select:focus-visible {
+    outline: 2px solid var(--color-focus);
+    outline-offset: 2px;
+}
+
+body select:disabled {
+    background: var(--color-surface);
+    color: var(--color-text-secondary);
+    cursor: not-allowed;
+}
+
+/* 支持菜单样式的浏览器使用统一浮层，其余浏览器保留原生菜单 */
+@supports (appearance: base-select) {
+    body select,
+    body select::picker(select) {
+        appearance: base-select;
+    }
+
+    body select {
+        /* 每个菜单只对齐自己的选择框，避免同页多个菜单互相影响 */
+        anchor-name: --select-control;
+        anchor-scope: --select-control;
+        display: inline-flex;
+        align-items: center;
+        gap: var(--select-menu-gap);
+        text-align: left;
+        overflow-wrap: anywhere;
+    }
+
+    body select:open {
+        border-color: var(--color-brand);
+        background: var(--color-page);
+    }
+
+    body select::picker-icon {
+        flex-shrink: 0;
+        color: var(--color-text-secondary);
+        transition: rotate var(--duration-panel) var(--ease-out);
+    }
+
+    body select:open::picker-icon {
+        rotate: 180deg;
+    }
+
+    body select::picker(select) {
+        position-anchor: --select-control;
+        position-area: none;
+        inset: auto;
+        top: anchor(bottom);
+        left: anchor(left);
+        inline-size: anchor-size(width);
+        block-size: fit-content;
+        max-inline-size: calc(100dvw - 32px);
+        /* 优先向下显示，空间不足时才让浏览器尝试其他方向 */
+        position-try-fallbacks: flip-block, flip-inline;
+        position-try-order: normal;
+        max-block-size: min(var(--select-menu-height), calc(100dvh - 32px));
+        margin-block-start: var(--select-menu-gap);
+        padding: var(--select-menu-padding);
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-control);
+        background: var(--color-page);
+        color: var(--color-text);
+        box-shadow: var(--shadow-menu);
+        overflow: auto;
+        overscroll-behavior: contain;
+        opacity: 0;
+        transform: translateY(-4px);
+        transition:
+            opacity var(--duration-panel) var(--ease-out),
+            transform var(--duration-panel) var(--ease-out),
+            display var(--duration-panel) allow-discrete,
+            overlay var(--duration-panel) allow-discrete;
+    }
+
+    body select:open::picker(select) {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+    body select option {
+        display: flex;
+        align-items: center;
+        gap: var(--select-menu-gap);
+        min-height: var(--select-option-height);
+        padding: var(--select-padding);
+        border-radius: var(--select-option-radius);
+        color: var(--color-text);
+        font: inherit;
+        white-space: normal;
+        overflow-wrap: anywhere;
+        cursor: pointer;
+    }
+
+    body select option:hover,
+    body select option:focus-visible {
+        background: var(--color-surface);
+        outline: none;
+    }
+
+    body select option:checked {
+        background: var(--gradient-selected);
+        font-weight: 500;
+    }
+
+    body select option::checkmark {
+        order: 1;
+        margin-inline-start: auto;
+        color: var(--color-text);
+    }
+
+    body select option:disabled {
+        color: var(--color-text-secondary);
+        cursor: not-allowed;
+    }
+
+    @starting-style {
+        body select:open::picker(select) {
+            opacity: 0;
+            transform: translateY(-4px);
+        }
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    body select,
+    body select::picker-icon,
+    body select::picker(select) {
+        transition: none;
+    }
+}

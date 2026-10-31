@@ -10,13 +10,14 @@
   <link rel="stylesheet" href="/styles/feedback.css" />
   <link rel="stylesheet" href="/styles/notifications.css" />
   <script type="module" src="/scripts/notifications.js"></script>
+  <script type="module" src="/scripts/creator-account.js"></script>
   <script type="module" src="/scripts/settings.js"></script>
 </head>
-<body class="settings-page">
+<body class="publish-page settings-page">
   <header class="editor-header">
     <div class="editor-identity">
       <a class="editor-brand" href="/index.html">小B书</a>
-      <span class="editor-divider" aria-hidden="true">/</span>
+      <span class="editor-divider" aria-hidden="true"></span>
       <span>个人设置</span>
     </div>
     <nav aria-label="创作导航">
@@ -29,12 +30,15 @@
     <nav>
       <a href="/index.html?feed=mine"><span data-icon="article"></span>我的文章</a>
       <a href="/publish.html"><span data-icon="write"></span>发布文章</a>
+      <a href="/index.html?feed=favorites"><span data-icon="bookmark"></span>我的收藏</a>
+      <a href="/index.html?feed=likes"><span data-icon="heart"></span>点赞历史</a>
       <a href="/index.html"><span data-icon="discover"></span>发现文章</a>
     </nav>
     <a class="creator-home" href="/index.html">小B书<span>biliblog</span></a>
   </aside>
   <div class="creator-workspace">
-    <main class="settings-main">
+    <nav class="creator-tabs" aria-label="设置页面"><a href="/settings.html" aria-current="page">资料设置</a></nav>
+    <main class="editor-main">
       <div class="editor-heading">
         <h1>资料设置</h1>
       </div>
@@ -71,7 +75,7 @@
                   </label>
                   <input id="cover-input" class="file-input" type="file" accept="image/jpeg,image/png,image/webp" />
                 </div>
-                <button id="remove-cover" type="button" class="text-button cover-remove-btn" hidden>删除封面</button>
+                <button id="remove-cover" type="button" class="cover-remove-btn" hidden>删除封面</button>
               </div>
               <p id="cover-status" class="message" role="status" tabindex="-1"></p>
             </div>
@@ -90,7 +94,7 @@
           <section class="settings-section">
             <div class="section-head">
               <h2>个人链接 <span class="optional">选填，最多 5 条</span></h2>
-              <button id="add-link" type="button" class="text-button">+ 添加链接</button>
+              <button id="add-link" type="button">+ 添加链接</button>
             </div>
             <div id="links-list" class="links-list"></div>
           </section>

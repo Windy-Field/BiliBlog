@@ -6,7 +6,9 @@ export const LOCAL_UNREAD_PREFIX = "biliblog-notification-unread-";
 export const DEFAULT_COVER_URL = "/assets/images/forest-banner.jpg";
 export const MAX_PAGE = 10000;
 export const HOME_PAGE_SIZE = 20;
+export const HOME_FIRST_PAGE_SIZE = 22;
 export const PROFILE_PAGE_SIZE = 12;
+export const DRAFT_PAGE_SIZE = 12;
 export const COMMENT_PAGE_SIZE = 10;
 export const NOTIFICATION_PAGE_SIZE = 10;
 export const NOTIFICATION_SCAN_SIZE = 50;
@@ -22,3 +24,7 @@ export const MAX_BODY_LENGTH = 12000;
 export const MAX_PROFILE_LINKS = 5;
 export const MAX_LINK_LABEL_LENGTH = 30;
 export const MAX_LINK_URL_LENGTH = 500;
+// 本站界面按产品要求最多置顶两篇，校园后端自身的上限仍为三篇
+export const MAX_PINNED_NOTES = 2;
+export const MAX_COLLECTIONS = 20;
+export const MAX_COLLECTION_NAME_LENGTH = 40;

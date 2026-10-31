@@ -2,10 +2,12 @@ import { requestApi } from "./api.js";
 import { readSession, clearSession } from "./auth.js";
 import { showMessage, showToast, setBusy } from "./common.js";
 import { resizePanel, scrollPage, updatePinnedTopbar, updateNoticeMotion } from "./motion.js";
-import { HOME_PAGE_SIZE, MAX_PAGE, TAG_PAGE_SIZE } from "./config.js";
+import { HOME_PAGE_SIZE, HOME_FIRST_PAGE_SIZE, MAX_PAGE, TAG_PAGE_SIZE, SESSION_KEY } from "./config.js";
 import { makeIcon, fillIcons } from "./icons.js";
 import { setReactionArticle } from "./reactions.js";
 import { setCommentArticle } from "./comments.js";
+import { makePinButton, makePinBadge } from "./pins.js";
+import { createCollections } from "./collections.js";
 
 const FEED_SCROLL_OFFSET = 80;
 const DESKTOP_TOPIC_LIMIT = 9;
@@ -49,19 +51,58 @@ let currentPage = 1;
 // 用请求编号筛选最新响应，避免较早发出的慢请求覆盖当前列表
 let feedRequest = 0;
 let displayedFeedKey = "";
+let displayedFavoritesToken = null;
 let detailRequest = 0;
 let currentArticleId = "";
 let currentUsername = "";
 let pendingDeleteNote = null;
 let deletingNote = false;
 let topicItems = [];
+let readingNote = null;
+const collections = createCollections(refreshLibrary);
+
+// 收藏夹模块只负责分组，路由和文章列表继续由首页统一处理
+async function refreshLibrary() {
+    readRoute();
+    updateFeedHeading();
+    await loadFeed();
+    if (readingNote && articleDialog.open) {
+        renderDetailCollection(readingNote);
+    }
+}
+
+// 已收藏文章可直接整理到收藏夹，未收藏时保持原来的收藏按钮流程
+function renderDetailCollection(note) {
+    const container = document.getElementById("detail-collection");
+    container.replaceChildren();
+    if (note.favorited) {
+        container.appendChild(collections.makeMoveButton(note));
+    }
+}
+
+// 其他标签页换账号时立即移除私人列表和收藏夹，不让旧名字留在页面上
+function resetPrivateLibrary(event) {
+    if (event.key && event.key !== SESSION_KEY) {
+        return;
+    }
+    collections.reset(null);
+    displayedFavoritesToken = null;
+    if (feed !== "latest") {
+        grid.replaceChildren();
+        displayedFeedKey = "";
+        loadFeed();
+    }
+    if (readingNote) {
+        readArticleHash();
+    }
+}
 
 // 从 URL 读取话题、搜索词、页码和内容来源，刷新和前进后退时沿用这些筛选条件
 // 地址统一保存筛选条件，分享链接后也能打开同一个列表
 function readRoute() {
     query = new URLSearchParams(window.location.search);
     feed = query.get("feed");
-    if (!["following", "favorites", "mine"].includes(feed)) {
+    if (!["following", "favorites", "mine", "likes"].includes(feed)) {
         feed = "latest";
     }
     currentPage = Number(query.get("page"));
@@ -69,6 +110,10 @@ function readRoute() {
         currentPage = 1;
     }
     searchInput.value = query.get("q") || "";
+    // 收藏和点赞接口不支持关键词，不显示看似生效但实际未过滤的搜索条件
+    if (feed === "favorites" || feed === "likes") {
+        searchInput.value = "";
+    }
 }
 
 readRoute();
@@ -82,6 +127,7 @@ function showGuest() {
 // 携带凭证读取本人资料，后端确认后再显示已登录状态
 async function loadProfile() {
     const session = readSession();
+    currentUsername = "";
     retryButton.hidden = true;
     guestLinks.hidden = true;
     accountMenu.hidden = true;
@@ -93,6 +139,10 @@ async function loadProfile() {
 
     try {
         const user = await requestApi("/me", "GET", null, session.token);
+        if (currentToken() !== session.token) {
+            showGuest();
+            return;
+        }
         currentUsername = user.username;
         welcome.textContent = user.displayName + "（" + user.username + "）";
         accountName.textContent = user.displayName;
@@ -113,6 +163,10 @@ async function loadProfile() {
         }
         accountMenu.hidden = false;
     } catch (error) {
+        if (currentToken() !== session.token) {
+            showGuest();
+            return;
+        }
         if (error.status === 401) {
             // 401 表示凭证失效，清理后提示重新登录
             clearSession();
@@ -204,6 +258,7 @@ function showTextCover(cover, note) {
 // 将一篇后端文章转换成卡片，用户文字一律按纯文字插入
 // isFeature 时计数并进作者行，普通卡片的计数叠加在封面底部
 function makeCard(note, index, isFeature) {
+    const displayTitle = note.title;
     const card = document.createElement("article");
     card.className = "article-card cover-tone-" + String(index % 4);
     card.dataset.articleId = note.id;
@@ -220,7 +275,8 @@ function makeCard(note, index, isFeature) {
     // 只改变文章编号，避免首次打开时新增页码参数导致整个页面重新加载
     const listAddress = window.location.pathname + window.location.search;
     cover.href = listAddress + "#article=" + encodeURIComponent(note.id);
-    cover.setAttribute("aria-label", "阅读：" + note.title);
+    const coverLabel = "阅读：" + displayTitle;
+    cover.setAttribute("aria-label", coverLabel);
     if (note.images.length > 0) {
         const image = document.createElement("img");
         image.src = note.images[0].url;
@@ -254,6 +310,9 @@ function makeCard(note, index, isFeature) {
     }
     const info = document.createElement("div");
     info.className = "card-info";
+    if (feed === "mine" && note.pinnedAt) {
+        info.appendChild(makePinBadge(note));
+    }
     let titleTag = "h2";
     if (feed === "following") {
         titleTag = "h3";
@@ -262,8 +321,8 @@ function makeCard(note, index, isFeature) {
     title.className = "card-title";
     const titleLink = document.createElement("a");
     titleLink.href = cover.href;
-    titleLink.textContent = note.title;
-    titleLink.title = note.title;
+    titleLink.textContent = displayTitle;
+    titleLink.title = displayTitle;
     title.appendChild(titleLink);
     const author = document.createElement("div");
     author.className = "card-author";
@@ -283,11 +342,19 @@ function makeCard(note, index, isFeature) {
     if (feed === "mine" && note.author.username === currentUsername) {
         const actions = document.createElement("div");
         actions.className = "article-owner-actions";
+        const editLink = document.createElement("a");
+        editLink.className = "secondary-button";
+        editLink.href = "/publish.html?id=" + encodeURIComponent(note.id);
+        editLink.textContent = "编辑";
+        actions.appendChild(editLink);
+        if (!note.hidden) {
+            actions.appendChild(makePinButton(note, loadFeed));
+        }
         const deleteButton = document.createElement("button");
         deleteButton.className = "delete-article-button";
         deleteButton.type = "button";
         deleteButton.textContent = "删除";
-        deleteButton.setAttribute("aria-label", "删除文章：" + note.title);
+        deleteButton.setAttribute("aria-label", "删除文章：" + displayTitle);
         // 记录目标文章并打开删除确认框
         deleteButton.addEventListener("click", function openDeleteConfirmation(event) {
             event.preventDefault();
@@ -296,6 +363,12 @@ function makeCard(note, index, isFeature) {
         });
         actions.appendChild(deleteButton);
         info.appendChild(actions);
+    }
+    if (feed === "favorites") {
+        const tools = document.createElement("div");
+        tools.className = "article-owner-actions";
+        tools.appendChild(collections.makeMoveButton(note));
+        info.appendChild(tools);
     }
     card.append(cover, info);
     return card;
@@ -386,7 +459,11 @@ function requestDeleteNote(note) {
         return;
     }
     pendingDeleteNote = note;
-    deleteDescription.textContent = "将删除《" + note.title + "》。文章删除后无法恢复，图片素材不会一并删除。";
+    let title = note.title;
+    if (!title) {
+        title = "无标题草稿";
+    }
+    deleteDescription.textContent = "将删除《" + title + "》。文章删除后无法恢复，图片素材不会一并删除。";
     showMessage(deleteStatus, "", false);
     confirmDeleteButton.disabled = false;
     confirmDeleteButton.textContent = "删除文章";
@@ -482,6 +559,9 @@ function feedPath() {
     }
     if (feed === "favorites") {
         path = "/me/favorites";
+        if (query.get("collectionId")) {
+            parameters.set("collectionId", query.get("collectionId"));
+        }
     } else {
         if (searchInput.value.trim()) {
             parameters.set("q", searchInput.value.trim());
@@ -489,6 +569,11 @@ function feedPath() {
         if (query.get("tag") && feed !== "mine") {
             parameters.set("tag", query.get("tag"));
         }
+    }
+    if (feed === "likes") {
+        path = "/me/likes";
+        parameters.delete("q");
+        parameters.delete("tag");
     }
     if (feed === "mine") {
         path = "/me/notes";
@@ -509,7 +594,10 @@ function updateFeedHeading() {
     if (feed === "mine") {
         title = "我的公开文章";
     }
-    if (query.get("tag") && feed !== "mine" && feed !== "favorites") {
+    if (feed === "likes") {
+        title = "点赞历史";
+    }
+    if (query.get("tag") && feed !== "mine" && feed !== "favorites" && feed !== "likes") {
         title = "# " + query.get("tag");
     }
     if (searchInput.value.trim() && feed !== "favorites") {
@@ -551,6 +639,10 @@ function syncActiveTopic() {
 // 只重查列表可以减少横幅和导航的重复加载，让切换话题更连贯
 // replace 为 true 时修正当前历史记录，用于处理超出范围的页码
 function navigate(parameters, replace) {
+    if (parameters.get("feed") === "drafts") {
+        window.location.assign(draftAddress(parameters));
+        return;
+    }
     const address = "/index.html?" + parameters.toString();
     if (replace) {
         window.history.replaceState(null, "", address);
@@ -603,21 +695,67 @@ function handleRouteClick(event) {
     scrollToFeed();
 }
 
-// 公开文章遇到失效凭证时改用游客身份读取，关注、收藏和本人列表需要重新登录
-// 公开内容允许游客访问，私人列表则需要后端确认身份
-async function requestFeed() {
-    const token = currentToken();
+// 只有未筛选的最新文章使用加长首页，其他列表沿用普通分页
+function hasExpandedFirstPage() {
+    return feed === "latest" && !query.get("q") && !query.get("tag");
+}
+
+// 根据首页容量计算总页数，剩余文章按普通页容量分配
+function countFeedPages(total) {
+    if (!hasExpandedFirstPage()) {
+        return Math.max(1, Math.ceil(total / pageSize));
+    }
+    const remaining = Math.max(0, total - HOME_FIRST_PAGE_SIZE);
+    return 1 + Math.ceil(remaining / pageSize);
+}
+
+// 读取指定接口页，公开文章遇到失效凭证时按原地址改用游客身份重试
+async function requestFeedPage(path, token, publicFeed) {
     try {
-        return await requestApi(feedPath(), "GET", null, token);
+        return await requestApi(path, "GET", null, token);
     } catch (error) {
-        if (error.status !== 401 || feed !== "latest" || !token) {
+        if (error.status !== 401 || !publicFeed || !token) {
             throw error;
         }
         clearSession();
         showGuest();
         showToast("登录已失效，当前以游客身份浏览", true);
-        return await requestApi(feedPath(), "GET", null, null);
+        return await requestApi(path, "GET", null, null);
     }
+}
+
+// 把显示页转换成接口页，首页多出的文章不会在后续页面重复出现
+async function requestFeed() {
+    const token = currentToken();
+    const publicFeed = feed === "latest";
+    const path = feedPath();
+    if (!hasExpandedFirstPage()) {
+        return requestFeedPage(path, token, publicFeed);
+    }
+    const address = new URL(path, window.location.origin);
+    if (currentPage === 1) {
+        address.searchParams.set("pageSize", String(HOME_FIRST_PAGE_SIZE));
+        return requestFeedPage(address.pathname + address.search, token, publicFeed);
+    }
+    // 例如第 2 页从第 23 篇开始：读取接口第 2 页，跳过已在首页显示的两篇
+    const start = HOME_FIRST_PAGE_SIZE + (currentPage - 2) * pageSize;
+    const serverPage = Math.floor(start / pageSize) + 1;
+    const skipped = start % pageSize;
+    address.searchParams.set("page", String(serverPage));
+    const nextAddress = new URL(address.href);
+    nextAddress.searchParams.set("page", String(serverPage + 1));
+    const result = await requestFeedPage(address.pathname + address.search, token, publicFeed);
+    const items = result.items.slice(skipped);
+    const nextStart = serverPage * pageSize;
+    // 当前接口页不够时只补读紧接的一页，不从头加载全部文章
+    if (items.length < pageSize && result.total > nextStart) {
+        const next = await requestFeedPage(nextAddress.pathname + nextAddress.search, currentToken(), publicFeed);
+        const needed = pageSize - items.length;
+        for (let index = 0; index < needed && index < next.items.length; index = index + 1) {
+            items.push(next.items[index]);
+        }
+    }
+    return { items: items, total: result.total };
 }
 
 // 读取当前文章列表，旧请求晚返回时不覆盖新结果
@@ -628,13 +766,19 @@ async function loadFeed() {
     setBusy(refreshButton, true);
     grid.setAttribute("aria-busy", "true");
     grid.inert = true;
-    pagination.hidden = true;
     feedLogin.hidden = true;
     const token = currentToken();
-    // 筛选条件和账号都相同时才保留旧卡片，避免切换账号后短暂显示别人的私人列表
+    collections.reset(token);
+    collections.panel.hidden = feed !== "favorites" || !token;
+    // 同一账号切换收藏夹时也保留旧内容，暂停交互后等待最新结果，避免骨架闪动
     const feedKey = feedPath() + "|" + token;
-    const keepCards = displayedFeedKey === feedKey && grid.hasChildNodes();
+    const keepFavorites = feed === "favorites" && Boolean(token) && displayedFavoritesToken === token;
+    const keepCards = keepFavorites || (displayedFeedKey === feedKey && grid.hasChildNodes());
+    pagination.inert = true;
     if (!keepCards) {
+        pagination.hidden = true;
+        displayedFeedKey = "";
+        displayedFavoritesToken = null;
         grid.replaceChildren();
         document.getElementById("result-count").textContent = "";
         feedStatus.textContent = "正在读取文章……";
@@ -648,13 +792,43 @@ async function loadFeed() {
         if (!keepCards) {
             renderFeedSkeletons();
         }
+        if (feed === "favorites") {
+            // 收藏夹读取失败不阻断文章阅读，管理区保留错误与刷新入口
+            try {
+                await collections.load(token);
+            } catch {
+                showToast("收藏夹读取失败，可在管理区刷新", true);
+            }
+            if (requestNumber !== feedRequest || currentToken() !== token) {
+                if (requestNumber === feedRequest && !currentToken()) {
+                    grid.replaceChildren();
+                    displayedFeedKey = "";
+                    displayedFavoritesToken = null;
+                    pagination.hidden = true;
+                    feedStatus.textContent = "登录已失效，请重新登录后查看收藏";
+                    feedLogin.hidden = false;
+                    collections.panel.hidden = true;
+                    showGuest();
+                }
+                return;
+            }
+        }
+        // 私人列表的编辑入口需要先确认本人用户名，不能依赖两个请求碰巧按顺序返回
+        if (feed === "mine") {
+            await loadProfile();
+            if (requestNumber !== feedRequest) {
+                return;
+            }
+        }
         const result = await requestFeed();
         // 网络请求的返回顺序不一定和点击顺序相同，只让最后一次点击更新页面
-        if (requestNumber !== feedRequest) {
+        const activeToken = currentToken();
+        const becameGuest = feed === "latest" && !activeToken;
+        if (requestNumber !== feedRequest || (activeToken !== token && !becameGuest)) {
             return;
         }
         // 页码超出实际结果时返回最后一页，避免搜索或内容减少后出现空白页
-        const pageCount = Math.max(1, Math.ceil(result.total / pageSize));
+        const pageCount = countFeedPages(result.total);
         if (currentPage > pageCount) {
             const parameters = new URLSearchParams(window.location.search);
             parameters.set("page", String(pageCount));
@@ -711,6 +885,10 @@ async function loadFeed() {
         setPageLink("next-page", currentPage + 1, currentPage < pageCount);
         pagination.hidden = pageCount <= 1;
         displayedFeedKey = feedKey;
+        displayedFavoritesToken = null;
+        if (feed === "favorites") {
+            displayedFavoritesToken = token;
+        }
     } catch (error) {
         if (requestNumber !== feedRequest) {
             return;
@@ -718,6 +896,8 @@ async function loadFeed() {
         feedStatus.textContent = "读取失败：" + error.message;
         grid.replaceChildren();
         displayedFeedKey = "";
+        displayedFavoritesToken = null;
+        pagination.hidden = true;
         grid.classList.remove("has-feature");
         if (error.status === 401) {
             clearSession();
@@ -730,6 +910,7 @@ async function loadFeed() {
             setBusy(refreshButton, false);
             grid.setAttribute("aria-busy", "false");
             grid.inert = false;
+            pagination.inert = false;
         }
     }
 }
@@ -831,7 +1012,7 @@ async function loadTopics() {
         syncActiveTopic();
         topicStatus.textContent = "";
         updateTopicVisibility();
-    } catch (error) {
+    } catch {
         topicStatus.textContent = "话题暂时不可用";
         retryTopics.hidden = false;
     }
@@ -843,8 +1024,9 @@ function searchArticles(event) {
     const parameters = new URLSearchParams(window.location.search);
     parameters.delete("page");
     parameters.set("q", searchInput.value.trim());
-    if (feed === "favorites") {
+    if (feed === "favorites" || feed === "likes") {
         parameters.delete("feed");
+        parameters.delete("collectionId");
     }
     navigate(parameters, false);
     scrollToFeed();
@@ -953,6 +1135,8 @@ function foldActivityMetadata(body) {
 
 // 根据链接中的文章 ID 读取详情，支持直接打开链接和刷新
 async function readArticleHash() {
+    readingNote = null;
+    document.getElementById("detail-collection").replaceChildren();
     setReactionArticle(null);
     setCommentArticle(null);
     const hash = new URLSearchParams(window.location.hash.slice(1));
@@ -976,11 +1160,15 @@ async function readArticleHash() {
     retryDetail.hidden = true;
     detailStatus.textContent = "正在读取文章……";
     setBusy(detailStatus, true);
+    const token = currentToken();
     try {
         const path = "/notes/" + encodeURIComponent(currentArticleId);
-        const note = await requestApi(path, "GET", null, currentToken());
+        const note = await requestApi(path, "GET", null, token);
         if (requestNumber !== detailRequest || !articleDialog.open) {
             return;
+        }
+        if (currentToken() !== token) {
+            throw new Error("登录账号已变化，请重新读取文章");
         }
         // 先把整篇文章填好，再显示正文，用户不会看到标题、作者逐项替换的半成品
         document.getElementById("detail-title").textContent = note.title;
@@ -1008,13 +1196,15 @@ async function readArticleHash() {
             note.commentCount;
         detailStatus.textContent = "";
         detailContent.hidden = false;
+        readingNote = note;
+        renderDetailCollection(note);
         setReactionArticle(note);
         setCommentArticle(note, hash.get("comment"));
     } catch (error) {
         if (requestNumber !== detailRequest) {
             return;
         }
-        if (error.status === 401) {
+        if (error.status === 401 && currentToken() === token) {
             clearSession();
             showGuest();
             document.getElementById("reaction-login").hidden = false;
@@ -1030,6 +1220,8 @@ async function readArticleHash() {
 
 // 关闭阅读窗口时移除文章地址，避免刷新又打开已关闭的文章
 function closeArticle() {
+    readingNote = null;
+    document.getElementById("detail-collection").replaceChildren();
     setReactionArticle(null);
     setCommentArticle(null);
     detailRequest = detailRequest + 1;
@@ -1050,8 +1242,12 @@ function updateArticleReaction(event) {
         stats.setAttribute("aria-label", "点赞 " + note.likeCount + "，评论 " + note.commentCount);
         stats.replaceChildren(makeCount("heart", note.likeCount), makeCount("comment", note.commentCount));
     }
-    if (feed === "favorites") {
+    // 评论数量变化只同步数字，点赞和收藏操作才可能改变私人列表的内容
+    if (event.type === "article-reaction" && (feed === "favorites" || feed === "likes")) {
         loadFeed();
+    }
+    if (event.type === "article-reaction" && readingNote && readingNote.id === note.id) {
+        renderDetailCollection(note);
     }
     document.getElementById("detail-counts").textContent = "点赞 " + note.likeCount + " · 收藏 " + note.favoriteCount + " · 评论 " + note.commentCount;
 }
@@ -1115,6 +1311,7 @@ window.addEventListener("scroll", updateTopbar, { passive: true });
 document.addEventListener("click", closeAccountMenu);
 document.addEventListener("article-reaction", updateArticleReaction);
 document.addEventListener("article-comment-count", updateArticleReaction);
+window.addEventListener("storage", resetPrivateLibrary);
 confirmDeleteButton.addEventListener("click", deleteArticle);
 document.getElementById("cancel-delete").addEventListener("click", cancelDelete);
 // Escape 和取消按钮共用关闭流程，请求处理中保持原有保护
@@ -1122,11 +1319,31 @@ deleteDialog.addEventListener("cancel", function closeDeleteDialog(event) {
     event.preventDefault();
     cancelDelete();
 });
-// 页面加载和刷新时都重新确认登录状态
-fillIcons();
-updateFeedHeading();
-updateTopbar();
-loadProfile();
-loadTopics();
-loadFeed();
-readArticleHash();
+// 兼容已保存的旧草稿地址，仅保留草稿页支持的筛选参数，不再加载首页文章
+function draftAddress(parameters) {
+    const target = new URLSearchParams();
+    if (parameters.get("q")) {
+        target.set("q", parameters.get("q"));
+    }
+    if (parameters.get("page")) {
+        target.set("page", parameters.get("page"));
+    }
+    let address = "/drafts.html";
+    if (target.size > 0) {
+        address = address + "?" + target.toString();
+    }
+    return address;
+}
+
+// 页面加载和刷新时都重新确认登录状态，旧草稿链接转到独立创作页面
+if (query.get("feed") === "drafts") {
+    window.location.replace(draftAddress(query));
+} else {
+    fillIcons();
+    updateFeedHeading();
+    updateTopbar();
+    loadProfile();
+    loadTopics();
+    loadFeed();
+    readArticleHash();
+}

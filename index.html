@@ -9,6 +9,7 @@
     <link rel="stylesheet" href="/styles/comments.css" />
     <link rel="stylesheet" href="/styles/feedback.css" />
     <link rel="stylesheet" href="/styles/notifications.css" />
+    <link rel="stylesheet" href="/styles/library.css" />
     <script type="module" src="/scripts/notifications.js"></script>
     <!-- 模块脚本在 HTML 解析完成后执行 -->
     <script type="module" src="/scripts/home.js"></script>
@@ -68,6 +69,8 @@
               <a href="/index.html?feed=mine"
                 ><span data-icon="article"></span>我的文章</a
               >
+              <a href="/drafts.html"><span data-icon="article"></span>草稿箱</a>
+              <a href="/index.html?feed=likes"><span data-icon="heart"></span>点赞历史</a>
               <a href="/index.html?feed=favorites"
                 ><span data-icon="bookmark"></span>我的收藏</a
               >
@@ -137,6 +140,7 @@
           <a href="/index.html?feed=mine" data-feed="mine"
             ><span data-icon="article"></span>我的文章</a
           >
+          <a href="/index.html?feed=likes" data-feed="likes"><span data-icon="heart"></span>点赞历史</a>
         </nav>
       </section>
       <section class="feed-section" aria-labelledby="feed-title">
@@ -164,6 +168,17 @@
           </button>
         </div>
         <p id="feed-status" class="feed-status" role="status"></p>
+        <section id="collection-tools" class="collection-tools" aria-label="收藏夹管理" hidden>
+          <div class="collection-toolbar">
+            <label for="collection-filter">收藏夹</label>
+            <select id="collection-filter"></select>
+            <button id="new-collection" type="button">新建收藏夹</button>
+            <button id="rename-collection" type="button">重命名</button>
+            <button id="delete-collection" type="button">删除收藏夹</button>
+            <button id="refresh-collections" type="button" title="刷新收藏夹" aria-label="刷新收藏夹"><span data-icon="refresh"></span></button>
+          </div>
+          <p id="collection-status" class="message" role="status" tabindex="-1"></p>
+        </section>
         <a
           id="feed-login"
           class="primary-button feed-login"
@@ -245,6 +260,7 @@
             ><span id="favorite-label">收藏</span>
           </button>
         </div>
+        <div id="detail-collection" class="detail-collection"></div>
         <p
           id="reaction-message"
           class="message reaction-message"
@@ -269,6 +285,24 @@
       <button id="retry-detail" class="secondary-button" type="button" hidden>
         重新读取
       </button>
+    </dialog>
+    <dialog id="collection-dialog" class="library-dialog" aria-labelledby="collection-dialog-title">
+      <h2 id="collection-dialog-title">新建收藏夹</h2>
+      <form id="collection-form">
+        <label for="collection-name">名称</label>
+        <input id="collection-name" required maxlength="40" autocomplete="off">
+        <p id="collection-name-status" class="message" role="status" tabindex="-1"></p>
+        <div class="library-actions"><button id="close-collection" type="button">取消</button><button id="save-collection" type="submit">保存</button></div>
+      </form>
+    </dialog>
+    <dialog id="move-collection-dialog" class="library-dialog" aria-labelledby="move-collection-title">
+      <h2 id="move-collection-title">移动收藏</h2>
+      <form id="move-collection-form">
+        <label for="collection-destination">目标收藏夹</label>
+        <select id="collection-destination"></select>
+        <p id="move-collection-status" class="message" role="status" tabindex="-1"></p>
+        <div class="library-actions"><button id="close-move-collection" type="button">取消</button><button id="move-collection-submit" type="submit">移动</button></div>
+      </form>
     </dialog>
     <dialog
       id="delete-dialog"

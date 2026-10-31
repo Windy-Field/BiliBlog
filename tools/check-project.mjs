@@ -10,6 +10,8 @@ const SOURCE_FOLDERS = ["scripts", "styles", "tools", "assets", "screenshots"];
 const files = [];
 const problems = [];
 const references = new Set();
+const moduleExports = [];
+const moduleImports = new Set();
 
 // 收集自维护文件，不进入依赖、构建结果和本地课程资料目录
 function collect(folder) {
@@ -77,10 +79,35 @@ function checkTextReferences(file) {
 
 // 检查模块依赖和未使用导入，导入属性名不算实际使用
 function checkModule(file) {
-    const source = fs.readFileSync(path.join(PROJECT_ROOT, file), "utf8");
+    const absolute = path.join(PROJECT_ROOT, file);
+    const source = fs.readFileSync(absolute, "utf8");
     const program = parseAst(source);
     const imported = [];
     const reads = new Set();
+    // 记录模块对外接口，只有其他模块实际导入的名称才需要保留导出
+    for (const statement of program.body) {
+        if (statement.type === "ExportNamedDeclaration" && statement.declaration) {
+            const declaration = statement.declaration;
+            if (declaration.id) {
+                moduleExports.push({ file: absolute, name: declaration.id.name });
+            }
+            if (declaration.type === "VariableDeclaration") {
+                for (const variable of declaration.declarations) {
+                    moduleExports.push({ file: absolute, name: variable.id.name });
+                }
+            }
+        }
+        if (statement.type === "ImportDeclaration" && statement.source.value.startsWith(".")) {
+            const target = resolveReference(file, statement.source.value);
+            for (const specifier of statement.specifiers) {
+                if (specifier.type === "ImportNamespaceSpecifier") {
+                    moduleImports.add(target + "|*");
+                } else if (specifier.type === "ImportSpecifier") {
+                    moduleImports.add(target + "|" + specifier.imported.name);
+                }
+            }
+        }
+    }
     // 递归读取节点，区分导入声明、属性名和实际使用
     function inspect(node, parent, field) {
         if (!node || typeof node !== "object") {
@@ -129,6 +156,18 @@ function checkModule(file) {
     }
 }
 
+// 仅供模块内部使用的函数和常量不应继续暴露为公共接口
+function checkUnusedExports() {
+    for (const exported of moduleExports) {
+        const namedImport = exported.file + "|" + exported.name;
+        const namespaceImport = exported.file + "|*";
+        if (!moduleImports.has(namedImport) && !moduleImports.has(namespaceImport)) {
+            const file = path.relative(PROJECT_ROOT, exported.file);
+            problems.push(file + " 包含没有调用方的导出：" + exported.name);
+        }
+    }
+}
+
 // 接口限制与 OpenAPI 一致，避免只改了常量却突破后端约束
 function checkApiLimits() {
     const spec = JSON.parse(fs.readFileSync(path.join(PROJECT_ROOT, "openapi.json"), "utf8"));
@@ -141,7 +180,8 @@ function checkApiLimits() {
         [config.MAX_COMMENT_LENGTH, schemas.CommentInput.properties.body.maxLength],
         [config.MAX_PROFILE_LINKS, schemas.HomepageInput.properties.links.maxItems],
         [config.MAX_LINK_LABEL_LENGTH, schemas.HomepageInput.properties.links.items.properties.label.maxLength],
-        [config.MAX_LINK_URL_LENGTH, schemas.HomepageInput.properties.links.items.properties.url.maxLength]
+        [config.MAX_LINK_URL_LENGTH, schemas.HomepageInput.properties.links.items.properties.url.maxLength],
+        [config.MAX_COLLECTION_NAME_LENGTH, schemas.CollectionInput.properties.name.maxLength]
     ];
     for (const limit of limits) {
         if (limit[0] !== limit[1]) {
@@ -150,7 +190,8 @@ function checkApiLimits() {
     }
     const htmlLimits = [
         ["publish.html", "article-body", config.MAX_BODY_LENGTH],
-        ["publish.html", "tags-text", config.MAX_TAG_LENGTH]
+        ["publish.html", "tags-text", config.MAX_TAG_LENGTH],
+        ["index.html", "collection-name", config.MAX_COLLECTION_NAME_LENGTH]
     ];
     for (const limit of htmlLimits) {
         const source = fs.readFileSync(path.join(PROJECT_ROOT, limit[0]), "utf8");
@@ -201,6 +242,7 @@ function main() {
             problems.push("文件没有静态引用，请检查是否废弃：" + file);
         }
     }
+    checkUnusedExports();
     checkApiLimits();
     for (const problem of problems) {
         console.error(problem);
@@ -209,7 +251,7 @@ function main() {
         process.exitCode = 1;
         return;
     }
-    console.log("项目检查通过：命名、模块引用、样式语法、资源和接口限制");
+    console.log("项目检查通过：命名、模块引用、导出使用、样式语法、资源和接口限制");
 }
 
 main();

@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>草稿箱 - 小B书</title>
+    <link rel="stylesheet" href="/styles/common.css">
+    <link rel="stylesheet" href="/styles/publish.css">
+    <link rel="stylesheet" href="/styles/drafts.css">
+    <link rel="stylesheet" href="/styles/feedback.css">
+    <link rel="stylesheet" href="/styles/notifications.css">
+    <script type="module" src="/scripts/notifications.js"></script>
+    <script type="module" src="/scripts/creator-account.js"></script>
+    <script type="module" src="/scripts/drafts.js"></script>
+</head>
+<body class="publish-page drafts-page">
+    <a class="drafts-skip" href="#content">跳到草稿列表</a>
+    <header class="editor-header">
+        <div class="editor-identity"><a class="editor-brand" href="/index.html">小B书</a><span class="editor-divider" aria-hidden="true"></span><span>创作中心</span></div>
+        <nav aria-label="创作导航">
+            <a href="/index.html"><span data-icon="home"></span>返回首页</a>
+            <button class="notification-bell" data-notifications type="button" aria-label="消息通知" title="消息通知" aria-haspopup="dialog"><span data-icon="bell"></span><span class="notification-badge" hidden></span></button>
+        </nav>
+    </header>
+    <aside class="creator-sidebar" aria-label="创作中心导航">
+        <a class="creator-publish" href="/publish.html"><span data-icon="write"></span>发布文章</a>
+        <nav>
+            <a href="/drafts.html" aria-current="page"><span data-icon="article"></span>草稿箱</a>
+            <a href="/index.html?feed=mine"><span data-icon="article"></span>我的文章</a>
+            <a href="/index.html?feed=favorites"><span data-icon="bookmark"></span>我的收藏</a>
+            <a href="/index.html?feed=likes"><span data-icon="heart"></span>点赞历史</a>
+            <a href="/index.html"><span data-icon="discover"></span>发现文章</a>
+        </nav>
+        <a class="creator-home" href="/index.html">小B书<span>biliblog</span></a>
+    </aside>
+    <div class="creator-workspace">
+        <nav class="creator-tabs" aria-label="写作页面"><a href="/publish.html">图文发布</a><a href="/drafts.html" aria-current="page">草稿箱</a></nav>
+        <main id="content" class="drafts-main">
+            <div class="editor-heading"><div class="drafts-title"><h1>草稿箱</h1><span id="draft-total"></span></div><a class="draft-new" href="/publish.html"><span data-icon="write"></span>新建文章</a></div>
+            <div class="drafts-toolbar">
+                <form id="draft-search" role="search">
+                    <label class="visually-hidden" for="draft-query">搜索草稿</label>
+                    <input id="draft-query" name="q" type="search" maxlength="100" placeholder="搜索草稿标题或正文" autocomplete="off">
+                    <button type="submit" aria-label="搜索草稿" title="搜索草稿"><span data-icon="search"></span></button>
+                </form>
+                <span id="draft-owner"></span>
+                <button id="draft-refresh" type="button"><span data-icon="refresh"></span>刷新</button>
+            </div>
+            <p id="draft-status" class="message" role="status" tabindex="-1"></p>
+            <a id="draft-login" href="/login.html" hidden>登录后查看草稿</a>
+            <div id="draft-list" class="draft-list" aria-busy="true"></div>
+            <nav id="draft-pagination" class="draft-pagination" aria-label="草稿分页" hidden>
+                <a id="draft-previous" aria-label="上一页草稿" title="上一页"><span data-icon="previous"></span></a>
+                <span id="draft-page"></span>
+                <a id="draft-next" aria-label="下一页草稿" title="下一页"><span data-icon="next"></span></a>
+            </nav>
+        </main>
+        <footer class="creator-footer">小B书 · biliblog<span class="footer-copy">© 2026 Octorange</span></footer>
+    </div>
+</body>
+</html>

@@ -6,9 +6,11 @@
     <title>发布文章 - 小B书</title>
     <link rel="stylesheet" href="/styles/common.css">
     <link rel="stylesheet" href="/styles/publish.css">
+    <link rel="stylesheet" href="/styles/editor.css">
     <link rel="stylesheet" href="/styles/feedback.css">
     <link rel="stylesheet" href="/styles/notifications.css">
     <script type="module" src="/scripts/notifications.js"></script>
+    <script type="module" src="/scripts/creator-account.js"></script>
     <script type="module" src="/scripts/publish.js"></script>
 </head>
 <body class="publish-page">
@@ -22,28 +24,48 @@
     <aside class="creator-sidebar" aria-label="创作中心导航">
         <a class="creator-publish" href="/publish.html" aria-current="page"><span data-icon="write"></span>发布文章</a>
         <nav>
+            <a href="/drafts.html"><span data-icon="article"></span>草稿箱</a>
             <a href="/index.html?feed=mine"><span data-icon="article"></span>我的文章</a>
             <a href="/index.html?feed=favorites"><span data-icon="bookmark"></span>我的收藏</a>
+            <a href="/index.html?feed=likes"><span data-icon="heart"></span>点赞历史</a>
             <a href="/index.html"><span data-icon="discover"></span>发现文章</a>
         </nav>
         <a class="creator-home" href="/index.html">小B书<span>biliblog</span></a>
     </aside>
     <div class="creator-workspace">
-        <div class="creator-tabs"><a href="/publish.html" aria-current="page">图文发布</a></div>
+        <div class="creator-tabs"><a href="/publish.html" aria-current="page">图文发布</a><a href="/drafts.html">草稿箱</a></div>
     <main class="editor-main">
-        <div class="editor-heading"><h1>发布文章</h1><span id="author-name"></span></div>
-        <p id="publish-message" class="message" role="status" tabindex="-1">正在确认登录状态</p>
+        <div class="editor-heading"><h1 id="editor-title">发布文章</h1><span id="author-name"></span></div>
+        <div class="writing-status"><span id="article-state">新文章</span><span id="save-state" role="status" aria-live="polite">尚未保存</span><label><input id="autosave-enabled" type="checkbox" checked>自动保存草稿</label></div>
+        <p id="publish-message" class="message" role="status" tabindex="-1"></p>
         <div class="login-actions" id="login-actions" hidden>
             <a href="/login.html" target="_blank" rel="noopener">去登录</a>
             <button id="check-login" type="button">重新确认登录</button>
         </div>
-        <form id="publish-form">
+        <section id="conflict-panel" class="conflict-panel" aria-labelledby="conflict-title" hidden>
+            <h2 id="conflict-title">文章版本已更新</h2>
+            <p id="conflict-message" role="status"></p>
+            <div class="conflict-columns">
+                <section><h3>本地内容</h3><pre id="conflict-local"></pre></section>
+                <section><h3>服务器内容</h3><pre id="conflict-server"></pre></section>
+            </div>
+            <label class="merge-confirm"><input id="merge-reviewed" type="checkbox">我已对比标题、正文、话题、图片和发布状态</label>
+            <div class="conflict-actions">
+                <button id="reload-conflict" type="button">重新读取服务器内容</button>
+                <button id="use-server" type="button">采用服务器内容</button>
+                <button id="keep-local" type="button">保留本地内容，继续手动保存</button>
+            </div>
+        </section>
+        <form id="publish-form" novalidate>
             <fieldset id="editor-fields" disabled>
                 <legend class="visually-hidden">文章内容</legend>
                 <label for="article-title">标题</label>
                 <input id="article-title" name="title" required maxlength="100" placeholder="给文章起个名字">
-                <label for="article-body">正文</label>
-                <textarea id="article-body" name="body" required maxlength="12000" rows="10" placeholder="记录今天的学习和生活"></textarea>
+                <div class="body-heading"><label for="article-body">正文</label><div id="preview-modes" class="preview-modes" role="group" aria-label="正文显示方式"><button type="button" data-mode="edit" aria-pressed="false"><span data-icon="write"></span>编辑</button><button type="button" data-mode="preview" aria-pressed="false"><span data-icon="preview"></span>预览</button><button type="button" data-mode="split" aria-pressed="true"><span data-icon="split"></span>分栏</button></div></div>
+                <div id="body-workspace" class="body-workspace" data-mode="split">
+                    <textarea id="article-body" name="body" required maxlength="12000" rows="10" placeholder="记录今天的学习和生活"></textarea>
+                    <section id="markdown-preview" class="markdown-preview" aria-label="Markdown 预览"></section>
+                </div>
                 <div class="field-caption"><span id="body-count">0 / 12000</span></div>
                 <label>话题 <span class="optional">选填</span></label>
                 <div id="tags-field" class="tags-field" role="group" aria-label="话题标签">
@@ -61,13 +83,15 @@
                 <p class="field-hint">JPEG、PNG 或 WebP，每张不超过 5 MiB，上传图片为公开可见</p>
                 <p id="upload-status" class="message" role="status" tabindex="-1"></p>
                 <div id="image-previews" class="image-previews"></div>
-                <div class="editor-actions"><button id="publish-button" class="publish-button" type="submit"><span data-icon="send"></span>发布文章</button></div>
+                <div class="editor-actions"><button id="save-draft" type="button"><span data-icon="save"></span>保存草稿</button><button id="publish-button" class="publish-button" type="submit"><span data-icon="send"></span>发布文章</button></div>
             </fieldset>
         </form>
         <section id="publish-uncertain" class="uncertain-panel" hidden aria-label="核对发布结果">
-            <p>发布结果尚未确认，请先核对我的文章，避免重复发布</p>
+            <p>保存结果尚未确认，已暂停自动保存和提交，本地输入继续保留</p>
+            <button id="check-save-result" type="button">核对服务器结果</button>
+            <a href="/drafts.html" target="_blank" rel="noopener">查看草稿箱</a>
             <a href="/index.html?feed=mine" target="_blank" rel="noopener">查看我的文章</a>
-            <button id="retry-publish" type="button">确认未发布，允许重新提交</button>
+            <button id="retry-publish" type="button" hidden>已核对未创建，允许重新保存</button>
         </section>
     </main>
     <footer class="creator-footer">小B书 · biliblog<span class="footer-copy">© 2026 Octorange</span></footer>

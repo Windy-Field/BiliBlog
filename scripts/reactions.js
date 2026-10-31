@@ -9,6 +9,7 @@ const loginLink = document.getElementById("reaction-login");
 let currentNote = null;
 let busy = false;
 let busyKind = "";
+let articleToken = null;
 
 // 用后端返回的状态和数量更新按钮
 // 使用服务器结果能让重复设置保持一致，避免前端累加出错误计数
@@ -36,6 +37,11 @@ function renderReactions() {
 
 // 详情加载后接收最新文章，关闭或切换文章时传 null，防止迟到的响应改错文章
 export function setReactionArticle(note) {
+    const session = readSession();
+    articleToken = null;
+    if (session) {
+        articleToken = session.token;
+    }
     currentNote = note;
     busy = false;
     busyKind = "";
@@ -55,6 +61,10 @@ async function changeReaction(kind) {
         loginLink.hidden = false;
         return;
     }
+    if (session.token !== articleToken) {
+        showMessage(message, "登录账号已变化，请重新读取文章后再操作", true);
+        return;
+    }
     const note = currentNote;
     let active = !note.liked;
     if (kind === "favorite") {
@@ -68,7 +78,8 @@ async function changeReaction(kind) {
         const path = "/notes/" + encodeURIComponent(note.id) + "/" + kind;
         const result = await requestApi(path, "POST", { active: active }, session.token);
         // 等待时用户可能已经打开另一篇文章，旧结果不能改动新文章的按钮
-        if (currentNote !== note) {
+        const activeSession = readSession();
+        if (currentNote !== note || !activeSession || activeSession.token !== session.token) {
             return;
         }
         if (kind === "like") {
@@ -78,11 +89,15 @@ async function changeReaction(kind) {
         } else {
             note.favorited = result.active;
             note.favoriteCount = result.count;
+            if (!result.active) {
+                note.favoriteCollectionId = null;
+            }
         }
         notifyReactionChange(note);
         // 按钮已显示最新状态，减少连续互动时反复弹出的提示
     } catch (error) {
-        if (currentNote !== note) {
+        const sessionNow = readSession();
+        if (currentNote !== note || !sessionNow || sessionNow.token !== session.token) {
             return;
         }
         if (error.status === 401) {
@@ -92,13 +107,15 @@ async function changeReaction(kind) {
         if (error.uncertain) {
             try {
                 const latest = await requestApi("/notes/" + encodeURIComponent(note.id), "GET", null, session.token);
-                if (currentNote !== note) {
+                const activeSession = readSession();
+                if (currentNote !== note || !activeSession || activeSession.token !== session.token) {
                     return;
                 }
                 note.liked = latest.liked;
                 note.favorited = latest.favorited;
                 note.likeCount = latest.likeCount;
                 note.favoriteCount = latest.favoriteCount;
+                note.favoriteCollectionId = latest.favoriteCollectionId;
                 notifyReactionChange(note);
                 // 读取后端最新状态后更新按钮
                 return;

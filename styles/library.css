@@ -1,0 +1,76 @@
+.collection-tools {
+    padding: 16px 0;
+    margin-bottom: 24px;
+    border-bottom: 1px solid var(--color-border);
+}
+.collection-toolbar,
+.library-actions {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+.collection-toolbar label { margin: 0; font-size: 14px; }
+.collection-toolbar select {
+    width: 220px;
+    height: var(--select-height);
+    white-space: nowrap;
+    overflow: hidden;
+}
+.home-page .collection-toolbar button,
+.home-page .collection-button,
+.home-page .pin-button,
+.library-dialog button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-height: 40px;
+    margin: 0;
+    width: auto;
+    padding: 8px 12px;
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    color: var(--color-text);
+    background: var(--color-page);
+    font: inherit;
+    font-size: 13px;
+}
+.home-page .pin-button[aria-pressed="true"] {
+    background: var(--gradient-selected-soft);
+    border-color: var(--color-brand);
+}
+.pin-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin: 4px 0;
+    color: var(--color-link);
+    font-size: 12px;
+    line-height: 20px;
+}
+.pin-badge svg { width: 14px; height: 14px; }
+.home-page .library-dialog {
+    width: calc(100% - 32px);
+    max-width: 480px;
+    max-height: calc(100dvh - 32px);
+    padding: 24px;
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    background: var(--color-page);
+    color: var(--color-text);
+    box-shadow: var(--shadow-menu);
+    overflow: auto;
+}
+.library-dialog::backdrop { background: var(--color-overlay); }
+.library-dialog h2 { margin: 0 0 20px; font-size: 20px; line-height: 28px; overflow-wrap: anywhere; }
+.library-dialog input,
+.library-dialog select { width: 100%; }
+.library-actions { justify-content: flex-end; margin-top: 24px; }
+.detail-collection:empty { display: none; }
+.detail-collection { margin-bottom: 16px; }
+@media (max-width: 767px) {
+    /* 标签和筛选框独占一行，选中文字变化时不挤动下方操作按钮 */
+    .collection-toolbar label { flex: 0 0 56px; }
+    .collection-toolbar select { flex: 1 0 calc(100% - 64px); width: 0; }
+}
