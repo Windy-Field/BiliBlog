@@ -105,12 +105,6 @@
     background: var(--gradient-brand-soft);
     color: var(--color-brand-active);
 }
-.creator-sidebar nav a[aria-current="page"] {
-    background: var(--gradient-selected-soft);
-    color: var(--color-brand-active);
-    font-weight: 500;
-    box-shadow: inset 3px 0 0 var(--color-brand);
-}
 .creator-home {
     display: flex;
     flex-direction: column;
@@ -298,6 +292,10 @@
     flex-wrap: wrap;
     gap: 6px;
 }
+/* 没有已选话题时移除空容器，避免多出一段左侧间距 */
+.tags-chips:empty {
+    display: none;
+}
 .tag-chip {
     display: inline-flex;
     align-items: center;
@@ -372,9 +370,7 @@
     opacity: 0;
     clip-path: inset(50%);
 }
-.image-tools:has(.file-input:focus-visible) .image-select,
-.avatar-editor:has(.file-input:focus-visible) .image-select,
-.cover-editor:has(.file-input:focus-visible) .image-select {
+.image-tools:has(.file-input:focus-visible) .image-select {
     outline: 2px solid var(--color-focus);
     outline-offset: 2px;
 }

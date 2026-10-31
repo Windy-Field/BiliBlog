@@ -1,0 +1,226 @@
+@import url("./tokens.css");
+
+body .notification-bell {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 44px;
+    height: 44px;
+    min-height: 44px;
+    padding: 0;
+    margin: 0;
+    border: 0;
+    border-radius: var(--radius-control);
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+}
+body .notification-bell:hover {
+    background: rgba(148, 153, 160, 0.18);
+}
+.notification-badge {
+    position: absolute;
+    top: 0;
+    right: -4px;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 4px;
+    border-radius: 9px;
+    background: var(--color-error);
+    color: var(--color-on-dark);
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 18px;
+    text-align: center;
+}
+body .notification-dialog {
+    width: calc(100% - 32px);
+    max-width: 680px;
+    max-height: calc(100dvh - 32px);
+    padding: 24px;
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    background: var(--color-page);
+    color: var(--color-text);
+    font-family: var(--font-body);
+    font-size: 14px;
+    line-height: 22px;
+    box-shadow: var(--shadow-menu);
+    overflow: auto;
+}
+.notification-dialog::backdrop {
+    background: var(--color-overlay);
+}
+.notification-header,
+.notification-tools,
+.notification-meta,
+.notification-actions,
+.notification-pagination {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+.notification-header {
+    justify-content: space-between;
+    margin-bottom: 20px;
+}
+.notification-header h2 {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 600;
+    line-height: 28px;
+}
+.notification-tools {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+.notification-filters {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+}
+.notification-toolbar-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+}
+.notification-filter {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+    margin: 0;
+    font-size: 13px;
+    white-space: nowrap;
+    color: var(--color-text-secondary);
+}
+body .notification-filter select {
+    min-height: 44px;
+    width: 100%;
+    min-width: 0;
+    padding: 8px;
+    border: 1px solid var(--color-input-border);
+    border-radius: 6px;
+    background: var(--color-page);
+    color: var(--color-text);
+    font: inherit;
+}
+body .notification-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 44px;
+    margin: 0;
+    padding: 8px 12px;
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    background: var(--color-page);
+    color: var(--color-text);
+    font: inherit;
+    cursor: pointer;
+}
+body .notification-button:not(:disabled):hover {
+    background: var(--color-surface);
+}
+body .notification-icon {
+    width: 44px;
+    padding: 0;
+}
+.notification-status:empty {
+    display: none;
+}
+.notification-login {
+    display: inline-block;
+    margin: 12px 0;
+    color: var(--color-link) !important;
+}
+.notification-item {
+    padding: 16px 0;
+    border-bottom: 1px solid var(--color-border);
+    overflow-wrap: anywhere;
+}
+.notification-item[data-unread="true"] {
+    border-left: 3px solid var(--color-brand);
+    padding-left: 12px;
+}
+.notification-meta {
+    flex-wrap: wrap;
+    gap: 4px 12px;
+    color: var(--color-text-secondary);
+    font-size: 13px;
+}
+.notification-type {
+    color: var(--color-link);
+    font-weight: 600;
+}
+.notification-text {
+    margin: 8px 0 12px;
+    line-height: 24px;
+}
+.notification-actions {
+    flex-wrap: wrap;
+}
+.notification-unavailable {
+    color: var(--color-text-secondary);
+    font-size: 13px;
+}
+.notification-pagination {
+    justify-content: center;
+    margin-top: 20px;
+}
+.notification-pagination button {
+    width: 44px;
+    padding: 0;
+}
+.notification-dialog :focus-visible,
+.notification-bell:focus-visible {
+    outline: 2px solid var(--color-focus);
+    outline-offset: 2px;
+}
+.notification-comment-context {
+    margin: 16px 0;
+    padding: 16px;
+    border-left: 3px solid var(--color-accent);
+    background: var(--color-selected);
+    scroll-margin-top: 16px;
+}
+.notification-comment-context > h3 {
+    margin: 0;
+    font-size: 16px;
+    line-height: 24px;
+}
+.notification-comment-target {
+    border-bottom-color: var(--color-accent);
+}
+@media (max-width: 767px) {
+    body .notification-dialog { padding: 16px; }
+    .notification-filters {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 8px;
+    }
+}
+@media (max-width: 479px) {
+    /* 手机顶栏为铃铛留出固定空间，发布入口保留原有图标和可访问名称 */
+    .home-page .publish-link {
+        width: 44px;
+        min-width: 44px;
+        padding: 0;
+        gap: 0;
+        font-size: 0;
+    }
+    .editor-header { padding-left: 16px; padding-right: 16px; }
+    .editor-header .editor-identity {
+        gap: 8px;
+        min-width: 0;
+    }
+    .editor-header .editor-divider,
+    .editor-header .editor-identity > span:last-child {
+        display: none;
+    }
+    .editor-header nav { gap: 8px; }
+}

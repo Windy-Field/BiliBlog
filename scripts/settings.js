@@ -1,8 +1,12 @@
 import { requestApi } from "./api.js";
 import { readSession, clearSession } from "./auth.js";
 import { showMessage, showToast, setBusy } from "./common.js";
-import { makeIcon, fillIcons } from "./icons.js";
+import { fillIcons } from "./icons.js";
+import { DEFAULT_COVER_URL, MAX_PROFILE_LINKS, MAX_LINK_LABEL_LENGTH, MAX_LINK_URL_LENGTH } from "./config.js";
+import { showLocalImage, validateImage } from "./media.js";
 
+const SAVE_COUNTDOWN_MS = 1000;
+const SAVE_REDIRECT_MS = 2000;
 const form = document.getElementById("settings-form");
 const fields = document.getElementById("settings-fields");
 const saveButton = document.getElementById("save-button");
@@ -44,12 +48,11 @@ async function loadSettings(token) {
 
 // 把资料填入各表单字段
 function populateForm(user) {
+    const snapshot = buildSnapshot(user);
     document.getElementById("display-name").value = user.displayName || "";
     document.getElementById("bio").value = user.bio || "";
-    document.getElementById("headline").value =
-        user.homepage ? user.homepage.headline || "" : "";
-    document.getElementById("about-md").value =
-        user.homepage ? user.homepage.aboutMarkdown || "" : "";
+    document.getElementById("headline").value = snapshot.headline;
+    document.getElementById("about-md").value = snapshot.aboutMarkdown;
     if (user.avatarUrl) {
         setImagePreview("avatar-preview", user.avatarUrl);
     } else {
@@ -59,45 +62,56 @@ function populateForm(user) {
     if (user.coverUrl) {
         setImagePreview("cover-preview", user.coverUrl);
         document.getElementById("remove-cover").hidden = false;
-        document.getElementById("refresh-cover-gradient").hidden = true;
     } else {
-        setImagePreview("cover-preview", "/assets/images/forest-banner.jpg");
-        document.getElementById("refresh-cover-gradient").hidden = true;
+        setImagePreview("cover-preview", DEFAULT_COVER_URL);
         document.getElementById("remove-cover").hidden = true;
     }
-    const links = user.homepage && user.homepage.links ? user.homepage.links : [];
+    const links = readHomepageLinks(user);
     renderLinkRows(links);
 }
 
 // 在预览容器里显示图片
 function setImagePreview(containerId, url) {
     const container = document.getElementById(containerId);
-    const img = document.createElement("img");
-    img.src = url;
-    img.alt = "";
-    container.replaceChildren(img);
+    const image = document.createElement("img");
+    image.src = url;
+    image.alt = "";
+    container.replaceChildren(image);
 }
 
 // 从当前用户数据构建一个快照，用于之后比对变更
 function buildSnapshot(user) {
+    let headline = "";
+    let aboutMarkdown = "";
+    if (user.homepage) {
+        headline = user.homepage.headline || "";
+        aboutMarkdown = user.homepage.aboutMarkdown || "";
+    }
+    const links = readHomepageLinks(user);
     return {
         displayName: user.displayName || "",
         bio: user.bio || "",
-        headline: user.homepage ? user.homepage.headline || "" : "",
-        aboutMarkdown: user.homepage ? user.homepage.aboutMarkdown || "" : "",
-        links: JSON.stringify(user.homepage && user.homepage.links ? user.homepage.links : []),
-        avatarId: user.avatarId || null,
-        coverId: user.coverId || null,
+        headline: headline,
+        aboutMarkdown: aboutMarkdown,
+        links: JSON.stringify(links),
     };
 }
 
+// 从用户资料读取个人链接，尚未设置主页时返回空列表
+function readHomepageLinks(user) {
+    if (user.homepage && user.homepage.links) {
+        return user.homepage.links;
+    }
+    return [];
+}
+
 // 上传单张图片，返回 { id, url }
-async function uploadImage(file, statusEl) {
+async function uploadImage(file, statusElement) {
     const formData = new FormData();
     formData.append("file", file);
     try {
         const result = await requestApi("/media", "POST", formData, sessionToken);
-        showMessage(statusEl, "", false);
+        showMessage(statusElement, "", false);
         return result;
     } catch (error) {
         showToast("上传失败：" + error.message, true);
@@ -111,18 +125,17 @@ async function handleAvatarChange() {
     if (!file) {
         return;
     }
-    const statusEl = document.getElementById("avatar-status");
-    const previewEl = document.getElementById("avatar-preview");
+    const statusElement = document.getElementById("avatar-status");
+    const previewElement = document.getElementById("avatar-preview");
     // 本地预览，让用户立刻看到选中效果
-    const previewUrl = URL.createObjectURL(file);
-    const img = document.createElement("img");
-    img.src = previewUrl;
-    img.alt = "";
-    img.onload = function () {
-        URL.revokeObjectURL(previewUrl);
-    };
-    previewEl.replaceChildren(img);
-    const result = await uploadImage(file, statusEl);
+    try {
+        validateImage(file);
+    } catch (error) {
+        showToast(error.message, true);
+        return;
+    }
+    showLocalImage(previewElement, file);
+    const result = await uploadImage(file, statusElement);
     if (result) {
         pendingAvatarId = result.id;
         showToast("头像已上传，保存后生效");
@@ -135,22 +148,20 @@ async function handleCoverChange() {
     if (!file) {
         return;
     }
-    const statusEl = document.getElementById("cover-status");
-    const previewEl = document.getElementById("cover-preview");
-    const previewUrl = URL.createObjectURL(file);
-    const img = document.createElement("img");
-    img.src = previewUrl;
-    img.alt = "";
-    img.onload = function () {
-        URL.revokeObjectURL(previewUrl);
-    };
-    previewEl.replaceChildren(img);
-    const result = await uploadImage(file, statusEl);
+    const statusElement = document.getElementById("cover-status");
+    const previewElement = document.getElementById("cover-preview");
+    try {
+        validateImage(file);
+    } catch (error) {
+        showToast(error.message, true);
+        return;
+    }
+    showLocalImage(previewElement, file);
+    const result = await uploadImage(file, statusElement);
     if (result) {
         pendingCoverId = result.id;
         pendingCoverDeleted = false;
         document.getElementById("remove-cover").hidden = false;
-        document.getElementById("refresh-cover-gradient").hidden = true;
         showToast("封面已上传，保存后生效");
     }
 }
@@ -159,33 +170,19 @@ async function handleCoverChange() {
 function handleRemoveCover() {
     pendingCoverId = null;
     pendingCoverDeleted = true;
-    setImagePreview("cover-preview", "/assets/images/forest-banner.jpg");
+    setImagePreview("cover-preview", DEFAULT_COVER_URL);
     document.getElementById("remove-cover").hidden = true;
-    document.getElementById("refresh-cover-gradient").hidden = true;
     document.getElementById("cover-input").value = "";
-}
-
-// 恢复默认封面（森林图）
-function handleRefreshGradient() {
-    if (pendingCoverId !== null) {
-        pendingCoverId = null;
-    }
-    pendingCoverDeleted = true;
-    const previewEl = document.getElementById("cover-preview");
-    const img = document.createElement("img");
-    img.src = "/assets/images/forest-banner.jpg";
-    img.alt = "";
-    previewEl.replaceChildren(img);
-    document.getElementById("refresh-cover-gradient").hidden = true;
-    document.getElementById("remove-cover").hidden = false;
 }
 
 // 渲染链接输入行列表
 function renderLinkRows(links) {
     const list = document.getElementById("links-list");
     list.replaceChildren();
-    for (let i = 0; i < links.length; i = i + 1) {
-        list.appendChild(makeLinkRow(links[i].label, links[i].url, i));
+    for (let index = 0; index < links.length; index = index + 1) {
+        const link = links[index];
+        const row = makeLinkRow(link.label, link.url, index);
+        list.appendChild(row);
     }
 }
 
@@ -193,50 +190,53 @@ function renderLinkRows(links) {
 function makeLinkRow(label, url, index) {
     const row = document.createElement("div");
     row.className = "link-row";
-    row.dataset.index = String(index);
     const labelInput = document.createElement("input");
     labelInput.className = "link-label";
     labelInput.type = "text";
     labelInput.placeholder = "链接名称";
-    labelInput.maxLength = 30;
+    labelInput.maxLength = MAX_LINK_LABEL_LENGTH;
     labelInput.value = label || "";
     labelInput.setAttribute("aria-label", "链接名称 " + (index + 1));
     const urlInput = document.createElement("input");
     urlInput.type = "url";
     urlInput.placeholder = "https://";
-    urlInput.maxLength = 500;
+    urlInput.maxLength = MAX_LINK_URL_LENGTH;
     urlInput.value = url || "";
     urlInput.setAttribute("aria-label", "链接地址 " + (index + 1));
-    const removeBtn = document.createElement("button");
-    removeBtn.type = "button";
-    removeBtn.className = "remove-link";
-    removeBtn.textContent = "×";
-    removeBtn.setAttribute("aria-label", "删除第 " + (index + 1) + " 条链接");
-    removeBtn.addEventListener("click", function removeLinkRow() {
+    const removeButton = document.createElement("button");
+    removeButton.type = "button";
+    removeButton.className = "remove-link";
+    removeButton.textContent = "×";
+    removeButton.setAttribute("aria-label", "删除第 " + (index + 1) + " 条链接");
+    // 删除链接后同步后续输入框的编号和可访问名称
+    removeButton.addEventListener("click", function removeLinkRow() {
         row.remove();
         reindexLinkRows();
     });
-    row.append(labelInput, urlInput, removeBtn);
+    row.append(labelInput, urlInput, removeButton);
     return row;
 }
 
 // 删除一行后重新编号
 function reindexLinkRows() {
-    const rows = document.getElementById("links-list").querySelectorAll(".link-row");
-    rows.forEach(function (row, i) {
-        row.dataset.index = String(i);
+    const list = document.getElementById("links-list");
+    const rows = list.querySelectorAll(".link-row");
+    for (let index = 0; index < rows.length; index = index + 1) {
+        const row = rows[index];
         const inputs = row.querySelectorAll("input");
-        inputs[0].setAttribute("aria-label", "链接名称 " + (i + 1));
-        inputs[1].setAttribute("aria-label", "链接地址 " + (i + 1));
-        row.querySelector(".remove-link").setAttribute("aria-label", "删除第 " + (i + 1) + " 条链接");
-    });
+        const number = index + 1;
+        inputs[0].setAttribute("aria-label", "链接名称 " + number);
+        inputs[1].setAttribute("aria-label", "链接地址 " + number);
+        const removeButton = row.querySelector(".remove-link");
+        removeButton.setAttribute("aria-label", "删除第 " + number + " 条链接");
+    }
 }
 
 // 添加一条空链接行
 function addLink() {
     const list = document.getElementById("links-list");
     const rows = list.querySelectorAll(".link-row");
-    if (rows.length >= 5) {
+    if (rows.length >= MAX_PROFILE_LINKS) {
         showToast("最多添加 5 条链接", true);
         return;
     }
@@ -246,14 +246,15 @@ function addLink() {
 
 // 从 DOM 收集链接行数据
 function collectLinks() {
-    const rows = document.getElementById("links-list").querySelectorAll(".link-row");
+    const list = document.getElementById("links-list");
+    const rows = list.querySelectorAll(".link-row");
     const links = [];
     for (const row of rows) {
         const inputs = row.querySelectorAll("input");
         const label = inputs[0].value.trim();
         const url = inputs[1].value.trim();
         if (label && url) {
-            links.push({ label, url });
+            links.push({ label: label, url: url });
         }
     }
     return links;
@@ -262,10 +263,11 @@ function collectLinks() {
 // 保存资料，只提交有变更的字段
 async function saveSettings(event) {
     event.preventDefault();
-    const displayName = document.getElementById("display-name").value.trim();
+    const displayNameInput = document.getElementById("display-name");
+    const displayName = displayNameInput.value.trim();
     if (!displayName) {
         showToast("昵称不能为空", true);
-        document.getElementById("display-name").focus();
+        displayNameInput.focus();
         return;
     }
     const bio = document.getElementById("bio").value;
@@ -273,6 +275,7 @@ async function saveSettings(event) {
     const aboutMarkdown = document.getElementById("about-md").value;
     const links = collectLinks();
     const payload = {};
+    // PATCH 表示只修改传入的字段，省略未改内容，避免覆盖服务器保存的其他资料
     if (displayName !== initialSnapshot.displayName) {
         payload.displayName = displayName;
     }
@@ -285,6 +288,7 @@ async function saveSettings(event) {
     if (pendingCoverId !== null) {
         payload.coverId = pendingCoverId;
     } else if (pendingCoverDeleted) {
+        // 不传 coverId 表示不修改封面，明确传 null 才表示删除，二者含义不同
         payload.coverId = null;
     }
     const homepagePayload = {};
@@ -295,6 +299,7 @@ async function saveSettings(event) {
         homepagePayload.aboutMarkdown = aboutMarkdown;
     }
     if (JSON.stringify(links) !== initialSnapshot.links) {
+        // 链接是数组，不能直接比较两个数组是否相等；转成文本比较内容和顺序
         homepagePayload.links = links;
     }
     if (Object.keys(homepagePayload).length > 0) {
@@ -317,12 +322,14 @@ async function saveSettings(event) {
         // 倒计时 toast 提示后跳转到个人主页
         const username = encodeURIComponent(updated.username || "");
         showToast("资料已保存，2 秒后跳转到主页…");
-        window.setTimeout(function () {
+        // 最后一秒更新提示，保持现有的保存后跳转反馈
+        window.setTimeout(function showLastSaveSecond() {
             showToast("资料已保存，1 秒后跳转到主页…");
-        }, 1000);
-        window.setTimeout(function () {
+        }, SAVE_COUNTDOWN_MS);
+        // 提示结束后打开本人的公开主页
+        window.setTimeout(function openSavedProfile() {
             window.location.href = "/profile.html?u=" + username;
-        }, 2000);
+        }, SAVE_REDIRECT_MS);
     } catch (error) {
         if (error.status === 401) {
             clearSession();
@@ -337,6 +344,7 @@ async function saveSettings(event) {
     }
 }
 
+// 检查身份并绑定资料表单事件，页面加载时执行一次
 function init() {
     const session = checkAuth();
     if (!session) {
@@ -347,7 +355,6 @@ function init() {
     document.getElementById("avatar-input").addEventListener("change", handleAvatarChange);
     document.getElementById("cover-input").addEventListener("change", handleCoverChange);
     document.getElementById("remove-cover").addEventListener("click", handleRemoveCover);
-    document.getElementById("refresh-cover-gradient").addEventListener("click", handleRefreshGradient);
     document.getElementById("add-link").addEventListener("click", addLink);
     form.addEventListener("submit", saveSettings);
     loadSettings(sessionToken);

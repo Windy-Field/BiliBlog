@@ -1,5 +1,45 @@
 @import url("./tokens.css");
 
+::view-transition-old(root),
+::view-transition-new(root) {
+    animation-duration: var(--duration-fast);
+    animation-timing-function: var(--ease-out);
+}
+
+/* 直接访问或刷新时，正文轻微淡入，导航和阅读窗口不跟着移动 */
+main {
+    animation: page-enter var(--duration-panel) var(--ease-out);
+}
+
+/* 浏览器已有前后画面淡化时，不再叠加正文入场动画 */
+html:active-view-transition main {
+    animation: none;
+}
+
+.article-grid {
+    opacity: 1;
+    transition: opacity var(--duration-fast) var(--ease-out);
+}
+
+.article-grid[aria-busy="true"] {
+    opacity: 0.55;
+}
+
+@keyframes page-enter {
+    from {
+        opacity: 0.75;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+/* 展开区域只在过渡期间固定高度，结束后恢复内容本身的高度 */
+.is-resizing {
+    overflow: clip;
+    transition: height var(--duration-panel) var(--ease-out);
+}
+
 /* 各页面共用等待和按压反馈，按钮及链接保留原有尺寸 */
 body button,
 body .primary-button,
@@ -70,12 +110,6 @@ body .message[data-error="true"]:not(:empty) {
     border-color: var(--color-error);
     background: var(--color-error-soft);
     color: var(--color-error);
-}
-
-body .message[data-tone="success"]:not(:empty) {
-    border-color: var(--color-success);
-    background: var(--color-success-soft);
-    color: var(--color-success);
 }
 
 /* 删除等操作的结果在浮层中短暂显示，页面布局保持原位 */
@@ -227,6 +261,23 @@ body .confirmation-actions .confirm-danger {
 }
 
 @supports selector(details::details-content) {
+    /* 原生 details 保留键盘操作，内容高度与透明度同步开合 */
+    .reader-metadata {
+        interpolate-size: allow-keywords;
+    }
+    .reader-metadata::details-content {
+        height: 0;
+        opacity: 0;
+        overflow: clip;
+        transition:
+            height var(--duration-panel) var(--ease-out),
+            opacity var(--duration-panel) var(--ease-out),
+            content-visibility var(--duration-panel) allow-discrete;
+    }
+    .reader-metadata[open]::details-content {
+        height: auto;
+        opacity: 1;
+    }
     .account-menu::details-content {
         opacity: 0;
         transition:
@@ -257,6 +308,20 @@ body .confirmation-actions .confirm-danger {
 
 /* 减少动态效果时不再移动位置，等待状态由文字和静态图形表达 */
 @media (prefers-reduced-motion: reduce) {
+    ::view-transition-old(root),
+    ::view-transition-new(root) {
+        animation: none;
+    }
+    main {
+        animation: none;
+    }
+    .article-grid {
+        transition: none;
+    }
+    .is-resizing,
+    .reader-metadata::details-content {
+        transition: none;
+    }
     body button,
     body .primary-button,
     body .page-button,

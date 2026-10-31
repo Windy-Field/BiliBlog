@@ -1,4 +1,4 @@
-const SESSION_KEY = "sdu-blog-session";
+import { SESSION_KEY } from "./config.js";
 
 // 从 session 中保存 token 和过期时间，密码只用于提交登录请求
 // 本页脚本可以读取 localStorage，凭证在有效期内也需要妥善保护
@@ -38,7 +38,8 @@ export function readSession() {
         return null;
     }
 
-    // 用户可以修改本地存储，读取后要重新检查凭证格式和有效期
+    // 本地存储只能帮助页面记住登录，不能证明身份，用户也能自行修改其中的内容
+    // 这里先检查格式和有效期，真正的身份及操作权限仍由后端接口判断
     if (!savedSession || typeof savedSession.token !== "string" || !savedSession.token) {
         clearSession();
         return null;

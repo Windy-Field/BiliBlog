@@ -5,10 +5,13 @@
   "type": "module",
   "scripts": {
     "dev": "vite --host 127.0.0.1 --port 5173 --strictPort",
+    "check": "node tools/check-style.mjs && node tools/check-project.mjs",
     "build": "vite build",
     "preview": "vite preview --host 127.0.0.1 --port 5173 --strictPort"
   },
   "devDependencies": {
+    "postcss": "8.5.31",
+    "rolldown": "1.2.15",
     "vite": "8.3.5"
   },
   "dependencies": {

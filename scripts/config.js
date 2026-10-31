@@ -1,0 +1,24 @@
+// 与后端协议有关的共享参数，修改限制时需要同时核对 openapi.json 和 HTML 校验属性
+export const API_BASE_URL = "https://dev.muyufly.com/api/v1";
+export const REQUEST_TIMEOUT_MS = 15000;
+export const SESSION_KEY = "sdu-blog-session";
+export const LOCAL_UNREAD_PREFIX = "biliblog-notification-unread-";
+export const DEFAULT_COVER_URL = "/assets/images/forest-banner.jpg";
+export const MAX_PAGE = 10000;
+export const HOME_PAGE_SIZE = 20;
+export const PROFILE_PAGE_SIZE = 12;
+export const COMMENT_PAGE_SIZE = 10;
+export const NOTIFICATION_PAGE_SIZE = 10;
+export const NOTIFICATION_SCAN_SIZE = 50;
+export const MEDIA_PAGE_SIZE = 20;
+export const TAG_PAGE_SIZE = 20;
+export const MAX_TAGS = 5;
+export const MAX_TAG_LENGTH = 20;
+export const MAX_IMAGES = 9;
+export const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
+export const IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
+export const MAX_COMMENT_LENGTH = 1000;
+export const MAX_BODY_LENGTH = 12000;
+export const MAX_PROFILE_LINKS = 5;
+export const MAX_LINK_LABEL_LENGTH = 30;
+export const MAX_LINK_URL_LENGTH = 500;

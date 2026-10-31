@@ -2,16 +2,17 @@ import { requestApi } from "./api.js";
 import { readSession, clearSession } from "./auth.js";
 import { showMessage, showToast, setBusy, confirmAction } from "./common.js";
 import { makeIcon } from "./icons.js";
+import { COMMENT_PAGE_SIZE, MAX_COMMENT_LENGTH } from "./config.js";
 
+const pageSize = COMMENT_PAGE_SIZE;
 const section = document.getElementById("comments-section");
 const drafts = new Map();
-const pageSize = 10;
 let current = null;
 
 // 为 note 建立评论区，关闭时传 null，切换文章后忽略旧请求
 // 列表重建时更新 renderVersion，回复请求只写入对应版本的列表
 // 这样旧回复晚到时，也能保留新列表里的内容
-export function setCommentArticle(note) {
+export function setCommentArticle(note, targetCommentId) {
     current = null;
     section.replaceChildren();
     if (!note) {
@@ -23,6 +24,7 @@ export function setCommentArticle(note) {
         token = session.token;
     }
     const draftKey = note.id;
+    // 草稿以文章编号区分，暂时关掉阅读框不会丢字，也不会把另一篇的输入带过来
     if (!drafts.has(draftKey)) {
         drafts.set(draftKey, { text: "", parentId: null, target: "", uncertain: false, pending: false });
     }
@@ -39,6 +41,7 @@ export function setCommentArticle(note) {
         available: true,
         identifying: true
     };
+    state.targetCommentId = targetCommentId;
     current = state;
     buildSection(state);
     initializeComments(state);
@@ -65,11 +68,12 @@ function actionButton(text, handler) {
 function buildSection(state) {
     const heading = textElement("div", "comments-heading", "");
     state.heading = textElement("h3", "", "评论 " + state.note.commentCount);
+    // 重新建立评论区，保留当前文章的输入草稿
     const refresh = actionButton("刷新评论", function refreshComments() {
         if (state.busy || state.draft.pending) {
             return;
         }
-        setCommentArticle(state.note);
+        setCommentArticle(state.note, state.targetCommentId);
     });
     state.refresh = refresh;
     heading.append(state.heading, refresh);
@@ -77,6 +81,7 @@ function buildSection(state) {
     state.form.className = "comment-form";
     state.target = textElement("div", "reply-target", "");
     state.targetText = textElement("span", "", "");
+    // 取消回复目标，已经输入的文字继续保留
     const cancel = actionButton("取消回复", function cancelReply() {
         if (state.busy) {
             return;
@@ -90,10 +95,11 @@ function buildSection(state) {
     label.htmlFor = "comment-body";
     state.input = document.createElement("textarea");
     state.input.id = "comment-body";
-    state.input.maxLength = 1000;
+    state.input.maxLength = MAX_COMMENT_LENGTH;
     state.input.required = true;
     state.input.rows = 3;
     state.input.value = state.draft.text;
+    // 记录输入，切换或重建评论区后还能继续编辑
     state.input.addEventListener("input", function saveCommentInput() {
         state.draft.text = state.input.value;
         state.input.setCustomValidity("");
@@ -111,11 +117,13 @@ function buildSection(state) {
     state.login.href = "/login.html";
     state.login.target = "_blank";
     state.login.rel = "noopener";
+    // 用户核对未提交后，解除不确定状态的提交限制
     state.retryPost = actionButton("已核对未提交，允许重试", function allowCommentRetry() {
         state.draft.uncertain = false;
         updateComposer(state);
     });
     state.form.append(state.target, label, state.input, tools, state.feedback, state.login, state.retryPost);
+    // 接管提交事件，交给评论发送流程处理
     state.form.addEventListener("submit", function submitCommentForm(event) {
         event.preventDefault();
         sendComment(state);
@@ -123,10 +131,16 @@ function buildSection(state) {
     state.listStatus = textElement("p", "comment-muted", "");
     state.listStatus.setAttribute("role", "status");
     state.list = textElement("div", "comment-list", "");
+    // 主评论翻页只更新列表，不清空输入区
     state.pager = makePager(function changeCommentPage(page) {
         loadComments(state, page);
     });
     section.append(heading, state.form, state.listStatus, state.list, state.pager.element);
+    state.context = textElement("section", "notification-comment-context", "");
+    state.context.hidden = true;
+    state.context.setAttribute("aria-label", "消息对应的评论");
+    state.context.tabIndex = -1;
+    section.insertBefore(state.context, state.listStatus);
     updateComposer(state);
 }
 
@@ -151,6 +165,48 @@ async function initializeComments(state) {
         state.identifying = false;
         updateComposer(state);
         loadComments(state, 1);
+        if (state.targetCommentId) {
+            loadCommentContext(state);
+        }
+    }
+}
+
+// 从通知直接读取目标评论和所属主评论，避免翻遍所有评论页
+async function loadCommentContext(state) {
+    state.context.hidden = false;
+    state.context.textContent = "正在定位评论";
+    try {
+        const path = "/comments/" + encodeURIComponent(state.targetCommentId) + "/context";
+        const context = await requestApi(path, "GET", null, state.token);
+        if (current !== state) {
+            return;
+        }
+        if (context.comment.noteId !== state.note.id) {
+            throw new Error("这条评论属于其他文章，请返回消息列表重新打开");
+        }
+        state.context.replaceChildren(textElement("h3", "", "消息对应的评论"));
+        if (context.rootComment.id !== context.comment.id) {
+            state.context.appendChild(makeComment(state, context.rootComment, false));
+        }
+        const target = makeComment(state, context.comment, Boolean(context.comment.parentId));
+        target.classList.add("notification-comment-target");
+        state.context.appendChild(target);
+        state.context.scrollIntoView({ block: "center", behavior: "instant" });
+        state.context.focus({ preventScroll: true });
+    } catch (error) {
+        if (current !== state) {
+            return;
+        }
+        state.context.replaceChildren();
+        let message = error.message;
+        if (error.status === 404) {
+            message = "消息对应的评论已删除或暂时无法访问";
+        }
+        state.context.appendChild(textElement("p", "comment-muted", message));
+        // 定位失败后重新读取同一个目标评论
+        state.context.appendChild(actionButton("重新定位", function retryContext() {
+            loadCommentContext(state);
+        }));
     }
 }
 
@@ -158,7 +214,7 @@ async function initializeComments(state) {
 function updateComposer(state) {
     state.target.hidden = !state.draft.parentId;
     state.targetText.textContent = "回复 " + state.draft.target;
-    state.counter.textContent = state.draft.text.length + " / 1000";
+    state.counter.textContent = state.draft.text.length + " / " + MAX_COMMENT_LENGTH;
     const pending = state.busy || state.draft.pending;
     state.input.disabled = pending;
     state.refresh.disabled = pending;
@@ -183,14 +239,16 @@ function updateComposer(state) {
 // 创建独立分页控件，主评论和每条主评论的回复分别翻页
 // 两类列表使用不同接口，分别记录页码才能互不影响
 function makePager(onChange) {
-    const pager = { page: 1, count: 1 };
+    const pager = { page: 1 };
     pager.element = textElement("nav", "comment-pagination", "");
     pager.element.setAttribute("aria-label", "评论分页");
+    // 将上一页页码交给调用方处理
     pager.previous = actionButton("", function previousPage() {
         onChange(pager.page - 1);
     });
     pager.previous.appendChild(makeIcon("previous"));
     pager.previous.setAttribute("aria-label", "上一页评论");
+    // 将下一页页码交给调用方处理
     pager.next = actionButton("", function nextPage() {
         onChange(pager.page + 1);
     });
@@ -205,7 +263,6 @@ function makePager(onChange) {
 // 更新分页状态，读取期间禁用翻页以免请求交叉
 function updatePager(pager, page, count, loading) {
     pager.page = page;
-    pager.count = count;
     pager.label.textContent = page + " / " + count;
     pager.element.hidden = count <= 1;
     pager.previous.disabled = loading || page <= 1;
@@ -295,6 +352,7 @@ function makeComment(state, comment, isReply) {
     }
     const actions = textElement("div", "comment-actions", "");
     if (!isReply && !comment.deleted) {
+        // 选择主评论作为回复目标，并把焦点放到输入框
         actions.appendChild(actionButton("回复", function selectReply() {
             if (state.busy || state.draft.pending) {
                 return;
@@ -306,6 +364,7 @@ function makeComment(state, comment, isReply) {
         }));
     }
     if (!comment.deleted && state.username === comment.author.username) {
+        // 本人点击删除时，进入确认和删除流程
         const remove = actionButton("删除", function requestCommentDelete() {
             deleteComment(state, comment);
         });
@@ -329,17 +388,24 @@ function addReplyList(state, row, actions, comment) {
     };
     replyState.root.hidden = true;
     replyState.status.setAttribute("role", "status");
+    // 每个回复列表独立翻页，保留其他主评论的状态
     replyState.pager = makePager(function changeReplyPage(page) {
         loadReplies(state, comment.id, replyState, page);
     });
+    // 请求失败时重读当前回复页
     replyState.retry = actionButton("重试回复", function retryReplies() {
         loadReplies(state, comment.id, replyState, replyState.page);
     });
     replyState.retry.hidden = true;
-    replyState.root.append(replyState.status, replyState.retry, replyState.list, replyState.pager.element);
+    const content = textElement("div", "comment-replies-content", "");
+    content.append(replyState.status, replyState.retry, replyState.list, replyState.pager.element);
+    replyState.root.appendChild(content);
+    // 同步展开状态和可访问性，第一次展开时读取回复
     const toggle = actionButton("查看回复 " + comment.replyCount, function toggleReplies() {
-        replyState.root.hidden = !replyState.root.hidden;
-        toggle.setAttribute("aria-expanded", String(!replyState.root.hidden));
+        const expanded = toggle.getAttribute("aria-expanded") !== "true";
+        replyState.root.hidden = !expanded;
+        replyState.root.inert = !expanded;
+        toggle.setAttribute("aria-expanded", String(expanded));
         if (!replyState.root.hidden && !replyState.list.hasChildNodes()) {
             loadReplies(state, comment.id, replyState, 1);
         }
@@ -347,6 +413,7 @@ function addReplyList(state, row, actions, comment) {
     toggle.dataset.replyRoot = comment.id;
     toggle.appendChild(makeIcon("down"));
     toggle.setAttribute("aria-expanded", "false");
+    replyState.root.inert = true;
     actions.appendChild(toggle);
     row.appendChild(replyState.root);
 }
@@ -416,7 +483,7 @@ async function sendComment(state) {
         state.input.reportValidity();
         return;
     }
-    if (text.length > 1000) {
+    if (text.length > MAX_COMMENT_LENGTH) {
         state.input.setCustomValidity("评论最多 1000 个字符");
         state.input.reportValidity();
         return;
@@ -427,10 +494,12 @@ async function sendComment(state) {
     }
     state.busy = true;
     state.draft.pending = true;
+    // draft 的等待状态比当前界面活得更久，关掉再打开也不能重复发送同一条评论
     const parentId = state.draft.parentId;
     updateComposer(state);
     try {
         await requestApi("/notes/" + encodeURIComponent(state.note.id) + "/comments", "POST", body, state.token);
+        // 只有服务器明确确认成功后才清空草稿，断网或报错时保留原文供用户核对
         state.draft.text = "";
         state.draft.parentId = null;
         state.draft.target = "";

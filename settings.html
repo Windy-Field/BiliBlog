@@ -8,6 +8,8 @@
   <link rel="stylesheet" href="/styles/publish.css" />
   <link rel="stylesheet" href="/styles/settings.css" />
   <link rel="stylesheet" href="/styles/feedback.css" />
+  <link rel="stylesheet" href="/styles/notifications.css" />
+  <script type="module" src="/scripts/notifications.js"></script>
   <script type="module" src="/scripts/settings.js"></script>
 </head>
 <body class="settings-page">
@@ -17,7 +19,10 @@
       <span class="editor-divider" aria-hidden="true">/</span>
       <span>个人设置</span>
     </div>
-    <nav aria-label="创作导航"><a href="/index.html"><span data-icon="home"></span>返回首页</a></nav>
+    <nav aria-label="创作导航">
+      <button class="notification-bell" data-notifications type="button" aria-label="消息通知" title="消息通知" aria-haspopup="dialog"><span data-icon="bell"></span><span class="notification-badge" hidden></span></button>
+      <a href="/index.html"><span data-icon="home"></span>返回首页</a>
+    </nav>
   </header>
   <aside class="creator-sidebar" aria-label="设置导航">
     <a class="creator-publish" href="/settings.html" aria-current="page"><span data-icon="user"></span>资料设置</a>
@@ -67,7 +72,6 @@
                   <input id="cover-input" class="file-input" type="file" accept="image/jpeg,image/png,image/webp" />
                 </div>
                 <button id="remove-cover" type="button" class="text-button cover-remove-btn" hidden>删除封面</button>
-                <button id="refresh-cover-gradient" type="button" class="text-button cover-refresh-btn" hidden>恢复默认</button>
               </div>
               <p id="cover-status" class="message" role="status" tabindex="-1"></p>
             </div>

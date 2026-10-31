@@ -8,3 +8,5 @@
 - 写代码前必须读取 C:\Users\lenovo\.claude\hooks\code-style-rules.md。代码风格规则仅维护在该文件，不在本项目复制或改写其内容。
 - 先检查现有文件和用户改动，优先复用已有实现；接口行为以 openapi.json 和 markdown-export 中的说明为依据。
 - 完成任务后删除此次创建的临时脚本，不删除用户文件。
+- 后续代码优化继续遵守上述唯一代码风格文件，提交结果前运行 npm run check 和相关功能验证
+- 共享配置维护在 scripts/config.js，样式数值维护在 styles/tokens.css，界面反馈维护在 scripts/common.js，纯动效维护在 scripts/motion.js

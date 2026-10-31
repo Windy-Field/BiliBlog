@@ -8,6 +8,8 @@
     <link rel="stylesheet" href="/styles/home.css" />
     <link rel="stylesheet" href="/styles/comments.css" />
     <link rel="stylesheet" href="/styles/feedback.css" />
+    <link rel="stylesheet" href="/styles/notifications.css" />
+    <script type="module" src="/scripts/notifications.js"></script>
     <!-- 模块脚本在 HTML 解析完成后执行 -->
     <script type="module" src="/scripts/home.js"></script>
   </head>
@@ -42,6 +44,9 @@
           </button>
         </form>
         <nav class="account-nav" aria-label="账号导航">
+          <button class="notification-bell" data-notifications type="button" aria-label="消息通知" title="消息通知" aria-haspopup="dialog">
+            <span data-icon="bell"></span><span class="notification-badge" hidden></span>
+          </button>
           <a class="primary-button publish-link" href="/publish.html"
             ><span data-icon="write"></span>发布文章</a
           >
@@ -199,9 +204,10 @@
       aria-labelledby="detail-title"
     >
       <div class="dialog-top">
-        <span></span
+        <a class="reader-brand" href="/index.html">小B书<span>biliblog</span></a
         ><button
           id="close-detail"
+          autofocus
           class="icon-button"
           type="button"
           aria-label="关闭文章"
@@ -212,11 +218,14 @@
       </div>
       <p id="detail-status" role="status"></p>
       <div id="detail-content" hidden>
-        <h2 id="detail-title"></h2>
-        <p id="detail-author" class="detail-author"></p>
+        <header class="reader-heading">
+          <nav id="detail-tags" class="detail-tags" aria-label="文章话题" hidden></nav>
+          <h2 id="detail-title"></h2>
+          <div id="detail-author" class="detail-author"></div>
+        </header>
         <div id="detail-body" class="detail-body"></div>
         <div id="detail-gallery" class="detail-gallery"></div>
-        <p id="detail-counts" class="detail-counts"></p>
+        <p id="detail-counts" class="detail-counts visually-hidden"></p>
         <div class="reaction-bar" aria-label="文章互动">
           <button
             id="like-button"

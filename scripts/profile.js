@@ -2,10 +2,11 @@ import { requestApi } from "./api.js";
 import { readSession, clearSession } from "./auth.js";
 import { showMessage, showToast, setBusy } from "./common.js";
 import { makeIcon, fillIcons } from "./icons.js";
+import { PROFILE_PAGE_SIZE, DEFAULT_COVER_URL } from "./config.js";
+import { scrollPage } from "./motion.js";
 
-const pageSize = 12;
+const pageSize = PROFILE_PAGE_SIZE;
 let currentUsername = "";
-let currentPage = 1;
 let currentYear = null;
 let currentMonth = null;
 let selfUsername = "";
@@ -14,6 +15,7 @@ let followCount = 0;
 let followLoading = false;
 let viewerToken = null;
 let followKnown = false;
+let notesRequest = 0;
 
 // 确认当前账号后再允许关注，避免把自己的主页当成其他人的主页
 async function loadTopbarProfile() {
@@ -31,6 +33,7 @@ async function loadTopbarProfile() {
     try {
         const user = await requestApi("/me", "GET", null, session.token);
         const currentSession = readSession();
+        // 发出请求后账号仍可能改变，返回时再核对一次，避免关注操作沿用旧身份
         if (!currentSession || currentSession.token !== session.token) {
             guestLinks.hidden = false;
             showFollowMessage("登录账号已变化，请重新检查登录状态", true);
@@ -49,13 +52,14 @@ async function loadTopbarProfile() {
             myProfileLink.href = "/profile.html?u=" + encodeURIComponent(user.username);
         }
         if (user.avatarUrl) {
-            const img = document.createElement("img");
-            img.src = user.avatarUrl;
-            img.alt = "";
-            img.addEventListener("error", function () {
+            const image = document.createElement("img");
+            image.src = user.avatarUrl;
+            image.alt = "";
+            // 头像链接失效时仍显示账号昵称首字
+            image.addEventListener("error", function restoreNavigationAvatar() {
                 avatar.textContent = user.displayName.slice(0, 1);
             }, { once: true });
-            avatar.replaceChildren(img);
+            avatar.replaceChildren(image);
         }
         accountMenu.hidden = false;
     } catch (error) {
@@ -70,9 +74,9 @@ async function loadTopbarProfile() {
 
 // 从地址栏读取目标用户名，参数为 u
 function readTargetUsername() {
-    const params = new URLSearchParams(window.location.search);
-    const u = params.get("u") || "";
-    return u.trim();
+    const parameters = new URLSearchParams(window.location.search);
+    const username = parameters.get("u") || "";
+    return username.trim();
 }
 
 // 加载用户资料并渲染顶部卡片
@@ -110,59 +114,57 @@ async function loadUserProfile(username) {
 // 把用户资料填入 DOM
 function showProfile(user) {
     document.title = user.displayName + " 的主页 - 小B书";
-    const avatarEl = document.getElementById("profile-avatar");
-    avatarEl.textContent = user.displayName.slice(0, 1);
+    const profileAvatar = document.getElementById("profile-avatar");
+    profileAvatar.textContent = user.displayName.slice(0, 1);
     if (user.avatarUrl) {
-        const img = document.createElement("img");
-        img.src = user.avatarUrl;
-        img.alt = user.displayName;
-        img.addEventListener("error", function () {
-            avatarEl.textContent = user.displayName.slice(0, 1);
+        const image = document.createElement("img");
+        image.src = user.avatarUrl;
+        image.alt = user.displayName;
+        // 资料头像加载失败时恢复昵称首字
+        image.addEventListener("error", function restoreProfileAvatar() {
+            profileAvatar.textContent = user.displayName.slice(0, 1);
         }, { once: true });
-        avatarEl.replaceChildren(img);
+        profileAvatar.replaceChildren(image);
     }
+    const coverImg = document.getElementById("profile-cover");
+    document.getElementById("cover-placeholder").hidden = true;
     if (user.coverUrl) {
-        const coverImg = document.getElementById("profile-cover");
-        document.getElementById("cover-placeholder").hidden = true;
         coverImg.src = user.coverUrl;
-        coverImg.hidden = false;
     } else {
-        const coverImg = document.getElementById("profile-cover");
-        document.getElementById("cover-placeholder").hidden = true;
-        coverImg.src = "/assets/images/forest-banner.jpg";
-        coverImg.hidden = false;
+        coverImg.src = DEFAULT_COVER_URL;
     }
+    coverImg.hidden = false;
     document.getElementById("profile-name").textContent = user.displayName;
     document.getElementById("profile-name").title = user.displayName;
     document.getElementById("profile-handle").textContent = "@" + user.username;
     document.getElementById("profile-handle").title = "@" + user.username;
     if (user.bio) {
-        const bioEl = document.getElementById("profile-bio");
-        bioEl.textContent = user.bio;
-        bioEl.hidden = false;
+        const bioElement = document.getElementById("profile-bio");
+        bioElement.textContent = user.bio;
+        bioElement.hidden = false;
     }
     document.getElementById("stat-notes-num").textContent = user.noteCount;
     document.querySelector("#stat-following strong").textContent = user.followingCount;
     updateFollowState(user);
     document.getElementById("profile-navbar").hidden = false;
     if (user.homepage && user.homepage.links && user.homepage.links.length > 0) {
-        const linksEl = document.getElementById("profile-links");
+        const linksElement = document.getElementById("profile-links");
         for (const link of user.homepage.links) {
-            const a = document.createElement("a");
-            a.href = link.url;
-            a.textContent = link.label;
-            a.title = link.label;
-            a.target = "_blank";
-            a.rel = "noopener noreferrer";
-            linksEl.appendChild(a);
+            const anchor = document.createElement("a");
+            anchor.href = link.url;
+            anchor.textContent = link.label;
+            anchor.title = link.label;
+            anchor.target = "_blank";
+            anchor.rel = "noopener noreferrer";
+            linksElement.appendChild(anchor);
         }
-        linksEl.hidden = false;
+        linksElement.hidden = false;
     }
     if (user.homepage && user.homepage.aboutHtml) {
-        const aboutEl = document.getElementById("profile-about");
+        const aboutElement = document.getElementById("profile-about");
         // 关于我来自后端服务器端渲染的 HTML，插入前已经过服务器消毒
         document.getElementById("about-content").innerHTML = user.homepage.aboutHtml;
-        aboutEl.hidden = false;
+        aboutElement.hidden = false;
     }
     renderFollowControl();
 }
@@ -246,7 +248,8 @@ async function refreshFollowState(token) {
             return;
         }
         updateFollowState(user);
-        showFollowMessage("已重新读取服务器上的关注状态，请查看按钮和粉丝数", false);
+        document.getElementById("follow-message").hidden = true;
+        showToast("已更新关注状态");
     } catch (error) {
         if (!checkViewer(token)) {
             return;
@@ -358,66 +361,74 @@ async function loadArchives(username) {
     }
 }
 
+// 把月份列表转换为筛选按钮，切换月份时从第一页开始读取
 function renderArchives(list) {
     const nav = document.getElementById("archives-nav");
-    const allBtn = document.createElement("button");
-    allBtn.className = "archive-btn";
-    allBtn.type = "button";
-    allBtn.textContent = "全部";
-    allBtn.setAttribute("aria-current", "true");
-    allBtn.addEventListener("click", function () {
+    const allButton = document.createElement("button");
+    allButton.className = "archive-btn";
+    allButton.type = "button";
+    allButton.textContent = "全部";
+    allButton.setAttribute("aria-current", "true");
+    // 清除月份筛选，从第一页读取全部文章
+    allButton.addEventListener("click", function showAllMonths() {
         currentYear = null;
         currentMonth = null;
-        currentPage = 1;
-        updateArchiveActive(allBtn);
+        updateArchiveActive(allButton);
         loadNotes(currentUsername, 1, null, null);
     });
-    nav.appendChild(allBtn);
+    nav.appendChild(allButton);
     for (const item of list) {
-        const btn = document.createElement("button");
-        btn.className = "archive-btn";
-        btn.type = "button";
-        btn.textContent = item.year + "/" + String(item.month).padStart(2, "0");
-        btn.dataset.year = item.year;
-        btn.dataset.month = item.month;
-        btn.addEventListener("click", function () {
+        const button = document.createElement("button");
+        button.className = "archive-btn";
+        button.type = "button";
+        button.textContent = item.year + "/" + String(item.month).padStart(2, "0");
+        // 按当前归档月份重新读取第一页
+        button.addEventListener("click", function showArchiveMonth() {
             currentYear = item.year;
             currentMonth = item.month;
-            currentPage = 1;
-            updateArchiveActive(btn);
+            updateArchiveActive(button);
             loadNotes(currentUsername, 1, item.year, item.month);
         });
-        nav.appendChild(btn);
+        nav.appendChild(button);
     }
     nav.hidden = false;
 }
 
-function updateArchiveActive(activeBtn) {
+// 标记当前月份按钮，其他月份恢复为未选中状态
+function updateArchiveActive(activeButton) {
     const nav = document.getElementById("archives-nav");
-    for (const btn of nav.querySelectorAll(".archive-btn")) {
-        btn.setAttribute("aria-current", btn === activeBtn ? "true" : "false");
+    const buttons = nav.querySelectorAll(".archive-btn");
+    for (const button of buttons) {
+        const active = button === activeButton;
+        button.setAttribute("aria-current", String(active));
     }
 }
 
 // 加载指定用户的文章列表
 async function loadNotes(username, page, year, month) {
+    notesRequest = notesRequest + 1;
+    const requestNumber = notesRequest;
     const grid = document.getElementById("profile-grid");
     const status = document.getElementById("profile-status");
     grid.setAttribute("aria-busy", "true");
     grid.replaceChildren();
     status.textContent = "正在读取文章……";
-    const params = new URLSearchParams();
-    params.set("username", username);
-    params.set("page", String(page));
-    params.set("pageSize", String(pageSize));
+    const parameters = new URLSearchParams();
+    parameters.set("username", username);
+    parameters.set("page", String(page));
+    parameters.set("pageSize", String(pageSize));
     if (year) {
-        params.set("year", String(year));
+        parameters.set("year", String(year));
     }
     if (month) {
-        params.set("month", String(month));
+        parameters.set("month", String(month));
     }
     try {
-        const result = await requestApi("/notes?" + params.toString(), "GET", null, null);
+        const result = await requestApi("/notes?" + parameters.toString(), "GET", null, null);
+        // 切换月份或页码后，只允许最新请求更新列表
+        if (requestNumber !== notesRequest) {
+            return;
+        }
         grid.replaceChildren();
         if (result.items.length === 0) {
             status.textContent = "这里还没有文章";
@@ -428,12 +439,15 @@ async function loadNotes(username, page, year, month) {
             grid.appendChild(renderNoteCard(note));
         }
         const pageCount = Math.max(1, Math.ceil(result.total / pageSize));
-        currentPage = page;
         renderPagination(page, pageCount);
     } catch (error) {
-        status.textContent = "文章读取失败：" + error.message;
+        if (requestNumber === notesRequest) {
+            status.textContent = "文章读取失败：" + error.message;
+        }
     } finally {
-        grid.setAttribute("aria-busy", "false");
+        if (requestNumber === notesRequest) {
+            grid.setAttribute("aria-busy", "false");
+        }
     }
 }
 
@@ -448,17 +462,18 @@ function renderNoteCard(note) {
     cover.href = href;
     cover.setAttribute("aria-label", "阅读：" + note.title);
     if (note.images && note.images.length > 0) {
-        const img = document.createElement("img");
-        img.src = note.images[0].url;
-        img.alt = "";
-        img.loading = "lazy";
-        img.addEventListener("load", function () {
-            img.classList.add("is-loaded");
+        const image = document.createElement("img");
+        image.src = note.images[0].url;
+        image.alt = "";
+        image.loading = "lazy";
+        // 封面真正加载完成后才淡入
+        image.addEventListener("load", function revealProfileCover() {
+            image.classList.add("is-loaded");
         }, { once: true });
-        if (img.complete && img.naturalWidth > 0) {
-            img.classList.add("is-loaded");
+        if (image.complete && image.naturalWidth > 0) {
+            image.classList.add("is-loaded");
         }
-        cover.appendChild(img);
+        cover.appendChild(image);
     } else {
         cover.classList.add("text-cover");
         const word = document.createElement("span");
@@ -493,8 +508,8 @@ function renderNoteCard(note) {
     authorName.textContent = note.author.displayName;
     const date = document.createElement("time");
     date.dateTime = note.createdAt;
-    const d = new Date(note.createdAt);
-    date.textContent = "· " + (d.getMonth() + 1) + "/" + d.getDate();
+    const createdDate = new Date(note.createdAt);
+    date.textContent = "· " + (createdDate.getMonth() + 1) + "/" + createdDate.getDate();
     author.append(authorName, date);
     info.append(title, author);
     article.append(cover, info);
@@ -504,17 +519,15 @@ function renderNoteCard(note) {
 // 渲染分页控件
 function renderPagination(page, pageCount) {
     const pagination = document.getElementById("pagination");
-    const prevLink = document.getElementById("previous-page");
+    const previousLink = document.getElementById("previous-page");
     const nextLink = document.getElementById("next-page");
     const pageInfo = document.getElementById("page-info");
     pagination.hidden = pageCount <= 1;
     pageInfo.textContent = page + " / " + pageCount;
-    prevLink.setAttribute("aria-disabled", page <= 1 ? "true" : "false");
-    nextLink.setAttribute("aria-disabled", page >= pageCount ? "true" : "false");
-    prevLink.dataset.page = String(page - 1);
+    previousLink.setAttribute("aria-disabled", String(page <= 1));
+    nextLink.setAttribute("aria-disabled", String(page >= pageCount));
+    previousLink.dataset.page = String(page - 1);
     nextLink.dataset.page = String(page + 1);
-    prevLink.dataset.maxPage = String(pageCount);
-    nextLink.dataset.maxPage = String(pageCount);
 }
 
 // 分页点击委托
@@ -531,7 +544,7 @@ function handlePageNav(event) {
     const page = Number(link.dataset.page);
     if (Number.isInteger(page) && page >= 1) {
         loadNotes(currentUsername, page, currentYear, currentMonth);
-        window.scrollTo({ top: 0, behavior: "smooth" });
+        scrollPage(0);
     }
 }
 
@@ -539,9 +552,9 @@ function handlePageNav(event) {
 async function init() {
     const username = readTargetUsername();
     if (!username) {
-        const err = document.getElementById("profile-error");
-        showMessage(err, "链接缺少用户名参数", true);
-        err.hidden = false;
+        const errorElement = document.getElementById("profile-error");
+        showMessage(errorElement, "链接缺少用户名参数", true);
+        errorElement.hidden = false;
         fillIcons();
         return;
     }

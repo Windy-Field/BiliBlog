@@ -7,12 +7,17 @@
     <link rel="stylesheet" href="/styles/common.css">
     <link rel="stylesheet" href="/styles/publish.css">
     <link rel="stylesheet" href="/styles/feedback.css">
+    <link rel="stylesheet" href="/styles/notifications.css">
+    <script type="module" src="/scripts/notifications.js"></script>
     <script type="module" src="/scripts/publish.js"></script>
 </head>
 <body class="publish-page">
     <header class="editor-header">
         <div class="editor-identity"><a class="editor-brand" href="/index.html">小B书</a><span class="editor-divider"></span><span>创作中心</span></div>
-        <nav aria-label="创作导航"><a href="/index.html"><span data-icon="home"></span>返回首页</a></nav>
+        <nav aria-label="创作导航">
+            <button class="notification-bell" data-notifications type="button" aria-label="消息通知" title="消息通知" aria-haspopup="dialog"><span data-icon="bell"></span><span class="notification-badge" hidden></span></button>
+            <a href="/index.html"><span data-icon="home"></span>返回首页</a>
+        </nav>
     </header>
     <aside class="creator-sidebar" aria-label="创作中心导航">
         <a class="creator-publish" href="/publish.html" aria-current="page"><span data-icon="write"></span>发布文章</a>
@@ -45,7 +50,6 @@
                     <div id="tags-chips" class="tags-chips"></div>
                     <input id="tags-text" class="tags-text-input" type="text" placeholder="输入话题，按空格或回车确认" maxlength="20" autocomplete="off" aria-label="输入话题" />
                 </div>
-                <input id="article-tags" name="tags" type="hidden" />
                 <p id="tags-hint" class="field-hint">最多 5 个，每个不超过 20 个字符</p>
                 <div class="image-heading"><label for="article-images">图片 <span class="optional">选填</span></label><span id="image-count">0 / 9</span></div>
                 <div class="image-tools">

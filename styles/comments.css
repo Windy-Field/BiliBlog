@@ -1,5 +1,5 @@
 .comments-section {
-    margin-top: 32px;
+    margin-top: 12px;
     padding-top: 24px;
     border-top: 1px solid var(--color-border);
 }
@@ -35,11 +35,16 @@
     border: 1px solid var(--color-input-border);
     border-radius: var(--radius-control);
     padding: 12px;
-    background: var(--color-page);
+    background: var(--color-surface);
     color: var(--color-text);
     font-family: inherit;
     font-size: 16px;
     line-height: 26px;
+}
+.comment-form textarea:focus {
+    background: var(--color-page);
+    outline: 2px solid var(--color-focus);
+    outline-offset: 2px;
 }
 .comment-form-tools {
     margin-top: 8px;
@@ -83,7 +88,7 @@
 .comment-item {
     position: relative;
     padding: 20px 0;
-    padding-left: 44px;
+    padding-left: 36px;
     border-bottom: 1px solid var(--color-border);
     min-width: 0;
 }
@@ -94,13 +99,13 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 32px;
-    height: 32px;
+    width: 24px;
+    height: 24px;
     overflow: hidden;
     border-radius: 50%;
     background: var(--color-brand-soft);
     color: var(--color-text);
-    font-size: 14px;
+    font-size: 12px;
 }
 .comment-avatar img {
     width: 100%;
@@ -137,16 +142,28 @@
     overflow-wrap: anywhere;
 }
 .comment-replies {
-    margin: 16px 0 0 16px;
+    interpolate-size: allow-keywords;
+    height: 0;
+    opacity: 0;
+    overflow: clip;
+    margin: 0 0 0 16px;
     padding-left: 16px;
     border-left: 2px solid var(--color-border);
+    transition:
+        height var(--duration-panel) var(--ease-out),
+        opacity var(--duration-panel) var(--ease-out),
+        display var(--duration-panel) allow-discrete;
+}
+.comment-replies-content {
+    padding-top: 16px;
 }
 .comment-replies:not([hidden]) {
+    height: auto;
     opacity: 1;
-    transition: opacity var(--duration-panel) var(--ease-out);
 }
 @starting-style {
     .comment-replies:not([hidden]) {
+        height: 0;
         opacity: 0;
     }
 }
@@ -189,7 +206,14 @@
 }
 @media (prefers-reduced-motion: reduce) {
     .comment-actions [data-reply-root] svg,
+    .comment-replies,
     .comment-replies:not([hidden]) {
         transition: none;
+    }
+    @starting-style {
+        .comment-replies:not([hidden]) {
+            height: auto;
+            opacity: 1;
+        }
     }
 }

@@ -2,7 +2,7 @@
 setlocal
 title biliblog
 
-"%SystemRoot%\System32\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "%~dp0scripts\start-dev.ps1" -OpenBrowser
+"%SystemRoot%\System32\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "%~dp0tools\start-dev.ps1" -OpenBrowser
 
 if errorlevel 1 (
     echo.

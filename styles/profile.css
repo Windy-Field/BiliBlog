@@ -49,51 +49,6 @@
     pointer-events: none;
 }
 
-/* ── 顶部导航条 ── */
-.profile-topbar {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 56px;
-    padding: 0 40px;
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    z-index: 2;
-    box-sizing: border-box;
-}
-
-.profile-brand {
-    font-size: 20px;
-    font-weight: 700;
-    color: #fff;
-    text-shadow: 0 1px 4px rgba(0,0,0,0.3);
-    flex-shrink: 0;
-}
-
-.profile-nav {
-    display: flex;
-    gap: 4px;
-    flex: 1;
-}
-
-.profile-nav a {
-    color: rgba(255,255,255,0.9);
-    font-size: 14px;
-    padding: 0 10px;
-    height: 34px;
-    display: inline-flex;
-    align-items: center;
-    border-radius: 6px;
-    transition: background-color 150ms;
-}
-
-.profile-nav a:hover {
-    background: rgba(255,255,255,0.18);
-    color: #fff;
-}
-
 /* 封面高度与首页一致，资料区给导航留出空间，头像适配下方可用高度 */
 .profile-hero-info {
     position: relative;
@@ -121,16 +76,16 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 112px;
-    height: 112px;
+    width: 80px;
+    height: 80px;
     border-radius: 50%;
-    border: 4px solid rgba(255,255,255,0.9);
+    border: 2px solid rgba(255,255,255,0.9);
     background: linear-gradient(135deg, var(--color-brand), var(--color-brand-active));
     color: #fff;
-    font-size: 40px;
+    font-size: 28px;
     font-weight: 700;
     overflow: hidden;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+    box-shadow: none;
     flex-shrink: 0;
 }
 
@@ -189,35 +144,41 @@
 
 /* 等待标记和较长提示共用固定宽度，切换状态时保持资料区稳定 */
 #follow-button {
-    width: 152px;
-    min-height: 44px;
+    width: 144px;
+    height: 40px;
+    min-height: 40px;
     padding: 0 12px;
     border: 1px solid transparent;
-    border-radius: var(--radius-control);
-    background: var(--gradient-brand);
-    color: var(--color-text);
+    border-radius: 20px;
+    background: var(--gradient-publish);
+    color: var(--color-on-dark);
+    font-size: 16px;
+    font-weight: 600;
+    line-height: 20px;
     box-shadow: none;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.18);
     white-space: nowrap;
 }
 
 #follow-button:not(:disabled):hover {
-    background: var(--gradient-brand-hover);
+    background: var(--gradient-publish-hover);
     box-shadow: none;
     transform: none;
 }
 
 #follow-button:not(:disabled):active {
-    background: var(--gradient-brand-active);
+    background: var(--gradient-publish-active);
 }
 
 #follow-button[data-following="true"] {
-    color: var(--color-text);
-    background: var(--gradient-selected-soft);
-    border: 1px solid var(--color-brand);
+    color: var(--color-text-secondary);
+    background: var(--color-surface);
+    border-color: var(--color-border);
+    text-shadow: none;
 }
 
 #follow-button[data-following="true"]:not(:disabled):hover {
-    background: var(--gradient-selected-soft);
+    background: var(--color-surface-hover);
 }
 
 #follow-message:not([hidden]) {
@@ -301,10 +262,6 @@
     height: 3px;
     border-radius: 2px 2px 0 0;
     background: var(--color-brand);
-}
-
-.profile-tab:hover:not(.is-active) {
-    color: var(--color-text);
 }
 
 /* 月份归档按钮 */
@@ -512,13 +469,11 @@ a.stat-item:hover strong {
 /* 响应式 */
 @media (max-width: 767px) {
     .profile-hero { --profile-cover-height: 160px; }
-    .profile-topbar { padding: 0 16px; }
-    .profile-nav { display: none; }
     .profile-hero-info {
         padding: 56px 16px 8px;
     }
     .profile-hero-inner { gap: 12px; }
-    .profile-avatar { width: 88px; height: 88px; font-size: 32px; }
+    .profile-avatar { width: 64px; height: 64px; font-size: 24px; }
     .profile-page .profile-name { font-size: 24px; line-height: 34px; }
     .profile-handle { font-size: 16px; line-height: 24px; }
     .profile-navbar-inner { padding: 0 16px; gap: 12px; }

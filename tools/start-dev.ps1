@@ -3,9 +3,15 @@ param(
     [switch]$OpenBrowser
 )
 
+$serverPort = 5173
+$preferredNodePath = 'D:\node\node.exe'
+$maxReadyAttempts = 20
+$readyTimeoutSeconds = 2
+$readyPollMilliseconds = 250
+$homeUrl = "http://127.0.0.1:$serverPort/index.html"
 $projectDirectory = Split-Path -Parent $PSScriptRoot
 $vitePath = Join-Path $projectDirectory 'node_modules\vite\bin\vite.js'
-$nodePath = 'D:\node\node.exe'
+$nodePath = $preferredNodePath
 
 if (-not (Test-Path -LiteralPath $nodePath)) {
     $nodeCommand = Get-Command node.exe -ErrorAction SilentlyContinue
@@ -25,7 +31,7 @@ if (-not (Test-Path -LiteralPath $vitePath)) {
 $connection = New-Object System.Net.Sockets.TcpClient
 $portOccupied = $false
 try {
-    $connection.Connect('127.0.0.1', 5173)
+    $connection.Connect('127.0.0.1', $serverPort)
     $portOccupied = $true
 } catch {
     $portOccupied = $false
@@ -38,7 +44,7 @@ if (-not $portOccupied) {
     $outputLog = Join-Path $logDirectory 'dev-server.log'
     $errorLog = Join-Path $logDirectory 'dev-server-error.log'
     $quotedVitePath = '"' + $vitePath + '"'
-    $serverArguments = @($quotedVitePath, '--host', '127.0.0.1', '--port', '5173', '--strictPort')
+    $serverArguments = @($quotedVitePath, '--host', '127.0.0.1', '--port', [string]$serverPort, '--strictPort')
 
     # 复用开机启动方式，在后台运行并记录日志
     try {
@@ -52,19 +58,21 @@ if (-not $portOccupied) {
 }
 
 # 确认端口提供的是小B书首页，避免误打开占用相同端口的其他项目
-$homeUrl = 'http://127.0.0.1:5173/index.html'
 $ready = $false
-for ($attempt = 0; $attempt -lt 20; $attempt = $attempt + 1) {
+for ($attempt = 0; $attempt -lt $maxReadyAttempts; $attempt = $attempt + 1) {
     try {
-        $response = Invoke-WebRequest -Uri $homeUrl -UseBasicParsing -TimeoutSec 2 -ErrorAction Stop
-        if ($response.StatusCode -eq 200 -and $response.Content -match '<title>首页 - 小B书</title>') {
+        $response = Invoke-WebRequest -Uri $homeUrl -UseBasicParsing -TimeoutSec $readyTimeoutSeconds -ErrorAction Stop
+        # Vite 的 HTML 使用 UTF-8，旧版 PowerShell 不一定能自动识别编码
+        $responseBytes = $response.RawContentStream.ToArray()
+        $responseText = [System.Text.Encoding]::UTF8.GetString($responseBytes)
+        if ($response.StatusCode -eq 200 -and $responseText -match '<title>首页 - 小B书</title>') {
             $ready = $true
             break
         }
         Write-Host '5173 端口已被其他页面占用，请先关闭对应服务'
         exit 1
     } catch {
-        Start-Sleep -Milliseconds 250
+        Start-Sleep -Milliseconds $readyPollMilliseconds
     }
 }
 

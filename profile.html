@@ -7,8 +7,9 @@
   <link rel="stylesheet" href="/styles/common.css" />
   <link rel="stylesheet" href="/styles/home.css" />
   <link rel="stylesheet" href="/styles/profile.css" />
-  <link rel="stylesheet" href="/styles/comments.css" />
   <link rel="stylesheet" href="/styles/feedback.css" />
+  <link rel="stylesheet" href="/styles/notifications.css" />
+  <script type="module" src="/scripts/notifications.js"></script>
   <script type="module" src="/scripts/profile.js"></script>
 </head>
 <body class="home-page profile-page">
@@ -23,6 +24,9 @@
         <a class="desktop-entry" href="/index.html?feed=favorites"><span data-icon="bookmark"></span>收藏</a>
       </nav>
       <nav class="account-nav" aria-label="账号导航">
+        <button class="notification-bell" data-notifications type="button" aria-label="消息通知" title="消息通知" aria-haspopup="dialog">
+          <span data-icon="bell"></span><span class="notification-badge" hidden></span>
+        </button>
         <a class="primary-button publish-link" href="/publish.html"
           ><span data-icon="write"></span>发布文章</a
         >
@@ -55,13 +59,6 @@
             </button>
           </div>
         </details>
-        <a
-          id="my-articles"
-          class="top-account-link"
-          href="/index.html?feed=mine"
-          hidden
-          ><span data-icon="article"></span><span>我的文章</span></a
-        >
       </nav>
     </div>
   </header>
@@ -84,7 +81,7 @@
           <nav id="profile-links" class="profile-links" aria-label="作者的个人链接" hidden></nav>
         </div>
         <div class="profile-actions">
-          <button id="follow-button" class="primary-button" type="button" hidden></button>
+          <button id="follow-button" type="button" hidden></button>
           <a id="own-settings-link" href="/settings.html" class="hero-edit-btn" hidden>编辑资料</a>
         </div>
       </div>

@@ -1,3 +1,10 @@
+const TOAST_DURATION_MS = 3000;
+const TOAST_CLOSE_MS = 240;
+let toastElement = null;
+let toastTimer = 0;
+let toastCloseTimer = 0;
+let confirmationDialog = null;
+
 // 将文字显示在提示元素中，isError 决定是否使用错误样式
 export function showMessage(element, text, isError) {
     // 按纯文字显示，避免把提示内容当成 HTML
@@ -20,9 +27,6 @@ export function setBusy(element, busy) {
     element.classList.toggle("is-busy", busy);
 }
 
-let toastElement = null;
-let toastTimer = 0;
-
 // 在页面底部短暂显示 text，isError 决定提示颜色
 // popover 将提示放在浏览器顶层，文章对话框打开时也能看见
 export function showToast(text, isError) {
@@ -35,7 +39,10 @@ export function showToast(text, isError) {
         document.body.appendChild(toastElement);
     }
     toastElement.textContent = text;
-    toastElement.dataset.tone = isError ? "error" : "success";
+    toastElement.dataset.tone = "success";
+    if (isError) {
+        toastElement.dataset.tone = "error";
+    }
     if (!toastElement.matches(":popover-open")) {
         toastElement.showPopover();
     }
@@ -44,18 +51,19 @@ export function showToast(text, isError) {
     void toastElement.offsetWidth;
     toastElement.classList.add("is-visible");
     window.clearTimeout(toastTimer);
+    // 新提示出现时取消旧提示的关闭计时，避免连续操作时提前隐藏
+    window.clearTimeout(toastCloseTimer);
+    // 阅读时间结束后先淡出，再移除浏览器顶层提示
     toastTimer = window.setTimeout(function hideToast() {
         toastElement.classList.remove("is-visible");
         // 等淡出完成再关闭浮层，避免提示突然消失
-        window.setTimeout(function closeToast() {
+        toastCloseTimer = window.setTimeout(function closeToast() {
             if (toastElement.matches(":popover-open")) {
                 toastElement.hidePopover();
             }
-        }, 240);
-    }, 3000);
+        }, TOAST_CLOSE_MS);
+    }, TOAST_DURATION_MS);
 }
-
-let confirmationDialog = null;
 
 // 显示 description 中的删除说明，用户确认时返回 true，取消时返回 false
 // 原生 dialog 负责焦点限制、Escape 取消和顶层显示
@@ -88,6 +96,7 @@ export function confirmAction(description) {
     }
     document.getElementById("confirmation-description").textContent = description;
     confirmationDialog.returnValue = "cancel";
+    // 等待用户关闭确认窗口，返回本次选择
     return new Promise(function waitForConfirmation(resolve) {
         // 关闭后返回本次选择，监听器只执行一次
         confirmationDialog.addEventListener("close", function finishConfirmation() {

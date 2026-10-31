@@ -66,6 +66,7 @@ async function submitAccount(event) {
     try {
         // 登录和注册省略旧凭证，避免失效凭证干扰新的身份验证
         const session = await requestApi(path, "POST", credentials, null);
+        // 只保存服务器签发的凭证，不把账号密码留在本地存储中
         saveSession(session);
         window.location.replace("/index.html");
     } catch (error) {

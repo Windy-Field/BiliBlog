@@ -67,10 +67,12 @@ async function changeReaction(kind) {
     try {
         const path = "/notes/" + encodeURIComponent(note.id) + "/" + kind;
         const result = await requestApi(path, "POST", { active: active }, session.token);
+        // 等待时用户可能已经打开另一篇文章，旧结果不能改动新文章的按钮
         if (currentNote !== note) {
             return;
         }
         if (kind === "like") {
+            // 使用后端返回的总数，不在本地直接加一，避免多标签页操作造成计数错误
             note.liked = result.active;
             note.likeCount = result.count;
         } else {

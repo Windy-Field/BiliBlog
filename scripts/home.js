@@ -1,9 +1,18 @@
 import { requestApi } from "./api.js";
 import { readSession, clearSession } from "./auth.js";
 import { showMessage, showToast, setBusy } from "./common.js";
+import { resizePanel, scrollPage, updatePinnedTopbar, updateNoticeMotion } from "./motion.js";
+import { HOME_PAGE_SIZE, MAX_PAGE, TAG_PAGE_SIZE } from "./config.js";
 import { makeIcon, fillIcons } from "./icons.js";
 import { setReactionArticle } from "./reactions.js";
 import { setCommentArticle } from "./comments.js";
+
+const FEED_SCROLL_OFFSET = 80;
+const DESKTOP_TOPIC_LIMIT = 9;
+const MOBILE_TOPIC_LIMIT = 4;
+const NOTICE_LIMIT = 8;
+const SKELETON_COUNT = 9;
+const FEATURE_MIN_ARTICLES = 5;
 
 const welcome = document.getElementById("welcome");
 const guestLinks = document.getElementById("guest-links");
@@ -32,12 +41,14 @@ const detailStatus = document.getElementById("detail-status");
 const detailContent = document.getElementById("detail-content");
 const retryDetail = document.getElementById("retry-detail");
 const topbar = document.getElementById("topbar");
-const pageSize = 20;
+const pageSize = HOME_PAGE_SIZE;
+const mobileTopics = window.matchMedia("(max-width: 767px)");
 let query = new URLSearchParams(window.location.search);
 let feed = "latest";
 let currentPage = 1;
 // 用请求编号筛选最新响应，避免较早发出的慢请求覆盖当前列表
 let feedRequest = 0;
+let displayedFeedKey = "";
 let detailRequest = 0;
 let currentArticleId = "";
 let currentUsername = "";
@@ -54,7 +65,7 @@ function readRoute() {
         feed = "latest";
     }
     currentPage = Number(query.get("page"));
-    if (!Number.isInteger(currentPage) || currentPage < 1 || currentPage > 10000) {
+    if (!Number.isInteger(currentPage) || currentPage < 1 || currentPage > MAX_PAGE) {
         currentPage = 1;
     }
     searchInput.value = query.get("q") || "";
@@ -206,8 +217,9 @@ function makeCard(note, index, isFeature) {
     stats.appendChild(makeCount("comment", note.commentCount));
     const cover = document.createElement("a");
     cover.className = "card-cover";
-    cover.href =
-        pageUrl(currentPage) + "#article=" + encodeURIComponent(note.id);
+    // 只改变文章编号，避免首次打开时新增页码参数导致整个页面重新加载
+    const listAddress = window.location.pathname + window.location.search;
+    cover.href = listAddress + "#article=" + encodeURIComponent(note.id);
     cover.setAttribute("aria-label", "阅读：" + note.title);
     if (note.images.length > 0) {
         const image = document.createElement("img");
@@ -221,6 +233,7 @@ function makeCard(note, index, isFeature) {
         // 封面失效时保留文字和真实计数，大图卡的计数在作者行里不重复添加
         image.addEventListener(
             "error",
+            // 图片失效时显示文字封面，并保留真实统计
             function replaceBrokenCover() {
                 showTextCover(cover, note);
                 if (!isFeature) {
@@ -259,9 +272,6 @@ function makeCard(note, index, isFeature) {
     authorName.className = "card-author-name";
     authorName.href = "/profile.html?u=" + encodeURIComponent(note.author.username);
     authorName.textContent = note.author.displayName;
-    authorName.addEventListener("click", function stopPropagation(e) {
-        e.stopPropagation();
-    });
     const date = document.createElement("time");
     date.dateTime = note.createdAt;
     date.textContent = "· " + formatDate(note.createdAt);
@@ -278,6 +288,7 @@ function makeCard(note, index, isFeature) {
         deleteButton.type = "button";
         deleteButton.textContent = "删除";
         deleteButton.setAttribute("aria-label", "删除文章：" + note.title);
+        // 记录目标文章并打开删除确认框
         deleteButton.addEventListener("click", function openDeleteConfirmation(event) {
             event.preventDefault();
             event.stopPropagation();
@@ -293,19 +304,18 @@ function makeCard(note, index, isFeature) {
 // 按用户名整理本页文章，同名昵称也能区分，作者与文章都保留首次出现的顺序
 function groupFollowingNotes(notes) {
     const groups = [];
+    const authors = new Map();
     for (const note of notes) {
-        let authorGroup = null;
-        for (const group of groups) {
-            if (group.author.username === note.author.username) {
-                authorGroup = group;
-                break;
-            }
-        }
+        // Map 像一本按用户名查找的目录，不用每篇文章都重新遍历所有作者
+        // 数组另行保留首次出现顺序，作者同名时仍按 username 区分
+        const username = note.author.username;
+        let authorGroup = authors.get(username);
         if (!authorGroup) {
             authorGroup = {
                 author: note.author,
                 notes: []
             };
+            authors.set(username, authorGroup);
             groups.push(authorGroup);
         }
         authorGroup.notes.push(note);
@@ -555,10 +565,9 @@ function navigate(parameters, replace) {
 // 滚到文章列表顶部；已在列表上方时不滚动
 function scrollToFeed() {
     const heading = document.getElementById("feed-title");
-    const top = heading.getBoundingClientRect().top + window.scrollY - 80;
+    const top = heading.getBoundingClientRect().top + window.scrollY - FEED_SCROLL_OFFSET;
     if (window.scrollY > top) {
-        const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-        window.scrollTo({ top, behavior: reduceMotion ? "auto" : "smooth" });
+        scrollPage(top);
     }
 }
 
@@ -618,20 +627,29 @@ async function loadFeed() {
     refreshButton.disabled = true;
     setBusy(refreshButton, true);
     grid.setAttribute("aria-busy", "true");
+    grid.inert = true;
     pagination.hidden = true;
     feedLogin.hidden = true;
-    grid.replaceChildren();
-    document.getElementById("result-count").textContent = "";
-    feedStatus.textContent = "正在读取文章……";
     const token = currentToken();
+    // 筛选条件和账号都相同时才保留旧卡片，避免切换账号后短暂显示别人的私人列表
+    const feedKey = feedPath() + "|" + token;
+    const keepCards = displayedFeedKey === feedKey && grid.hasChildNodes();
+    if (!keepCards) {
+        grid.replaceChildren();
+        document.getElementById("result-count").textContent = "";
+        feedStatus.textContent = "正在读取文章……";
+    }
     try {
         if (feed !== "latest" && !token) {
             feedStatus.textContent = "登录后才能查看这些文章";
             feedLogin.hidden = false;
             return;
         }
-        renderFeedSkeletons();
+        if (!keepCards) {
+            renderFeedSkeletons();
+        }
         const result = await requestFeed();
+        // 网络请求的返回顺序不一定和点击顺序相同，只让最后一次点击更新页面
         if (requestNumber !== feedRequest) {
             return;
         }
@@ -655,7 +673,7 @@ async function loadFeed() {
             !query.get("q") &&
             !query.get("tag") &&
             currentPage === 1 &&
-            result.items.length >= 5;
+            result.items.length >= FEATURE_MIN_ARTICLES;
         // 首屏大图优先选本页最新带图文章，其余文章保持原顺序且不重复展示
         let featureIndex = 0;
         if (useFeature) {
@@ -692,12 +710,14 @@ async function loadFeed() {
         setPageLink("previous-page", currentPage - 1, currentPage > 1);
         setPageLink("next-page", currentPage + 1, currentPage < pageCount);
         pagination.hidden = pageCount <= 1;
+        displayedFeedKey = feedKey;
     } catch (error) {
         if (requestNumber !== feedRequest) {
             return;
         }
         feedStatus.textContent = "读取失败：" + error.message;
         grid.replaceChildren();
+        displayedFeedKey = "";
         grid.classList.remove("has-feature");
         if (error.status === 401) {
             clearSession();
@@ -709,6 +729,7 @@ async function loadFeed() {
             refreshButton.disabled = false;
             setBusy(refreshButton, false);
             grid.setAttribute("aria-busy", "false");
+            grid.inert = false;
         }
     }
 }
@@ -730,7 +751,11 @@ function renderNotices(notes) {
         track.replaceChildren();
         return;
     }
-    const items = notes.slice(0, 8).map(function makeNoticeText(note) {
+    const group = document.createElement("div");
+    group.className = "notice-group";
+    const noticeCount = Math.min(notes.length, NOTICE_LIMIT);
+    for (let index = 0; index < noticeCount; index = index + 1) {
+        const note = notes[index];
         const text = document.createElement("span");
         text.className = "notice-item";
         const author = document.createElement("strong");
@@ -741,31 +766,17 @@ function renderNotices(notes) {
                 "于" + formatNoticeDate(note.createdAt) + "发布了《" + note.title + "》",
             ),
         );
-        return text;
-    });
-    const group = document.createElement("div");
-    group.className = "notice-group";
-    group.append(...items);
+        group.appendChild(text);
+    }
     track.replaceChildren(group);
     bar.hidden = false;
-    // 公告总宽度超过可视区域时开启滚动
-    const viewport = track.parentElement;
-    if (group.scrollWidth > viewport.clientWidth) {
-        const clone = group.cloneNode(true);
-        clone.setAttribute("aria-hidden", "true");
-        track.appendChild(clone);
-        track.style.setProperty(
-            "--notice-duration",
-            Math.max(24, notes.length * 6) + "s",
-        );
-        track.classList.add("is-scrolling");
-    }
+    updateNoticeMotion(track, group, notes.length);
 }
 
 // 用灰色骨架预留卡片位置，避免等待时列表塌陷、结果返回后页面又被撑开
 function renderFeedSkeletons() {
     grid.classList.toggle("has-feature", feed === "latest" && !query.get("q") && !query.get("tag") && currentPage === 1);
-    for (let index = 0; index < 9; index = index + 1) {
+    for (let index = 0; index < SKELETON_COUNT; index = index + 1) {
         const card = document.createElement("div");
         card.className = "article-card skeleton-card";
         card.setAttribute("aria-hidden", "true");
@@ -798,15 +809,15 @@ async function loadTopics() {
     retryTopics.hidden = true;
     topicStatus.textContent = "正在读取话题";
     try {
-        const result = await requestApi("/tags?pageSize=20", "GET", null, null);
+        const result = await requestApi("/tags?pageSize=" + TAG_PAGE_SIZE, "GET", null, null);
         topicList.replaceChildren(moreTopics);
         topicItems = [];
         const allTopics = [{ tag: "", noteCount: 0 }];
         for (const item of result.items) {
             allTopics.push(item);
         }
-        for (let i = 0; i < allTopics.length; i = i + 1) {
-            const item = allTopics[i];
+        for (let index = 0; index < allTopics.length; index = index + 1) {
+            const item = allTopics[index];
             const link = document.createElement("a");
             const label = document.createElement("span");
             label.textContent = item.tag || "全部文章";
@@ -814,15 +825,12 @@ async function loadTopics() {
             if (item.tag) {
                 link.title = item.tag + " · " + item.noteCount + " 篇文章";
             }
-            if (i >= 9) {
-                link.classList.add("topic-hidden");
-            }
             topicList.insertBefore(link, moreTopics);
             topicItems.push({ tag: item.tag, link: link });
         }
         syncActiveTopic();
         topicStatus.textContent = "";
-        moreTopics.hidden = topicItems.length <= 9;
+        updateTopicVisibility();
     } catch (error) {
         topicStatus.textContent = "话题暂时不可用";
         retryTopics.hidden = false;
@@ -842,18 +850,105 @@ function searchArticles(event) {
     scrollToFeed();
 }
 
-// 展开或收起多余话题
+// 根据屏幕宽度和展开状态显示话题，手机默认只显示两行
+function updateTopicVisibility() {
+    let limit = DESKTOP_TOPIC_LIMIT;
+    if (mobileTopics.matches) {
+        limit = MOBILE_TOPIC_LIMIT;
+    }
+    const expanded = moreTopics.getAttribute("aria-expanded") === "true";
+    for (let index = 0; index < topicItems.length; index = index + 1) {
+        const item = topicItems[index];
+        const hidden = index >= limit && !expanded;
+        item.link.classList.toggle("topic-hidden", hidden);
+    }
+    moreTopics.hidden = topicItems.length <= limit;
+    let label = "更多";
+    if (expanded) {
+        label = "收起";
+    }
+    // 保留原图标节点，展开和收起时箭头才能从当前角度连续转动
+    moreTopics.firstChild.textContent = label;
+}
+
+// 切换展开状态，再统一更新按钮文字和可见话题
 function toggleTopics() {
     const expanded = moreTopics.getAttribute("aria-expanded") !== "true";
-    moreTopics.setAttribute("aria-expanded", String(expanded));
-    const extraLinks = topicItems.slice(9).map(function (item) { return item.link; });
-    for (const link of extraLinks) {
-        link.classList.toggle("topic-hidden", !expanded);
+    // 在高度过渡中更新话题和按钮状态
+    resizePanel(topicList, function changeTopicVisibility() {
+        moreTopics.setAttribute("aria-expanded", String(expanded));
+        updateTopicVisibility();
+    });
+}
+
+// 文章作者与完整发布日期独立成行，头像失效时仍能辨认作者
+function renderArticleAuthor(note) {
+    const container = document.getElementById("detail-author");
+    const link = document.createElement("a");
+    link.className = "reader-author-link";
+    link.href = "/profile.html?u=" + encodeURIComponent(note.author.username);
+    const avatar = document.createElement("span");
+    avatar.className = "reader-avatar";
+    avatar.setAttribute("aria-hidden", "true");
+    avatar.textContent = note.author.displayName.slice(0, 1);
+    if (note.author.avatarUrl) {
+        const image = document.createElement("img");
+        image.src = note.author.avatarUrl;
+        image.alt = "";
+        // 头像失效后显示昵称首字，作者入口仍可辨认
+        image.addEventListener("error", function restoreReaderAvatar() {
+            avatar.textContent = note.author.displayName.slice(0, 1);
+        }, { once: true });
+        avatar.replaceChildren(image);
     }
-    moreTopics.replaceChildren(
-        document.createTextNode(expanded ? "收起" : "更多"),
-        makeIcon("down"),
-    );
+    const name = document.createElement("span");
+    name.className = "reader-author-name";
+    name.textContent = note.author.displayName;
+    link.append(avatar, name);
+    const time = document.createElement("time");
+    time.dateTime = note.createdAt;
+    const createdDate = new Date(note.createdAt);
+    time.textContent = createdDate.toLocaleDateString("zh-CN", {
+        year: "numeric", month: "long", day: "numeric"
+    });
+    container.replaceChildren(link, time);
+}
+
+// 话题沿用站内筛选链接，阅读后可以继续查看同类文章
+function renderArticleTags(tags) {
+    const container = document.getElementById("detail-tags");
+    container.replaceChildren();
+    container.hidden = tags.length === 0;
+    for (const tag of tags) {
+        const link = document.createElement("a");
+        const parameters = new URLSearchParams();
+        parameters.set("tag", tag);
+        link.href = "/index.html?" + parameters.toString();
+        link.textContent = "# " + tag;
+        container.appendChild(link);
+    }
+}
+
+// 仅折叠独占段落的活动附加标记，正文和代码示例继续完整显示
+function foldActivityMetadata(body) {
+    const paragraphs = body.querySelectorAll("p");
+    for (const paragraph of paragraphs) {
+        const text = paragraph.textContent.trim();
+        if (!text.startsWith("<!--SDU_ACTIVITY:") || !text.endsWith("-->")) {
+            continue;
+        }
+        if (paragraph.children.length > 0) {
+            continue;
+        }
+        const details = document.createElement("details");
+        details.className = "reader-metadata";
+        const summary = document.createElement("summary");
+        summary.textContent = "活动附加数据";
+        const source = document.createElement("pre");
+        source.textContent = text;
+        details.append(summary, source);
+        paragraph.replaceWith(details);
+    }
 }
 
 // 根据链接中的文章 ID 读取详情，支持直接打开链接和刷新
@@ -877,6 +972,7 @@ async function readArticleHash() {
         articleDialog.showModal();
     }
     detailContent.hidden = true;
+    articleDialog.scrollTop = 0;
     retryDetail.hidden = true;
     detailStatus.textContent = "正在读取文章……";
     setBusy(detailStatus, true);
@@ -886,18 +982,14 @@ async function readArticleHash() {
         if (requestNumber !== detailRequest || !articleDialog.open) {
             return;
         }
+        // 先把整篇文章填好，再显示正文，用户不会看到标题、作者逐项替换的半成品
         document.getElementById("detail-title").textContent = note.title;
-        const detailAuthor = document.getElementById("detail-author");
-        const authorLink = document.createElement("a");
-        authorLink.href = "/profile.html?u=" + encodeURIComponent(note.author.username);
-        authorLink.textContent = note.author.displayName;
-        detailAuthor.replaceChildren(
-            authorLink,
-            document.createTextNode(" · " + formatDate(note.createdAt)),
-        );
+        renderArticleAuthor(note);
+        renderArticleTags(note.tags);
         // 接口约定 contentHtml 已清理，可用于富文本展示；昵称和标题按纯文字插入以免执行用户标记
         const body = document.getElementById("detail-body");
         body.innerHTML = note.contentHtml;
+        foldActivityMetadata(body);
         const gallery = document.getElementById("detail-gallery");
         gallery.replaceChildren();
         for (const item of note.images) {
@@ -917,7 +1009,7 @@ async function readArticleHash() {
         detailStatus.textContent = "";
         detailContent.hidden = false;
         setReactionArticle(note);
-        setCommentArticle(note);
+        setCommentArticle(note, hash.get("comment"));
     } catch (error) {
         if (requestNumber !== detailRequest) {
             return;
@@ -965,18 +1057,8 @@ function updateArticleReaction(event) {
 }
 
 // 下滑后固定导航，并按滚动距离逐渐由透明填充为白色
-const TOPBAR_PIN = 8;
-const TOPBAR_FADE = 88;
 function updateTopbar() {
-    const offset = window.scrollY;
-    if (offset <= TOPBAR_PIN) {
-        topbar.classList.remove("is-sticky");
-        topbar.style.removeProperty("--topbar-fill");
-        return;
-    }
-    const fill = Math.min(1, (offset - TOPBAR_PIN) / (TOPBAR_FADE - TOPBAR_PIN));
-    topbar.classList.add("is-sticky");
-    topbar.style.setProperty("--topbar-fill", fill.toFixed(3));
+    updatePinnedTopbar(topbar);
 }
 
 // 点击账号菜单外部时收起菜单
@@ -988,8 +1070,7 @@ function closeAccountMenu(event) {
 
 // 回到页面顶部并保留地址栏哈希，文章详情状态继续由原链接控制
 function backToTop() {
-    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    window.scrollTo({ top: 0, behavior: reduceMotion ? "auto" : "smooth" });
+    scrollPage(0);
 }
 
 logoutButton.addEventListener("click", logout);
@@ -997,6 +1078,7 @@ retryButton.addEventListener("click", loadProfile);
 refreshButton.addEventListener("click", loadFeed);
 retryTopics.addEventListener("click", loadTopics);
 moreTopics.addEventListener("click", toggleTopics);
+mobileTopics.addEventListener("change", updateTopicVisibility);
 document.getElementById("back-to-top").addEventListener("click", backToTop);
 document
     .getElementById("search-form")
@@ -1011,6 +1093,11 @@ articleDialog.addEventListener("cancel", function cancelArticle(event) {
 window.addEventListener("hashchange", readArticleHash);
 // 浏览器前进后退时按地址重新读取列表，保持页面不重载
 window.addEventListener("popstate", function handleHistory() {
+    const parameters = new URLSearchParams(window.location.search);
+    // 只切换文章时交给 hashchange，避免重复读取列表和文章
+    if (parameters.toString() === query.toString()) {
+        return;
+    }
     readRoute();
     updateFeedHeading();
     loadFeed();
@@ -1030,6 +1117,7 @@ document.addEventListener("article-reaction", updateArticleReaction);
 document.addEventListener("article-comment-count", updateArticleReaction);
 confirmDeleteButton.addEventListener("click", deleteArticle);
 document.getElementById("cancel-delete").addEventListener("click", cancelDelete);
+// Escape 和取消按钮共用关闭流程，请求处理中保持原有保护
 deleteDialog.addEventListener("cancel", function closeDeleteDialog(event) {
     event.preventDefault();
     cancelDelete();

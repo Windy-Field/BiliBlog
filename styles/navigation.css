@@ -1,0 +1,10 @@
+/* Vite 在页面头部提前注入此声明，保证浏览器建立前后页面的过渡 */
+@view-transition {
+    navigation: auto;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    @view-transition {
+        navigation: none;
+    }
+}

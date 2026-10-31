@@ -20,8 +20,11 @@ import {
     ImagePlus,
     Send,
     Megaphone,
+    Bell,
 } from "lucide";
 
+const ICON_SIZE = 20;
+const ICON_STROKE = 1.8;
 const iconShapes = {
     search: Search,
     close: X,
@@ -43,14 +46,15 @@ const iconShapes = {
     image: ImagePlus,
     send: Send,
     notice: Megaphone,
+    bell: Bell,
 };
 
 // 根据名称创建 Lucide 图标，图标旁的按钮或文字负责说明用途
 export function makeIcon(name) {
     return createElement(iconShapes[name], {
-        width: 20,
-        height: 20,
-        "stroke-width": 1.8,
+        width: ICON_SIZE,
+        height: ICON_SIZE,
+        "stroke-width": ICON_STROKE,
         "aria-hidden": "true",
         focusable: "false",
     });
