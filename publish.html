@@ -12,6 +12,9 @@
     <script type="module" src="/scripts/notifications.js"></script>
     <script type="module" src="/scripts/creator-account.js"></script>
     <script type="module" src="/scripts/publish.js"></script>
+    <link rel="stylesheet" href="/styles/ai-pet.css">
+    <link rel="stylesheet" href="/styles/pet-motion.css">
+    <script type="module" src="/scripts/ai-pet.js"></script>
 </head>
 <body class="publish-page">
     <header class="editor-header">
@@ -30,7 +33,7 @@
             <a href="/index.html?feed=likes"><span data-icon="heart"></span>点赞历史</a>
             <a href="/index.html"><span data-icon="discover"></span>发现文章</a>
         </nav>
-        <a class="creator-home" href="/index.html">小B书<span>biliblog</span></a>
+        <a class="creator-home" href="/index.html">小B书<span>BiliBlog</span></a>
     </aside>
     <div class="creator-workspace">
         <div class="creator-tabs"><a href="/publish.html" aria-current="page">图文发布</a><a href="/drafts.html">草稿箱</a></div>
@@ -38,6 +41,11 @@
         <div class="editor-heading"><h1 id="editor-title">发布文章</h1><span id="author-name"></span></div>
         <div class="writing-status"><span id="article-state">新文章</span><span id="save-state" role="status" aria-live="polite">尚未保存</span><label><input id="autosave-enabled" type="checkbox" checked>自动保存草稿</label></div>
         <p id="publish-message" class="message" role="status" tabindex="-1"></p>
+        <section id="local-recovery" class="local-recovery" aria-label="恢复本机草稿" hidden>
+            <p id="local-recovery-text" role="status"></p>
+            <button id="restore-local-draft" type="button"><span data-icon="refresh"></span>恢复本机内容</button>
+            <button id="discard-local-draft" type="button"><span data-icon="trash"></span>丢弃本机备份</button>
+        </section>
         <div class="login-actions" id="login-actions" hidden>
             <a href="/login.html" target="_blank" rel="noopener">去登录</a>
             <button id="check-login" type="button">重新确认登录</button>
@@ -94,7 +102,7 @@
             <button id="retry-publish" type="button" hidden>已核对未创建，允许重新保存</button>
         </section>
     </main>
-    <footer class="creator-footer">小B书 · biliblog<span class="footer-copy">© 2026 Octorange</span></footer>
+    <footer class="creator-footer">小B书 · BiliBlog<span class="footer-copy">© 2026 Octorange</span></footer>
     </div>
     <dialog id="media-dialog" aria-labelledby="media-title">
         <div class="media-heading"><h2 id="media-title">已上传图片</h2><button id="close-library" class="icon-button" type="button" aria-label="关闭素材库" title="关闭"><span data-icon="close"></span></button></div>

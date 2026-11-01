@@ -8,6 +8,9 @@ import { setReactionArticle } from "./reactions.js";
 import { setCommentArticle } from "./comments.js";
 import { makePinButton, makePinBadge } from "./pins.js";
 import { createCollections } from "./collections.js";
+import { createPeopleSearch } from "./people.js";
+import { copyArticleLink } from "./article-share.js";
+import { startReadingProgress, stopReadingProgress } from "./reading-progress.js";
 
 const FEED_SCROLL_OFFSET = 80;
 const DESKTOP_TOPIC_LIMIT = 9;
@@ -60,6 +63,7 @@ let deletingNote = false;
 let topicItems = [];
 let readingNote = null;
 const collections = createCollections(refreshLibrary);
+const updatePeopleSearch = createPeopleSearch(document.getElementById("author-results"));
 
 // 收藏夹模块只负责分组，路由和文章列表继续由首页统一处理
 async function refreshLibrary() {
@@ -760,6 +764,8 @@ async function requestFeed() {
 
 // 读取当前文章列表，旧请求晚返回时不覆盖新结果
 async function loadFeed() {
+    updatePeopleSearch(searchInput.value.trim());
+    document.getElementById("article-results-title").hidden = !searchInput.value.trim();
     feedRequest = feedRequest + 1;
     const requestNumber = feedRequest;
     refreshButton.disabled = true;
@@ -1135,6 +1141,7 @@ function foldActivityMetadata(body) {
 
 // 根据链接中的文章 ID 读取详情，支持直接打开链接和刷新
 async function readArticleHash() {
+    stopReadingProgress();
     readingNote = null;
     document.getElementById("detail-collection").replaceChildren();
     setReactionArticle(null);
@@ -1199,7 +1206,8 @@ async function readArticleHash() {
         readingNote = note;
         renderDetailCollection(note);
         setReactionArticle(note);
-        setCommentArticle(note, hash.get("comment"));
+        setCommentArticle(note);
+        startReadingProgress(note.id, articleDialog);
     } catch (error) {
         if (requestNumber !== detailRequest) {
             return;
@@ -1220,6 +1228,7 @@ async function readArticleHash() {
 
 // 关闭阅读窗口时移除文章地址，避免刷新又打开已关闭的文章
 function closeArticle() {
+    stopReadingProgress();
     readingNote = null;
     document.getElementById("detail-collection").replaceChildren();
     setReactionArticle(null);
@@ -1280,6 +1289,12 @@ document
     .getElementById("search-form")
     .addEventListener("submit", searchArticles);
 document.getElementById("close-detail").addEventListener("click", closeArticle);
+// 分享当前文章，地址不保留收藏夹等私人列表条件
+document.getElementById("share-article").addEventListener("click", function shareArticle() {
+    if (readingNote) {
+        copyArticleLink(readingNote.id);
+    }
+});
 retryDetail.addEventListener("click", readArticleHash);
 // Escape 关闭阅读窗口时也清理文章地址
 articleDialog.addEventListener("cancel", function cancelArticle(event) {

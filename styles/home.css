@@ -380,11 +380,13 @@
 }
 .feed-heading {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     justify-content: space-between;
     gap: 16px;
     margin: 0 0 20px;
 }
+.feed-heading .refresh-button { flex-shrink: 0; white-space: nowrap; }
 .feed-title-group {
     display: flex;
     align-items: baseline;

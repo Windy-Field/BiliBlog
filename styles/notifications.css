@@ -173,21 +173,6 @@ body .notification-icon {
     outline: 2px solid var(--color-focus);
     outline-offset: 2px;
 }
-.notification-comment-context {
-    margin: 16px 0;
-    padding: 16px;
-    border-left: 3px solid var(--color-accent);
-    background: var(--color-selected);
-    scroll-margin-top: 16px;
-}
-.notification-comment-context > h3 {
-    margin: 0;
-    font-size: 16px;
-    line-height: 24px;
-}
-.notification-comment-target {
-    border-bottom-color: var(--color-accent);
-}
 @media (max-width: 767px) {
     body .notification-dialog { padding: 16px; }
     .notification-filters {

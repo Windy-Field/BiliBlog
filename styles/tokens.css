@@ -59,6 +59,14 @@
     --select-menu-gap: 8px;
     --select-menu-height: 288px;
     --select-option-radius: 4px;
+    --pet-width: 160px;
+    --pet-height: 120px;
+    --pet-width-mobile: 104px;
+    --pet-height-mobile: 78px;
+    --pet-panel-width: 360px;
+    --pet-message-height: 240px;
+    --pet-greeting-anchor: 24%;
+    --pet-greeting-offset: 12px;
     --duration-fast: 150ms;
     --duration-press: 120ms;
     --duration-panel: 200ms;

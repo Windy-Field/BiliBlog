@@ -133,7 +133,7 @@ function checkModule(file) {
         }
         if (node.type === "NewExpression" && node.callee.name === "URL") {
             const address = node.arguments[0];
-            if (address && address.type === "Literal" && typeof address.value === "string" && address.value.startsWith("./")) {
+            if (address && address.type === "Literal" && typeof address.value === "string" && address.value.startsWith(".")) {
                 checkReference(file, address.value);
             }
         }
@@ -173,6 +173,7 @@ function checkApiLimits() {
     const spec = JSON.parse(fs.readFileSync(path.join(PROJECT_ROOT, "openapi.json"), "utf8"));
     const schemas = spec.components.schemas;
     const limits = [
+        [config.MAX_TITLE_LENGTH, schemas.NoteInput.properties.title.maxLength],
         [config.MAX_TAGS, schemas.NoteInput.properties.tags.maxItems],
         [config.MAX_TAG_LENGTH, schemas.NoteInput.properties.tags.items.maxLength],
         [config.MAX_IMAGES, schemas.NoteInput.properties.imageIds.maxItems],
@@ -189,6 +190,8 @@ function checkApiLimits() {
         }
     }
     const htmlLimits = [
+        ["publish.html", "article-title", config.MAX_TITLE_LENGTH],
+        ["index.html", "search-input", config.MAX_SEARCH_LENGTH],
         ["publish.html", "article-body", config.MAX_BODY_LENGTH],
         ["publish.html", "tags-text", config.MAX_TAG_LENGTH],
         ["index.html", "collection-name", config.MAX_COLLECTION_NAME_LENGTH]

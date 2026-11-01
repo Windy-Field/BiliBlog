@@ -606,18 +606,13 @@ async function openNotification(notification) {
             address = "/profile.html?u=" + encodeURIComponent(username);
         } else {
             let noteId = notification.noteId;
-            let commentId = "";
             if (notification.type === "COMMENT" || notification.type === "REPLY") {
                 const context = await requestApi("/comments/" + encodeURIComponent(notification.commentId) + "/context", "GET", null, expectedToken);
                 noteId = context.comment.noteId;
-                commentId = context.comment.id;
             }
             await requestApi("/notes/" + encodeURIComponent(noteId), "GET", null, expectedToken);
             const hash = new URLSearchParams();
             hash.set("article", noteId);
-            if (commentId) {
-                hash.set("comment", commentId);
-            }
             address = "/index.html#" + hash.toString();
         }
         if (!sameSession(expectedToken)) {

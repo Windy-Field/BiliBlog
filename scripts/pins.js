@@ -87,7 +87,7 @@ export function makePinButton(note, onChanged) {
         }
         try {
             if (navigator.locks) {
-                await navigator.locks.request("biliblog-pin-" + note.author.username, performPin);
+                await navigator.locks.request("BiliBlog-pin-" + note.author.username, performPin);
             } else {
                 await performPin();
             }

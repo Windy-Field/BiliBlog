@@ -1,4 +1,5 @@
 import fs from "node:fs";
+import { aiPlugin } from "./tools/ai-plugin.mjs";
 
 const navigationFile = new URL("./styles/navigation.css", import.meta.url);
 const navigationStyles = fs.readFileSync(navigationFile, "utf8");
@@ -14,7 +15,7 @@ function addNavigationStyles() {
 
 // Vite 构建配置，各页面都作为入口
 export default {
-    plugins: [{
+    plugins: [aiPlugin(), {
         name: "navigation-styles",
         transformIndexHtml: {
             order: "pre",

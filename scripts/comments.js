@@ -3,6 +3,7 @@ import { readSession, clearSession } from "./auth.js";
 import { showMessage, showToast, setBusy, confirmAction } from "./common.js";
 import { makeIcon } from "./icons.js";
 import { COMMENT_PAGE_SIZE, MAX_COMMENT_LENGTH } from "./config.js";
+import { copyArticleLink } from "./article-share.js";
 
 const pageSize = COMMENT_PAGE_SIZE;
 const section = document.getElementById("comments-section");
@@ -12,7 +13,7 @@ let current = null;
 // 为 note 建立评论区，关闭时传 null，切换文章后忽略旧请求
 // 列表重建时更新 renderVersion，回复请求只写入对应版本的列表
 // 这样旧回复晚到时，也能保留新列表里的内容
-export function setCommentArticle(note, targetCommentId) {
+export function setCommentArticle(note) {
     current = null;
     section.replaceChildren();
     if (!note) {
@@ -41,7 +42,6 @@ export function setCommentArticle(note, targetCommentId) {
         available: true,
         identifying: true
     };
-    state.targetCommentId = targetCommentId;
     current = state;
     buildSection(state);
     initializeComments(state);
@@ -80,7 +80,7 @@ function buildSection(state) {
         }
         // 重新登录后需要核对评论身份，避免沿用旧账号的删除权限
         if (token !== state.token || (token && !state.username)) {
-            setCommentArticle(state.note, state.targetCommentId);
+            setCommentArticle(state.note);
             return;
         }
         loadComments(state, state.page);
@@ -146,11 +146,6 @@ function buildSection(state) {
         loadComments(state, page);
     });
     section.append(heading, state.form, state.listStatus, state.list, state.pager.element);
-    state.context = textElement("section", "notification-comment-context", "");
-    state.context.hidden = true;
-    state.context.setAttribute("aria-label", "消息对应的评论");
-    state.context.tabIndex = -1;
-    section.insertBefore(state.context, state.listStatus);
     updateComposer(state);
 }
 
@@ -175,48 +170,6 @@ async function initializeComments(state) {
         state.identifying = false;
         updateComposer(state);
         loadComments(state, 1);
-        if (state.targetCommentId) {
-            loadCommentContext(state);
-        }
-    }
-}
-
-// 从通知直接读取目标评论和所属主评论，避免翻遍所有评论页
-async function loadCommentContext(state) {
-    state.context.hidden = false;
-    state.context.textContent = "正在定位评论";
-    try {
-        const path = "/comments/" + encodeURIComponent(state.targetCommentId) + "/context";
-        const context = await requestApi(path, "GET", null, state.token);
-        if (current !== state) {
-            return;
-        }
-        if (context.comment.noteId !== state.note.id) {
-            throw new Error("这条评论属于其他文章，请返回消息列表重新打开");
-        }
-        state.context.replaceChildren(textElement("h3", "", "消息对应的评论"));
-        if (context.rootComment.id !== context.comment.id) {
-            state.context.appendChild(makeComment(state, context.rootComment, false));
-        }
-        const target = makeComment(state, context.comment, Boolean(context.comment.parentId));
-        target.classList.add("notification-comment-target");
-        state.context.appendChild(target);
-        state.context.scrollIntoView({ block: "center", behavior: "instant" });
-        state.context.focus({ preventScroll: true });
-    } catch (error) {
-        if (current !== state) {
-            return;
-        }
-        state.context.replaceChildren();
-        let message = error.message;
-        if (error.status === 404) {
-            message = "消息对应的评论已删除或暂时无法访问";
-        }
-        state.context.appendChild(textElement("p", "comment-muted", message));
-        // 定位失败后重新读取同一个目标评论
-        state.context.appendChild(actionButton("重新定位", function retryContext() {
-            loadCommentContext(state);
-        }));
     }
 }
 
@@ -367,6 +320,10 @@ function makeComment(state, comment, isReply) {
         content.classList.add("comment-muted");
     }
     const actions = textElement("div", "comment-actions", "");
+    // 评论操作区分享所属文章，阅读窗口只保留一份普通评论列表
+    actions.appendChild(actionButton("复制链接", function shareComment() {
+        copyArticleLink(state.note.id);
+    }));
     if (!isReply && !comment.deleted) {
         // 选择主评论作为回复目标，并把焦点放到输入框
         actions.appendChild(actionButton("回复", function selectReply() {

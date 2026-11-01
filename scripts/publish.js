@@ -1,11 +1,12 @@
 import { requestApi } from "./api.js";
 import { readSession, clearSession } from "./auth.js";
-import { showMessage, showToast, setBusy } from "./common.js";
+import { showMessage, showToast, setBusy, confirmAction } from "./common.js";
 import { makeIcon, fillIcons } from "./icons.js";
-import { MEDIA_PAGE_SIZE, MAX_TAGS, MAX_TAG_LENGTH, MAX_IMAGES, MAX_BODY_LENGTH } from "./config.js";
+import { MEDIA_PAGE_SIZE, MAX_TAGS, MAX_TAG_LENGTH, MAX_IMAGES, MAX_BODY_LENGTH, LOCAL_DRAFT_DELAY_MS, SESSION_KEY } from "./config.js";
 import { validateImage } from "./media.js";
 import { createEditorSession, noteFields } from "./editor-session.js";
 import { renderMarkdown } from "./markdown-preview.js";
+import { readLocalDraft, writeLocalDraft, removeLocalDraft } from "./local-draft.js";
 
 const PUBLISH_REDIRECT_MS = 700;
 const AUTOSAVE_DELAY_MS = 2000;
@@ -35,6 +36,8 @@ let uploading = false;
 let readingLibrary = false;
 let libraryPage = 1;
 let libraryPageCount = 1;
+let deletingMedia = false;
+let libraryToken = null;
 
 // 胶囊标签管理
 const chipTags = [];
@@ -51,6 +54,119 @@ let autosaveTimer = 0;
 let previewTimer = 0;
 let dirtyDuringLogin = false;
 let productId = null;
+let localDraftTimer = 0;
+let recoveryDraft = null;
+let localNoteId = "";
+let localStorageFailed = false;
+
+// 本机只保存可恢复的字段，未上传文件仅记录数量，不伪造其恢复结果
+function localSnapshot() {
+    const images = [];
+    let pendingImages = 0;
+    for (const image of selectedImages) {
+        if (image.id) {
+            images.push({ id: image.id, url: image.url });
+        } else {
+            pendingImages = pendingImages + 1;
+        }
+    }
+    const awaitingCreation = !editor.state.note && Boolean(manualSave || editor.state.pending || editor.state.uncertain || saveState.textContent === "正在保存");
+    let baseVersion = null;
+    if (editor.state.note) {
+        baseVersion = editor.state.note.version;
+    }
+    const needsComparison = Boolean(editor.state.conflict);
+    return { title: titleInput.value, contentMarkdown: bodyInput.value, tags: chipTags.slice(), pendingTag: tagsTextField.value, images: images, pendingImages: pendingImages, productId: productId, awaitingCreation: awaitingCreation, baseVersion: baseVersion, needsComparison: needsComparison };
+}
+
+// 身份确认后才读写本人备份，等待用户选择时不能覆盖待恢复内容
+function saveLocalBackup() {
+    window.clearTimeout(localDraftTimer);
+    if (!initialized || !username || recoveryDraft) {
+        return;
+    }
+    try {
+        checkEditorIdentity(sessionToken);
+    } catch {
+        return;
+    }
+    try {
+        if (!editor.dirty() && !editor.state.pending && !editor.state.uncertain && !hasPendingImages() && !tagsTextField.value) {
+            removeLocalDraft(username, localNoteId);
+        } else {
+            writeLocalDraft(username, localNoteId, localSnapshot());
+        }
+    } catch {
+        if (!localStorageFailed) {
+            localStorageFailed = true;
+            showToast("本机备份不可用，请及时保存到服务器", true);
+        }
+    }
+}
+
+// 初次读取完成后只提示恢复，不自动覆盖新读到的服务器内容
+function offerLocalRecovery() {
+    recoveryDraft = readLocalDraft(username, localNoteId);
+    if (recoveryDraft && JSON.stringify(recoveryDraft) === JSON.stringify(localSnapshot())) {
+        recoveryDraft = null;
+    }
+    document.getElementById("local-recovery").hidden = !recoveryDraft;
+    if (recoveryDraft) {
+        autosaveEnabled.checked = false;
+        let text = "发现尚未保存的本机内容";
+        if (recoveryDraft.pendingImages > 0) {
+            text = text + "，未上传图片需要重新选择";
+        }
+        if (recoveryDraft.awaitingCreation) {
+            text = text + "，上次创建结果待核对，请先检查服务器草稿箱";
+        }
+        document.getElementById("local-recovery-text").textContent = text;
+    }
+}
+
+// 用户恢复后只改编辑器输入，不自动上传或发布，原版本继续用于冲突保护
+function restoreLocalBackup() {
+    if (!recoveryDraft || manualSave || uploading) {
+        return;
+    }
+    try {
+        checkEditorIdentity(sessionToken);
+        const draft = recoveryDraft;
+        const note = { title: draft.title, contentMarkdown: draft.contentMarkdown, tags: draft.tags, images: draft.images, productId: draft.productId };
+        populateEditor(note);
+        tagsTextField.value = draft.pendingTag;
+        recoveryDraft = null;
+        if (draft.awaitingCreation && !editor.state.note) {
+            editor.state.blocked = true;
+            editor.state.uncertain = { fields: readEditorFields(), version: null };
+            showSaveState("uncertain");
+        } else if (editor.state.note && (draft.needsComparison || draft.baseVersion !== editor.state.note.version)) {
+            // 本机副本来自旧版本时必须先对比，不能把刚读取的新版本直接覆盖
+            editor.state.conflict = editor.state.note;
+            editor.state.blocked = true;
+            showSaveState("conflict");
+        }
+        document.getElementById("local-recovery").hidden = true;
+        updateEditorControls();
+        editorChanged();
+        showToast("本机内容已恢复，请核对后保存");
+    } catch (error) {
+        showToast(error.message, true);
+    }
+}
+
+// 明确丢弃仅移除当前账号当前文章的本机副本
+function discardLocalBackup() {
+    try {
+        checkEditorIdentity(sessionToken);
+        removeLocalDraft(username, localNoteId);
+        recoveryDraft = null;
+        document.getElementById("local-recovery").hidden = true;
+        updateEditorControls();
+    } catch (error) {
+        showToast(error.message, true);
+    }
+}
 
 // 把当前表单转成可提交快照，图片必须先取得服务器 ID，商品关联继续保留
 function readEditorFields() {
@@ -137,7 +253,12 @@ function updateEditorControls() {
     publishButton.replaceChildren(makeIcon("send"), document.createTextNode(action));
     saveDraftButton.hidden = published;
     autosaveEnabled.disabled = published || manualSave || !sessionToken;
-    const paused = !sessionToken || !initialized || manualSave || uploading || editor.state.blocked || leaving;
+    const paused = !sessionToken || !initialized || manualSave || uploading || editor.state.blocked || leaving || Boolean(recoveryDraft);
+    // 恢复选择完成前暂停整个编辑表单，避免新输入与待恢复内容混在一起
+    editorFields.disabled = Boolean(recoveryDraft) || !sessionToken || !initialized || manualSave || leaving;
+    fileInput.disabled = Boolean(recoveryDraft) || uploading || !sessionToken;
+    uploadButton.disabled = paused || !hasPendingImages();
+    document.getElementById("open-library").disabled = Boolean(recoveryDraft) || !sessionToken;
     publishButton.disabled = paused;
     saveDraftButton.disabled = paused;
     setBusy(publishButton, manualSave);
@@ -148,11 +269,23 @@ function updateEditorControls() {
 function showSaveState(kind) {
     if (kind === "saving") {
         saveState.textContent = "正在保存";
+        saveLocalBackup();
     } else if (kind === "saved") {
         showMessage(publishMessage, "", false);
         saveState.textContent = "已保存 " + new Date().toLocaleTimeString("zh-CN");
         uncertainPanel.hidden = true;
         if (editor.state.note) {
+            const previousId = localNoteId;
+            localNoteId = editor.state.note.id;
+            // 首次保存取得 ID 后迁移仍未保存的新输入，避免新建页留下旧备份
+            saveLocalBackup();
+            if (previousId !== localNoteId) {
+                try {
+                    removeLocalDraft(username, previousId);
+                } catch {
+                    showToast("旧本机备份清理失败，可稍后丢弃", true);
+                }
+            }
             const address = "/publish.html?id=" + encodeURIComponent(editor.state.note.id);
             window.history.replaceState(null, "", address);
         }
@@ -162,6 +295,7 @@ function showSaveState(kind) {
         conflictPanel.hidden = false;
         renderConflict();
     } else if (kind === "uncertain") {
+        saveLocalBackup();
         saveState.textContent = "保存结果待核对";
         uncertainPanel.hidden = false;
         document.getElementById("retry-publish").hidden = Boolean(editor.state.note);
@@ -185,6 +319,11 @@ function editorChanged() {
         return;
     }
     window.clearTimeout(autosaveTimer);
+    window.clearTimeout(localDraftTimer);
+    localDraftTimer = window.setTimeout(saveLocalBackup, LOCAL_DRAFT_DELAY_MS);
+    if (recoveryDraft) {
+        return;
+    }
     if (!sessionToken) {
         dirtyDuringLogin = true;
         return;
@@ -206,7 +345,7 @@ function editorChanged() {
 
 // 只自动保存草稿，不自动发布；上次请求没结束时等待下一轮，避免版本交叉
 async function autoSaveDraft() {
-    if (manualSave || uploading || editor.state.blocked || !autosaveEnabled.checked || !sessionToken) {
+    if (manualSave || uploading || recoveryDraft || editor.state.blocked || !autosaveEnabled.checked || !sessionToken) {
         return;
     }
     if (editor.state.pending) {
@@ -230,6 +369,7 @@ async function autoSaveDraft() {
         handleSaveError(error);
     } finally {
         updateEditorControls();
+        saveLocalBackup();
         if (!editor.state.blocked && editor.dirty()) {
             saveState.textContent = "有未保存的修改";
         }
@@ -238,7 +378,7 @@ async function autoSaveDraft() {
 
 // 手动保存期间禁用表单，空草稿可保存，公开发布才要求标题和正文
 async function saveManually(status) {
-    if (manualSave || uploading || !sessionToken || editor.state.blocked) {
+    if (manualSave || uploading || recoveryDraft || !sessionToken || editor.state.blocked) {
         return;
     }
     confirmTagInput();
@@ -261,6 +401,7 @@ async function saveManually(status) {
     }
     window.clearTimeout(autosaveTimer);
     manualSave = true;
+    saveLocalBackup();
     editorFields.disabled = true;
     updateEditorControls();
     showMessage(publishMessage, "", false);
@@ -282,6 +423,7 @@ async function saveManually(status) {
         manualSave = false;
         editorFields.disabled = !sessionToken || leaving;
         updateEditorControls();
+        saveLocalBackup();
     }
 }
 
@@ -386,6 +528,7 @@ function updatePreview() {
 // 正文输入后短暂合并预览更新，避免每个按键都重复解析长文章
 function bodyChanged() {
     updateBodyCount();
+    updateMediaSelection();
     editorChanged();
     window.clearTimeout(previewTimer);
     previewTimer = window.setTimeout(updatePreview, PREVIEW_DELAY_MS);
@@ -414,6 +557,7 @@ function saveDraft() {
 
 // 页面有未保存输入、待上传图片或进行中的请求时，离开前提醒用户
 function warnBeforeLeaving(event) {
+    saveLocalBackup();
     if (!initialized || leaving) {
         return;
     }
@@ -531,6 +675,7 @@ async function checkLogin() {
         if (!initialized) {
             const parameters = new URLSearchParams(window.location.search);
             const id = parameters.get("id");
+            localNoteId = id || "";
             if (id) {
                 const note = await requestApi("/notes/" + encodeURIComponent(id), "GET", null, sessionToken);
                 checkEditorIdentity(sessionToken);
@@ -542,9 +687,11 @@ async function checkLogin() {
                 saveState.textContent = "已载入保存的版本";
             }
             initialized = true;
+            offerLocalRecovery();
         }
         showMessage(publishMessage, "", false);
         editorFields.disabled = false;
+        document.getElementById("local-recovery").hidden = !recoveryDraft;
         updateEditorControls();
         if (dirtyDuringLogin) {
             dirtyDuringLogin = false;
@@ -553,6 +700,7 @@ async function checkLogin() {
     } catch (error) {
         if (error.status === 401) {
             clearSession();
+            mediaList.replaceChildren();
             showLoginRequired("登录已失效，请重新登录");
             return;
         }
@@ -713,25 +861,51 @@ async function loadMediaLibrary() {
         return;
     }
     readingLibrary = true;
-    document.getElementById("media-refresh").disabled = true;
+    const expectedToken = sessionToken;
+    libraryToken = expectedToken;
+    updateMediaSelection();
     mediaList.replaceChildren();
     mediaStatus.textContent = "正在读取图片";
     try {
         const path = "/me/media?page=" + libraryPage + "&pageSize=" + pageSize;
-        const result = await requestApi(path, "GET", null, sessionToken);
+        const result = await requestApi(path, "GET", null, expectedToken);
+        checkEditorIdentity(expectedToken);
         libraryPageCount = Math.max(1, Math.ceil(result.total / pageSize));
+        if (libraryPage > libraryPageCount) {
+            libraryPage = libraryPageCount;
+            readingLibrary = false;
+            await loadMediaLibrary();
+            return;
+        }
         document.getElementById("media-page").textContent = libraryPage + " / " + libraryPageCount;
-        document.getElementById("media-previous").disabled = libraryPage <= 1;
-        document.getElementById("media-next").disabled = libraryPage >= libraryPageCount;
         if (result.items.length === 0) {
             mediaStatus.textContent = "素材库里还没有图片";
         } else {
             mediaStatus.textContent = "选择图片即可加入文章，最多 9 张";
         }
         for (const item of result.items) {
-            mediaList.appendChild(makeMediaChoice(item));
+            const row = document.createElement("div");
+            row.className = "media-entry";
+            const remove = document.createElement("button");
+            remove.type = "button";
+            remove.className = "media-delete";
+            remove.dataset.deleteMedia = item.id;
+            remove.append(makeIcon("trash"), document.createTextNode("删除素材"));
+            remove.title = "仅可删除未被引用且未用于当前编辑内容的图片";
+            // 删除入口与选择按钮平级，避免嵌套按钮导致误选图片
+            remove.addEventListener("click", function removeMedia() {
+                deleteMedia(item, expectedToken);
+            });
+            row.append(makeMediaChoice(item), remove);
+            mediaList.appendChild(row);
         }
     } catch (error) {
+        const activeSession = readSession();
+        if (!activeSession || activeSession.token !== expectedToken) {
+            mediaList.replaceChildren();
+            mediaStatus.textContent = "登录账号已变化，请重新确认登录";
+            return;
+        }
         if (error.status === 401) {
             clearSession();
             showLoginRequired("登录已失效，请重新登录");
@@ -739,7 +913,55 @@ async function loadMediaLibrary() {
         mediaStatus.textContent = "读取素材失败：" + error.message;
     } finally {
         readingLibrary = false;
-        document.getElementById("media-refresh").disabled = false;
+        updateMediaSelection();
+    }
+}
+
+// 当前编辑器中已选图片或正文链接仍在使用的素材必须先移除引用
+function mediaInEditor(item) {
+    return isImageSelected(item.id) || bodyInput.value.includes(item.url);
+}
+
+// 删除前确认，真正引用检查交由后端执行，不自动重发结果未知的删除请求
+async function deleteMedia(item, expectedToken) {
+    if (deletingMedia || readingLibrary || uploading || !item.canDelete || mediaInEditor(item)) {
+        return;
+    }
+    deletingMedia = true;
+    updateMediaSelection();
+    try {
+        const confirmed = await confirmAction("删除这张未被引用的图片？素材文件无法恢复");
+        if (!confirmed) {
+            return;
+        }
+        checkEditorIdentity(expectedToken);
+        if (libraryToken !== expectedToken || mediaInEditor(item)) {
+            throw new Error("素材或账号状态已变化，请重新读取素材库");
+        }
+        await requestApi("/media/" + encodeURIComponent(item.id), "DELETE", null, expectedToken);
+        checkEditorIdentity(expectedToken);
+        showToast("素材已删除");
+        await loadMediaLibrary();
+    } catch (error) {
+        showToast(error.message, true);
+        const activeSession = readSession();
+        if (!activeSession || activeSession.token !== expectedToken || error.code === "IDENTITY_CHANGED") {
+            mediaList.replaceChildren();
+            showLoginRequired("登录账号已变化，请重新确认登录");
+            return;
+        }
+        if (error.status === 401) {
+            clearSession();
+            mediaList.replaceChildren();
+            showLoginRequired("登录已失效，请重新登录");
+            return;
+        }
+        if (error.code === "MEDIA_IN_USE" || error.uncertain || error.status === 404) {
+            await loadMediaLibrary();
+        }
+    } finally {
+        deletingMedia = false;
+        updateMediaSelection();
     }
 }
 
@@ -749,6 +971,8 @@ function makeMediaChoice(item) {
     choice.type = "button";
     choice.className = "media-choice";
     choice.dataset.imageId = item.id;
+    choice.dataset.imageUrl = item.url;
+    choice.dataset.canDelete = String(item.canDelete === true);
     const alreadySelected = isImageSelected(item.id);
     choice.setAttribute("aria-pressed", String(alreadySelected));
     const image = document.createElement("img");
@@ -760,6 +984,15 @@ function makeMediaChoice(item) {
     choice.append(image, caption);
     // 点击素材时切换选择状态，服务器素材本身继续保留
     choice.addEventListener("click", function toggleMediaChoice() {
+        if (deletingMedia || recoveryDraft) {
+            return;
+        }
+        try {
+            checkEditorIdentity(libraryToken);
+        } catch (error) {
+            showToast(error.message, true);
+            return;
+        }
         if (isImageSelected(item.id)) {
             removeSelectedImage(item.id);
         } else if (selectedImages.length >= MAX_IMAGES) {
@@ -778,10 +1011,19 @@ function makeMediaChoice(item) {
 
 // 按当前已选图片更新素材按钮，复用已有节点，不重新请求整页素材
 function updateMediaSelection() {
+    const busy = readingLibrary || deletingMedia || !sessionToken;
+    document.getElementById("media-refresh").disabled = busy;
+    document.getElementById("media-previous").disabled = busy || libraryPage <= 1;
+    document.getElementById("media-next").disabled = busy || libraryPage >= libraryPageCount;
     const choices = mediaList.querySelectorAll(".media-choice");
     for (const choice of choices) {
         const selected = isImageSelected(choice.dataset.imageId);
         choice.setAttribute("aria-pressed", String(selected));
+        choice.disabled = busy;
+        const remove = choice.parentElement.querySelector("[data-delete-media]");
+        if (remove) {
+            remove.disabled = busy || choice.dataset.canDelete !== "true" || selected || bodyInput.value.includes(choice.dataset.imageUrl);
+        }
     }
 }
 
@@ -833,7 +1075,7 @@ function allowPublishRetry() {
 
 // 选择素材库上一页
 function showPreviousMediaPage() {
-    if (libraryPage > 1) {
+    if (!readingLibrary && !deletingMedia && libraryPage > 1) {
         libraryPage = libraryPage - 1;
         loadMediaLibrary();
     }
@@ -841,7 +1083,7 @@ function showPreviousMediaPage() {
 
 // 选择素材库下一页
 function showNextMediaPage() {
-    if (libraryPage < libraryPageCount) {
+    if (!readingLibrary && !deletingMedia && libraryPage < libraryPageCount) {
         libraryPage = libraryPage + 1;
         loadMediaLibrary();
     }
@@ -881,6 +1123,27 @@ document.getElementById("close-library").addEventListener("click", closeMediaLib
 document.getElementById("media-refresh").addEventListener("click", loadMediaLibrary);
 document.getElementById("media-previous").addEventListener("click", showPreviousMediaPage);
 document.getElementById("media-next").addEventListener("click", showNextMediaPage);
+document.getElementById("restore-local-draft").addEventListener("click", restoreLocalBackup);
+document.getElementById("discard-local-draft").addEventListener("click", discardLocalBackup);
+window.addEventListener("pagehide", saveLocalBackup);
+// 其他标签页换账号后暂停旧编辑器，移除旧账号素材和备份提示，输入继续保留
+window.addEventListener("storage", function stopOldEditor(event) {
+    if (event.key && event.key !== SESSION_KEY) {
+        return;
+    }
+    window.clearTimeout(localDraftTimer);
+    mediaList.replaceChildren();
+    libraryToken = null;
+    mediaDialog.close();
+    document.getElementById("local-recovery").hidden = true;
+    showLoginRequired("登录账号已变化，请重新确认登录，输入仍保留");
+});
+// 页面切入后台时立即备份，不依赖手机浏览器一定触发离开提醒
+document.addEventListener("visibilitychange", function backupWhenHidden() {
+    if (document.visibilityState === "hidden") {
+        saveLocalBackup();
+    }
+});
 
 fillIcons();
 updateBodyCount();

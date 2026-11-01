@@ -1,0 +1,13 @@
+/* 角色状态切换和浮层开合只使用透明度与变换，拖动坐标不播放动画 */
+.pet-layer,
+.pet-greeting { transition: opacity var(--duration-panel) var(--ease-out); }
+body .pet-panel { opacity: 0; transform: translateY(8px); transform-origin: bottom right; transition: opacity var(--duration-panel) var(--ease-out), transform var(--duration-panel) var(--ease-out), display var(--duration-panel) allow-discrete, overlay var(--duration-panel) allow-discrete; }
+body .pet-panel:popover-open { opacity: 1; transform: translateY(0); }
+@starting-style {
+    body .pet-panel:popover-open { opacity: 0; transform: translateY(8px); }
+}
+@media (prefers-reduced-motion: reduce) {
+    .pet-layer,
+    .pet-greeting { transition: none; }
+    body .pet-panel { transition: none; transform: none; }
+}

@@ -40,7 +40,7 @@ try {
 }
 
 if (-not $portOccupied) {
-    $logDirectory = Join-Path $env:LOCALAPPDATA 'biliblog'
+    $logDirectory = Join-Path $env:LOCALAPPDATA 'BiliBlog'
     $outputLog = Join-Path $logDirectory 'dev-server.log'
     $errorLog = Join-Path $logDirectory 'dev-server-error.log'
     $quotedVitePath = '"' + $vitePath + '"'
@@ -77,7 +77,7 @@ for ($attempt = 0; $attempt -lt $maxReadyAttempts; $attempt = $attempt + 1) {
 }
 
 if (-not $ready) {
-    Write-Host '首页暂时无法打开，请查看 %LOCALAPPDATA%\biliblog 中的启动日志'
+    Write-Host '首页暂时无法打开，请查看 %LOCALAPPDATA%\BiliBlog 中的启动日志'
     exit 1
 }
 

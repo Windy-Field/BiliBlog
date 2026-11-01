@@ -10,9 +10,13 @@
     <link rel="stylesheet" href="/styles/feedback.css" />
     <link rel="stylesheet" href="/styles/notifications.css" />
     <link rel="stylesheet" href="/styles/library.css" />
+    <link rel="stylesheet" href="/styles/people.css" />
     <script type="module" src="/scripts/notifications.js"></script>
     <!-- 模块脚本在 HTML 解析完成后执行 -->
     <script type="module" src="/scripts/home.js"></script>
+    <link rel="stylesheet" href="/styles/ai-pet.css" />
+    <link rel="stylesheet" href="/styles/pet-motion.css" />
+    <script type="module" src="/scripts/ai-pet.js"></script>
   </head>
   <body class="home-page">
     <a class="skip-link" href="#content">跳到文章</a>
@@ -26,12 +30,12 @@
           <a class="desktop-entry" href="/index.html?feed=favorites"><span data-icon="bookmark"></span>收藏</a>
         </nav>
         <form id="search-form" class="search-form" role="search">
-          <label class="visually-hidden" for="search-input">搜索文章</label>
+          <label class="visually-hidden" for="search-input">搜索文章或作者</label>
           <input
             id="search-input"
             name="q"
             type="search"
-            placeholder="搜索感兴趣的文章"
+            placeholder="搜索文章或作者"
             maxlength="100"
             autocomplete="off"
           />
@@ -167,6 +171,8 @@
             重试登录状态
           </button>
         </div>
+        <section id="author-results" class="author-results" aria-labelledby="author-results-title" hidden></section>
+        <h2 id="article-results-title" class="article-results-title" hidden>相关文章</h2>
         <p id="feed-status" class="feed-status" role="status"></p>
         <section id="collection-tools" class="collection-tools" aria-label="收藏夹管理" hidden>
           <div class="collection-toolbar">
@@ -206,7 +212,7 @@
         </nav>
       </section>
       <footer class="home-footer">
-        <span>小B书 · biliblog</span><span>学习 · 生活 · 分享</span
+        <span>小B书 · BiliBlog</span><span>学习 · 生活 · 分享</span
         ><button id="back-to-top" class="back-to-top" type="button"
           >回到顶部<span data-icon="top"></span
         ></button>
@@ -219,7 +225,7 @@
       aria-labelledby="detail-title"
     >
       <div class="dialog-top">
-        <a class="reader-brand" href="/index.html">小B书<span>biliblog</span></a
+        <a class="reader-brand" href="/index.html">小B书<span>BiliBlog</span></a
         ><button
           id="close-detail"
           autofocus
@@ -242,6 +248,7 @@
         <div id="detail-gallery" class="detail-gallery"></div>
         <p id="detail-counts" class="detail-counts visually-hidden"></p>
         <div class="reaction-bar" aria-label="文章互动">
+          <button id="share-article" class="reaction-button" type="button"><span data-icon="link"></span>复制链接</button>
           <button
             id="like-button"
             class="reaction-button"

@@ -22,7 +22,7 @@ body[data-mode] .site-header > a:first-child {
 }
 
 body[data-mode] .site-header > a:first-child::after {
-    content: "biliblog";
+    content: "BiliBlog";
     margin-left: 12px;
     font-size: 13px;
     font-weight: 400;

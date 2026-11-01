@@ -5,6 +5,7 @@ import { makeIcon, fillIcons } from "./icons.js";
 import { PROFILE_PAGE_SIZE, DEFAULT_COVER_URL } from "./config.js";
 import { scrollPage } from "./motion.js";
 import { makePinButton, makePinBadge } from "./pins.js";
+import { openPeople } from "./people.js";
 
 const pageSize = PROFILE_PAGE_SIZE;
 let currentUsername = "";
@@ -576,6 +577,8 @@ async function init() {
         return;
     }
     currentUsername = username;
+    document.getElementById("stat-followers").addEventListener("click", showFollowers);
+    document.getElementById("stat-following").addEventListener("click", showFollowing);
     fillIcons();
     document.getElementById("follow-button").addEventListener("click", toggleFollow);
     document.getElementById("logout-button").addEventListener("click", logout);
@@ -593,3 +596,15 @@ async function init() {
 }
 
 init();
+
+// 点击粉丝计数时读取真实名单，不跳到页面中不存在的锚点
+function showFollowers(event) {
+    event.preventDefault();
+    openPeople("followers", currentUsername);
+}
+
+// 关注名单复用作者列表和分页，点击作者后进入对方主页
+function showFollowing(event) {
+    event.preventDefault();
+    openPeople("following", currentUsername);
+}

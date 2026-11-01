@@ -147,6 +147,20 @@ body .message[data-error="true"]:not(:empty) {
     background: var(--color-error);
 }
 
+body .share-dialog {
+    width: calc(100% - 32px);
+    max-width: 480px;
+    padding: 24px;
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    background: var(--color-page);
+    color: var(--color-text);
+}
+.share-dialog::backdrop { background: var(--color-overlay); }
+.share-dialog h2 { margin: 0 0 20px; font-size: 20px; }
+.share-dialog form { display: flex; justify-content: flex-end; margin-top: 20px; }
+body .share-dialog button { width: auto; margin: 0; }
+
 body input,
 body textarea {
     transition: border-color var(--duration-fast) var(--ease-out);

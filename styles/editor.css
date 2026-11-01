@@ -114,6 +114,12 @@
 }
 .conflict-actions { margin-top: 16px; }
 .editor-actions { gap: 12px; flex-wrap: wrap; }
+.local-recovery { padding: 16px 0; margin-bottom: 24px; border-block: 1px solid var(--color-border); }
+.local-recovery p { margin: 0 0 12px; color: var(--color-text-secondary); }
+.local-recovery button { margin: 4px 8px 4px 0; }
+.media-entry { min-width: 0; }
+.publish-page .media-entry .media-choice { width: 100%; }
+.publish-page .media-delete { width: 100%; margin-top: 8px; color: var(--color-error); font-size: 13px; }
 @media (max-width: 767px) {
     .body-workspace[data-mode="split"],
     .conflict-columns { grid-template-columns: minmax(0, 1fr); }
