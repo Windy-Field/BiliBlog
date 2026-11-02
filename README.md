@@ -2,7 +2,7 @@
 
 本项目采用**路线二：AI Agent 开发**，主要使用 HTML5、CSS3、JavaScript 和 Vite 完成前端
 
-[<img src="screenshots/home-desktop.jpg" height="260" alt="桌面首页文章排列">](screenshots/home.png)
+[<img src="screenshots/home.png" height="260" alt="桌面首页文章排列">](screenshots/home.png)
 
 开发时，我尤其在意视觉效果的呈现。因此除了实现了博客的基本功能外，还接入自定义 AI 接口，并反复调整了视觉方面的内容，如：刷新区域、页面切换的平滑动画等
 
