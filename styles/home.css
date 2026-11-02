@@ -1,4 +1,5 @@
 @import url("./tokens.css");
+@import url("./buttons.css");
 
 /* 首页单独使用设计变量，避免影响已有账号表单 */
 .home-page {
@@ -200,30 +201,6 @@
     display: flex;
     align-items: center;
     gap: 20px;
-}
-.home-page .primary-button {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-height: 40px;
-    padding: 0 20px;
-    background: var(--gradient-brand);
-    color: var(--color-text);
-    border: 0;
-    border-radius: 20px;
-    font-weight: 600;
-    white-space: nowrap;
-    box-shadow: 0 2px 8px rgba(232, 75, 133, 0.28);
-    transition: box-shadow var(--duration-panel) var(--ease-out), transform var(--duration-press) var(--ease-out);
-}
-.home-page .primary-button:not(:disabled):hover {
-    background: var(--gradient-brand-hover);
-    box-shadow: 0 4px 14px rgba(232, 75, 133, 0.38);
-    transform: translateY(-1px);
-}
-.home-page .primary-button:not(:disabled):active {
-    background: var(--gradient-brand-active);
-    transform: scale(0.97);
 }
 /* 发布文章与发表评论共用文字样式，按钮尺寸由各自组件决定 */
 .home-page .publish-link,

@@ -1,0 +1,31 @@
+@import url("./tokens.css");
+
+/* 首页和账号页复用同一个主按钮，尺寸和各状态的配色一起维护。 */
+body a.primary-button,
+body button.primary-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 40px;
+    padding: 0 20px;
+    border: 0;
+    border-radius: 20px;
+    background: var(--gradient-brand);
+    color: var(--color-text);
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 20px;
+    white-space: nowrap;
+    box-shadow: 0 2px 8px rgba(232, 75, 133, 0.28);
+}
+
+body a.primary-button:not(:disabled):hover,
+body button.primary-button:not(:disabled):hover {
+    background: var(--gradient-brand-hover);
+    box-shadow: 0 4px 14px rgba(232, 75, 133, 0.38);
+}
+
+body a.primary-button:not(:disabled):active,
+body button.primary-button:not(:disabled):active {
+    background: var(--gradient-brand-active);
+}

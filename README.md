@@ -2,7 +2,11 @@
 
 本项目采用**路线二：AI Agent 开发**，主要使用 HTML5、CSS3、JavaScript 和 Vite 完成前端
 
+[预览](screenshots/home.png)
+
 开发时，我尤其在意视觉效果的呈现。因此除了实现了博客的基本功能外，还接入自定义 AI 接口，并反复调整了视觉方面的内容，如：刷新区域、页面切换的平滑动画等
+
+可维护性方面，我采用了模块化的代码结构，将不同的功能和组件分离开来，方便后续的维护和扩展
 
 **因此，您可以重点关注以上方面的内容**
 
@@ -42,11 +46,11 @@
 
 ## 界面截图
 
-桌面截图使用 1440×960 视口，手机截图使用 440×956 视口，表格中的预览统一高度，点击图片可以查看原图。首页和阅读截图使用当时的公开文章，写作截图使用本机示例内容，设置截图展示当前界面
+截图已按当前页面重新生成。桌面视口为 1440×960，手机视口为 440×956，表格中的预览统一高度，点击图片可以查看原图。首页和阅读画面使用本机模拟接口返回的示例文章，写作画面使用未提交的示例内容；异常画面由浏览器内的模拟接口返回错误，不会向校园服务提交数据
 
 | 画面 | 网页端 | 手机端 |
 | --- | --- | --- |
-| 首页文章排列（[原首页截图](screenshots/home.png)） | [<img src="screenshots/home-desktop.jpg" height="260" alt="桌面首页文章排列">](screenshots/home-desktop.jpg) | [<img src="screenshots/home-mobile.jpg" height="260" alt="手机首页与三个标签加更多">](screenshots/home-mobile.jpg) |
+| 首页文章排列（[PNG 原图](screenshots/home.png)） | [<img src="screenshots/home-desktop.jpg" height="260" alt="桌面首页文章排列">](screenshots/home-desktop.jpg) | [<img src="screenshots/home-mobile.jpg" height="260" alt="手机首页文章排列">](screenshots/home-mobile.jpg) |
 | 文章阅读 | [<img src="screenshots/reader-desktop.jpg" height="260" alt="桌面文章阅读窗口">](screenshots/reader-desktop.jpg) | [<img src="screenshots/reader-mobile.jpg" height="260" alt="手机文章阅读窗口">](screenshots/reader-mobile.jpg) |
 | Markdown 写作与预览（示例内容） | [<img src="screenshots/editor-desktop.jpg" height="260" alt="桌面 Markdown 分栏编辑">](screenshots/editor-desktop.jpg) | [<img src="screenshots/editor-mobile.jpg" height="260" alt="手机 Markdown 编辑与上下预览">](screenshots/editor-mobile.jpg) |
 | 统一设置 | [<img src="screenshots/settings-desktop.jpg" height="260" alt="桌面设置窗口">](screenshots/settings-desktop.jpg) | [<img src="screenshots/settings-mobile.jpg" height="260" alt="手机设置窗口">](screenshots/settings-mobile.jpg) |
@@ -106,6 +110,16 @@ DASHSCOPE_APP_ID=08f487dd5e10446287bec082430afe7f // 这个应用 ID 对应本�
 ## 项目结构
 
 目录树和主要文件用途放在 [项目结构说明](project-structure.md) 中
+
+## 本地运行与提交打包
+
+安装 Node.js 24 后，在项目目录运行 `npm ci`，再双击 `start.cmd`，或运行 `npm run dev`，浏览器访问 `http://127.0.0.1:5173`。学校接口需要接入校园网络，AI 配置按上面的环境变量说明填写
+
+提交前双击根目录的 [package.cmd](package.cmd)，也可以运行 `npm run package`。程序会自动执行风格与项目检查、生产构建，再把源码、素材、截图、文档、依赖清单和配置示例打包到 `submissions/`，完成后显示压缩包的完整路径，每次生成新文件
+
+压缩包内统一放在 `BiliBlog/` 目录中，排除 `node_modules/`、`dist/`、Git 记录、本机环境变量和旧压缩包。根目录新增的 Markdown 文档，以及 `docs/` 中的代码理解材料会一同收录；打包后逐个核对文件内容，失败时自动清理临时 ZIP
+
+路线二附加材料采用自己撰写的代码理解与开发说明，提交前应确认已完成并放入根目录或 `docs/`。在作业平台的提交说明中注明“路线二：AI Agent 开发”，并粘贴 README 的主要说明
 
 ## 注册和登录的核心代码
 

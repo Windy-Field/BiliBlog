@@ -8,7 +8,7 @@ import * as config from "../scripts/config.js";
 // 自维护源码、资源和文档的检查范围，依赖及构建产物由工具管理
 const PROJECT_ROOT = fileURLToPath(new URL("../", import.meta.url));
 const SOURCE_FOLDERS = ["scripts", "styles", "tools", "assets", "screenshots"];
-const DOCUMENT_FILES = ["README.md", "project-structure.md", "design.md", "AGENTS.md"];
+const DOCUMENT_FILES = ["README.md", "project-structure.md", "design.md"];
 const files = [];
 const problems = [];
 const references = new Set();
@@ -232,7 +232,7 @@ function main() {
     checkModule("vite.config.js");
     for (const file of files) {
         const name = path.basename(file);
-        if (file !== "README.md" && file !== "AGENTS.md" && !/^[a-z0-9]+(?:-[a-z0-9]+)*\.[a-z0-9]+$/.test(name)) {
+        if (file !== "README.md" && !/^[a-z0-9]+(?:-[a-z0-9]+)*\.[a-z0-9]+$/.test(name)) {
             problems.push("文件命名不规范：" + file);
         }
         if (file.endsWith(".js") || file.endsWith(".mjs")) {

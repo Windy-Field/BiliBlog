@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite --host 127.0.0.1 --port 5173 --strictPort",
     "check": "node tools/check-style.mjs && node tools/check-project.mjs",
+    "package": "powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File tools/pack-submission.ps1",
     "build": "vite build",
     "preview": "vite preview --host 127.0.0.1 --port 5173 --strictPort"
   },

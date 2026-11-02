@@ -1,15 +1,17 @@
 @import url("./tokens.css");
+@import url("./buttons.css");
 
+/* 账号页沿用首页的白底、字体和颜色，表单用留白区分内容。 */
 body[data-mode] {
     font-family: var(--font-body);
     color: var(--color-text);
-    background: var(--color-workspace);
+    background: var(--color-page);
     font-size: 14px;
 }
 
 body[data-mode] .site-header {
     height: 64px;
-    padding: 0 32px;
+    padding: 0 24px;
     border-color: var(--color-border);
     background: var(--color-page);
 }
@@ -30,36 +32,8 @@ body[data-mode] .site-header > a:first-child::after {
 }
 
 body[data-mode] .account-page {
-    margin: 0 auto;
-    padding: 32px 24px 16px;
-}
-.account-masthead {
-    height: 112px;
-    background: url("/assets/images/forest-banner.jpg") center 48% / cover;
-}
-.account-masthead > a {
-    display: flex;
-    align-items: baseline;
-    gap: 16px;
-    height: 100%;
-    max-width: 1000px;
-    margin: 0 auto;
-    padding: 24px 32px;
-    color: var(--color-on-dark) !important;
-    font-size: 32px;
-    font-weight: 700;
-    text-decoration: none;
-    background: var(--color-banner-shade);
-}
-.account-masthead span {
-    font-size: 16px;
-    font-weight: 400;
-}
-.account-surface {
-    max-width: 1000px;
-    margin: 24px auto 0;
-    background: var(--color-page);
-    border-bottom: 1px solid var(--color-border);
+    margin: 48px auto 0;
+    padding: 0 24px;
 }
 .account-tabs {
     display: flex;
@@ -72,15 +46,16 @@ body[data-mode] .account-page {
     position: relative;
     padding: 0 8px 16px;
     text-decoration: none;
-    color: var(--color-text-secondary) !important;
-    font-size: 18px;
-}
-.account-tabs a + a {
-    margin-left: 0;
+    color: var(--color-text-secondary);
+    font-size: 16px;
+    line-height: 24px;
 }
 .account-tabs a[aria-current="page"] {
-    color: var(--color-text) !important;
-    font-weight: 500;
+    color: var(--color-text);
+    font-weight: 600;
+}
+.account-tabs a:hover {
+    color: var(--color-brand-active);
 }
 .account-tabs a[aria-current="page"]::after {
     content: "";
@@ -92,7 +67,10 @@ body[data-mode] .account-page {
     background: var(--color-brand);
 }
 .account-footer {
+    max-width: 440px;
+    margin: 32px auto 0;
     padding: 24px;
+    border-top: 1px solid var(--color-border);
     text-align: center;
     color: var(--color-text-secondary);
     font-size: 12px;
@@ -107,13 +85,19 @@ body[data-mode] .site-header .account-return {
     text-decoration: none;
     font-size: 14px;
     font-weight: 400;
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+}
+body[data-mode] .site-header .account-return:hover {
+    color: var(--color-accent);
 }
 
 body[data-mode] h1 {
     margin-bottom: 24px;
-    font-size: 28px;
+    font-size: 20px;
     font-weight: 600;
-    line-height: 40px;
+    line-height: 28px;
 }
 
 body[data-mode] label {
@@ -127,12 +111,19 @@ body[data-mode] input {
     padding: 10px 12px;
     font-size: 16px;
     color: var(--color-text);
-    background: var(--color-surface);
+    background: var(--color-page);
 }
 
 body[data-mode] input:focus-visible {
     outline: 2px solid var(--color-focus);
     outline-offset: 2px;
+}
+
+/* 登录和注册按钮在悬停、按下时保持原来的配色。 */
+body[data-mode] button.primary-button:hover,
+body[data-mode] button.primary-button:active {
+    background: var(--gradient-brand);
+    color: var(--color-text);
 }
 
 body[data-mode] .hint {
@@ -142,30 +133,18 @@ body[data-mode] .hint {
     line-height: 22px;
 }
 
-body[data-mode] button[type="submit"] {
-    background: var(--gradient-brand);
-    color: var(--color-text);
-    border-color: var(--color-brand);
-    border-radius: var(--radius-control);
-    font-weight: 500;
-}
-
-body[data-mode] button[type="submit"]:not(:disabled):hover {
-    background: var(--gradient-brand-hover);
-}
-
-body[data-mode] button[type="submit"]:not(:disabled):active {
-    background: var(--gradient-brand-active);
-}
-
-body[data-mode] a {
-    color: var(--color-link);
-}
-
 body[data-mode] .account-page > p:last-child {
     margin: 24px 0;
     color: var(--color-text-secondary);
     text-align: center;
+}
+
+body[data-mode] .account-page > p:last-child a {
+    color: var(--color-link);
+}
+
+body[data-mode] .account-page > p:last-child a:hover {
+    color: var(--color-brand-active);
 }
 
 @media (max-width: 767px) {
@@ -174,25 +153,10 @@ body[data-mode] .account-page > p:last-child {
         padding: 0 16px;
     }
     body[data-mode] .account-page {
-        margin: 0 auto;
-        padding: 0 24px;
-    }
-    .account-surface {
-        margin: 16px 12px 0;
-        padding-top: 24px;
-    }
-    .account-masthead {
-        height: 96px;
-    }
-    .account-masthead > a {
-        padding: 20px 24px;
-        font-size: 28px;
+        margin: 32px auto 0;
+        padding: 0 16px;
     }
     .account-tabs {
         gap: 32px;
-    }
-    body[data-mode] h1 {
-        font-size: 24px;
-        line-height: 34px;
     }
 }

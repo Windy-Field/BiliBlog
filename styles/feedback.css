@@ -60,11 +60,25 @@ body .comment-submit {
 }
 
 body button:not(:disabled):active,
-body .primary-button:active,
 body .page-button:not([aria-disabled="true"]):active,
 body .back-to-top:active,
 body .comment-button:not(:disabled):active,
 body .comment-submit:not(:disabled):active {
+    transform: scale(0.97);
+}
+
+/* 主按钮在首页和账号页使用相同反馈，禁用时保持原位。 */
+body .primary-button {
+    transition:
+        box-shadow var(--duration-panel) var(--ease-out),
+        transform var(--duration-press) var(--ease-out);
+}
+
+body .primary-button:not(:disabled):hover {
+    transform: translateY(-1px);
+}
+
+body .primary-button:not(:disabled):active {
     transform: scale(0.97);
 }
 
@@ -371,7 +385,8 @@ body .confirmation-actions .confirm-danger {
         transition: none !important;
     }
     body button:not(:disabled):active,
-    body .primary-button:active,
+    body .primary-button:not(:disabled):hover,
+    body .primary-button:not(:disabled):active,
     body .page-button:active,
     body dialog,
     body dialog[open],

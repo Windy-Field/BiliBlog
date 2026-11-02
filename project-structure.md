@@ -9,6 +9,7 @@
 ```text
 Blog/
 ├── start.cmd                          双击启动服务并打开首页
+├── package.cmd                        双击检查、构建并生成提交 ZIP
 ├── index.html                         首页、搜索结果与文章阅读窗口
 ├── login.html                         登录页面
 ├── register.html                      注册页面
@@ -48,10 +49,12 @@ Blog/
 │   ├── check-style.mjs                JavaScript 语法风格和函数说明检查
 │   ├── check-project.mjs              检查文件命名、代码和文档引用及接口限制
 │   ├── ai-plugin.mjs                  转发百炼 AI 请求，限制请求大小和调用频率
+│   ├── pack-submission.ps1            选择提交文件，生成 ZIP 并逐个核对文件内容
 │   └── start-dev.ps1                  本机开发服务启动脚本
 ├── styles/
 │   ├── navigation.css                 声明同站页面切换的过渡效果，由 Vite 提前注入
 │   ├── common.css                     基础页面与表单样式
+│   ├── buttons.css                    首页、登录和注册共用主按钮及各状态配色
 │   ├── account.css                    登录与注册页面样式
 │   ├── account-menu.css               首页和创作页面共用的头像菜单
 │   ├── home.css                       首页、作者分组、文章卡片和不同屏幕下的网格
@@ -79,7 +82,6 @@ Blog/
 │       ├── hovering.png               鼠标悬停状态
 │       └── thinking.png               等待 AI 回复时的思考状态
 ├── screenshots/                       README 表格中的桌面、手机和异常状态截图
-│   ├── home.png                       保留的原首页截图
 │   ├── home-desktop.jpg               桌面首页
 │   ├── home-mobile.jpg                手机首页
 │   ├── reader-desktop.jpg             桌面文章阅读
@@ -95,9 +97,9 @@ Blog/
 │   ├── login-error-desktop.jpg        桌面登录失败，模拟 401 响应
 │   └── login-error-mobile.jpg         手机登录失败，模拟 401 响应
 ├── markdown-export/                   本地课程教程，由 Git 忽略
+├── submissions/                       自动生成的提交压缩包，由 Git 忽略
 ├── openapi.json                       接口定义
 ├── design.md                          页面设计规范
-├── AGENTS.md                          项目协作约定
 ├── vite.config.js                     页面构建入口
 ├── package.json                       依赖与运行命令
 ├── package-lock.json                  锁定依赖版本，安装时使用相同版本
