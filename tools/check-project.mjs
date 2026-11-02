@@ -5,8 +5,10 @@ import { parseAst } from "rolldown/parseAst";
 import postcss from "postcss";
 import * as config from "../scripts/config.js";
 
+// 自维护源码、资源和文档的检查范围，依赖及构建产物由工具管理
 const PROJECT_ROOT = fileURLToPath(new URL("../", import.meta.url));
 const SOURCE_FOLDERS = ["scripts", "styles", "tools", "assets", "screenshots"];
+const DOCUMENT_FILES = ["README.md", "project-structure.md", "design.md", "AGENTS.md"];
 const files = [];
 const problems = [];
 const references = new Set();
@@ -70,7 +72,7 @@ function checkTextReferences(file) {
         postcss.parse(source, { from: file });
         pattern = /url\(["']?([^"')]+)["']?\)/g;
     } else {
-        pattern = /!\[[^\]]*\]\(([^)]+)\)/g;
+        pattern = /\[[^\]]*\]\(([^)]+)\)/g;
     }
     for (const match of source.matchAll(pattern)) {
         checkReference(file, match[1]);
@@ -223,12 +225,14 @@ function main() {
             files.push(name);
         }
     }
-    files.push("README.md");
+    for (const document of DOCUMENT_FILES) {
+        files.push(document);
+    }
     // 构建配置会读取跳转样式，也需要纳入引用检查
     checkModule("vite.config.js");
     for (const file of files) {
         const name = path.basename(file);
-        if (file !== "README.md" && !/^[a-z0-9]+(?:-[a-z0-9]+)*\.[a-z0-9]+$/.test(name)) {
+        if (file !== "README.md" && file !== "AGENTS.md" && !/^[a-z0-9]+(?:-[a-z0-9]+)*\.[a-z0-9]+$/.test(name)) {
             problems.push("文件命名不规范：" + file);
         }
         if (file.endsWith(".js") || file.endsWith(".mjs")) {

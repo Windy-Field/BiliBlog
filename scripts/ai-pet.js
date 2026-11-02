@@ -1,9 +1,18 @@
 import { makeIcon } from "./icons.js";
 import { readSession } from "./auth.js";
 import { renderMarkdown } from "./markdown-preview.js";
-import { PET_NAME, PET_CHAT_PATH, PET_STATUS_PATH, PET_TIMEOUT_MS, PET_MAX_MESSAGE_LENGTH, PET_MAX_MESSAGES, PET_STORAGE_KEY, PET_SESSION_KEY, PET_STATES, PET_GREETING_VISIBLE_MS, PET_GREETING_HIDDEN_MS, PET_DRAG_THRESHOLD, PET_EDGE_MARGIN, SESSION_KEY } from "./config.js";
+import { addSettingsSection } from "./site-settings.js";
+import { showToast } from "./common.js";
+import { PET_NAME, PET_CHAT_PATH, PET_STATUS_PATH, PET_TIMEOUT_MS, PET_MAX_MESSAGE_LENGTH, PET_MAX_MESSAGES, PET_STORAGE_KEY, PET_SESSION_KEY, PET_STATES, PET_GREETING_VISIBLE_MS, PET_GREETING_HIDDEN_MS, PET_DRAG_THRESHOLD, PET_EDGE_MARGIN, SESSION_KEY, SESSION_CHANGED_EVENT } from "./config.js";
 
-const greetings = ["你好，我是 " + PET_NAME, "有什么知识想了解？", "一起把问题弄明白吧", "学习、写作，都可以聊"];
+// 状态检查的等待时间以毫秒计，图片使用双层交替显示以避免切换闪白
+const STATUS_TIMEOUT_MS = 5000;
+const IMAGE_LAYER_COUNT = 2;
+// 浏览器单次定时器的最长毫秒数，较长会话分段检查，避免计时溢出
+const MAX_SESSION_DELAY_MS = 2147483647;
+// 动态问候和快捷问题集中维护，调整内容时无需改动发送流程
+const GREETINGS = ["你好，我是 " + PET_NAME, "有什么知识想了解？", "一起把问题弄明白吧", "学习、写作，都可以聊"];
+const QUICK_QUESTIONS = ["如何查找并核对可靠的知识来源？", "请通俗解释一个机器学习的基础概念"];
 const root = document.createElement("aside");
 const toggle = document.createElement("button");
 const panel = document.createElement("section");
@@ -19,6 +28,7 @@ let imageRevision = 0;
 let controller = null;
 let requestRevision = 0;
 let greetingTimer = 0;
+let sessionTimer = 0;
 let greetingIndex = 0;
 let dragged = false;
 let drag = null;
@@ -47,7 +57,7 @@ function saveSettings() {
     try {
         localStorage.setItem(PET_STORAGE_KEY, JSON.stringify(settings));
     } catch {
-        status.textContent = "当前设置仅本页有效";
+        showToast("当前宠物设置仅本页有效，浏览器未能保存偏好", true);
     }
 }
 
@@ -83,6 +93,8 @@ function toolButton(icon, title, handler) {
 function buildPet() {
     root.id = "ai-pet";
     root.className = "ai-pet";
+    // 挂到页面前先隐藏，游客首次进入时也不会短暂闪出宠物
+    root.hidden = true;
     root.setAttribute("aria-label", PET_NAME + " AI 助手");
     toggle.type = "button";
     toggle.className = "pet-toggle";
@@ -90,7 +102,7 @@ function buildPet() {
     toggle.setAttribute("aria-expanded", "false");
     toggle.setAttribute("aria-controls", "pet-panel");
     const stage = textElement("span", "pet-stage", "");
-    for (let index = 0; index < 2; index = index + 1) {
+    for (let index = 0; index < IMAGE_LAYER_COUNT; index = index + 1) {
         const image = document.createElement("img");
         image.src = PET_STATES.idle;
         image.alt = "";
@@ -127,7 +139,7 @@ function buildPet() {
     messages.setAttribute("role", "log");
     messages.setAttribute("aria-live", "polite");
     const shortcuts = textElement("div", "pet-prompts", "");
-    for (const question of ["如何查找并核对可靠的知识来源？", "请通俗解释一个机器学习的基础概念"]) {
+    for (const question of QUICK_QUESTIONS) {
         const button = textElement("button", "", question);
         button.type = "button";
         // 快捷问题与手动输入共用一次发送流程
@@ -155,36 +167,38 @@ function buildPet() {
     root.appendChild(toggle);
     document.body.append(root, panel);
     addSettings();
-    loadConversationId();
+    if (owner !== "guest") {
+        loadConversationId();
+    }
     appendMessage("你好，我是 **" + PET_NAME + "**。可以帮你梳理知识、解答问题和查找思路，检索到的知识来源会随回答显示", "assistant");
-    applySettings();
+    syncSession();
     window.addEventListener("resize", adaptPosition);
     window.addEventListener("storage", storageChanged);
     window.addEventListener("pagehide", cancelRequest);
+    window.addEventListener("focus", syncSession);
+    document.addEventListener(SESSION_CHANGED_EVENT, syncSession);
     // 页面弹窗打开时暂时收起宠物，避免干扰阅读和编辑确认
     const observer = new MutationObserver(syncModalVisibility);
     observer.observe(document.body, { subtree: true, attributes: true, attributeFilter: ["open"], childList: true });
 }
 
-// 设置入口始终可见，即使隐藏宠物也可重新开启
+// 将宠物开关加入统一设置，隐藏宠物后仍能通过导航重新开启
 function addSettings() {
-    const footer = document.querySelector(".creator-footer, .home-footer, .profile-footer, .account-footer");
-    const group = textElement("details", "pet-settings", "");
-    const summary = textElement("summary", "", "宠物助手设置");
-    const controls = textElement("div", "pet-setting-controls", "");
-    const enabledLabel = textElement("label", "", "");
+    const controls = document.createElement("div");
+    const enabledLabel = textElement("label", "site-setting-row", "");
     enabledInput = document.createElement("input");
     enabledInput.type = "checkbox";
-    enabledLabel.append(enabledInput, document.createTextNode("显示 " + PET_NAME));
+    enabledInput.setAttribute("role", "switch");
+    enabledLabel.append(document.createTextNode("显示 " + PET_NAME), enabledInput);
     enabledInput.addEventListener("change", changeEnabled);
-    const greetingLabel = textElement("label", "", "");
+    const greetingLabel = textElement("label", "site-setting-row", "");
     greetingInput = document.createElement("input");
     greetingInput.type = "checkbox";
-    greetingLabel.append(greetingInput, document.createTextNode("动态问候"));
+    greetingInput.setAttribute("role", "switch");
+    greetingLabel.append(document.createTextNode("动态问候"), greetingInput);
     greetingInput.addEventListener("change", changeGreeting);
     controls.append(enabledLabel, greetingLabel);
-    group.append(summary, controls);
-    footer.appendChild(group);
+    addSettingsSection("宠物助手", controls);
 }
 
 // 状态图片预加载完成后双层交替显示，快速操作时忽略旧加载结果
@@ -285,7 +299,9 @@ async function loadConversationId() {
         const digest = await crypto.subtle.digest("SHA-256", bytes);
         let fingerprint = "";
         for (const value of new Uint8Array(digest)) {
-            fingerprint = fingerprint + value.toString(16).padStart(2, "0");
+            const hexadecimal = value.toString(16);
+            const padded = hexadecimal.padStart(2, "0");
+            fingerprint = fingerprint + padded;
         }
         if (expectedOwner !== owner || revision !== requestRevision) {
             return;
@@ -348,11 +364,12 @@ function updateSending() {
 
 // 发送普通文字对话，不自动读取文章、草稿或任何账号资料
 async function sendMessage(text) {
+    if (!readSession()) {
+        syncSession();
+        return;
+    }
     if (owner !== sessionOwner()) {
-        clearConversation();
-        owner = sessionOwner();
-        sessionStorageKey = "";
-        loadConversationId();
+        syncSession();
     }
     const message = text.trim();
     if (controller || !message || message.length > PET_MAX_MESSAGE_LENGTH) {
@@ -430,6 +447,10 @@ function submitMessage(event) {
 
 // 拖动后的鼠标释放不再当作点击，普通键盘操作仍可打开对话
 function togglePanel(event) {
+    if (!readSession()) {
+        syncSession();
+        return;
+    }
     if (dragged && event.detail !== 0) {
         dragged = false;
         return;
@@ -450,7 +471,7 @@ async function checkStatus() {
         return;
     }
     try {
-        const response = await fetch(PET_STATUS_PATH, { signal: AbortSignal.timeout(5000) });
+        const response = await fetch(PET_STATUS_PATH, { signal: AbortSignal.timeout(STATUS_TIMEOUT_MS) });
         const result = await response.json();
         if (!controller && result.configured === false) {
             status.textContent = "AI 服务尚未配置";
@@ -483,7 +504,13 @@ function startDrag(event) {
     }
     const bounds = root.getBoundingClientRect();
     dragged = false;
-    drag = { pointer: event.pointerId, startX: event.clientX, startY: event.clientY, left: bounds.left, top: bounds.top };
+    drag = {
+        pointer: event.pointerId,
+        startX: event.clientX,
+        startY: event.clientY,
+        left: bounds.left,
+        top: bounds.top
+    };
     toggle.setPointerCapture(event.pointerId);
 }
 
@@ -536,7 +563,9 @@ function adaptPosition() {
         root.style.bottom = "auto";
     }
     const bounds = root.getBoundingClientRect();
-    const width = Math.min(360, innerWidth - PET_EDGE_MARGIN * 2);
+    const panelStyle = getComputedStyle(panel);
+    const configuredWidth = Number.parseFloat(panelStyle.getPropertyValue("--pet-panel-width"));
+    const width = Math.min(configuredWidth, innerWidth - PET_EDGE_MARGIN * 2);
     const left = Math.max(PET_EDGE_MARGIN, Math.min(innerWidth - width - PET_EDGE_MARGIN, bounds.right - width));
     panel.style.left = left + "px";
     positionGreeting();
@@ -565,10 +594,10 @@ function positionGreeting() {
 function restartGreeting() {
     window.clearTimeout(greetingTimer);
     root.classList.remove("has-greeting");
-    if (root.hidden || !settings.greeting || panel.matches(":popover-open") || document.visibilityState === "hidden") {
+    if (root.hidden || !readSession() || !settings.greeting || panel.matches(":popover-open") || document.visibilityState === "hidden") {
         return;
     }
-    greeting.textContent = greetings[greetingIndex % greetings.length];
+    greeting.textContent = GREETINGS[greetingIndex % GREETINGS.length];
     positionGreeting();
     greetingIndex = greetingIndex + 1;
     root.classList.add("has-greeting");
@@ -579,16 +608,18 @@ function restartGreeting() {
     }, PET_GREETING_VISIBLE_MS);
 }
 
-// 设置变化立刻应用，隐藏时收起聊天，开关仍保留在页脚
+// 设置变化立刻应用，隐藏时收起聊天，开关仍保留在导航的设置窗口中
 function applySettings() {
     enabledInput.checked = settings.enabled;
     greetingInput.checked = settings.greeting;
-    root.hidden = !settings.enabled;
-    if (!settings.enabled) {
+    const loggedIn = Boolean(readSession());
+    enabledInput.disabled = !loggedIn;
+    greetingInput.disabled = !loggedIn;
+    if (!settings.enabled || !loggedIn) {
         closePanel();
     }
-    adaptPosition();
     syncModalVisibility();
+    adaptPosition();
     restartGreeting();
 }
 
@@ -609,7 +640,7 @@ function changeGreeting() {
 // 原生模态窗口出现时不让宠物遮住正文或操作按钮
 function syncModalVisibility() {
     const modal = document.querySelector("dialog[open]");
-    const hidden = !settings.enabled || Boolean(modal);
+    const hidden = !readSession() || !settings.enabled || Boolean(modal);
     if (root.hidden !== hidden) {
         root.hidden = hidden;
         if (hidden) {
@@ -619,21 +650,39 @@ function syncModalVisibility() {
     }
 }
 
+// 登录、退出和凭证到期时同步宠物，取消旧账号请求并停止游客的动态问候
+function syncSession() {
+    const nextOwner = sessionOwner();
+    if (owner !== nextOwner) {
+        clearConversation();
+        owner = nextOwner;
+        sessionStorageKey = "";
+        if (owner !== "guest") {
+            loadConversationId();
+        }
+        closePanel();
+    }
+    window.clearTimeout(sessionTimer);
+    const session = readSession();
+    if (session) {
+        const remaining = Date.parse(session.expiresAt) - Date.now();
+        const delay = Math.min(MAX_SESSION_DELAY_MS, Math.max(1, remaining));
+        sessionTimer = window.setTimeout(syncSession, delay);
+    }
+    applySettings();
+}
+
 // 设置跨页面同步，登录账号变化时取消旧请求并清空旧 AI 会话
 function storageChanged(event) {
     if (event.key === PET_STORAGE_KEY || !event.key) {
         settings = readSettings();
         applySettings();
     }
-    if ((event.key === SESSION_KEY || !event.key) && owner !== sessionOwner()) {
-        clearConversation();
-        owner = sessionOwner();
-        sessionStorageKey = "";
-        loadConversationId();
-        closePanel();
+    if (event.key === SESSION_KEY || !event.key) {
+        syncSession();
     }
 }
 
 // 页面切入后台停止语录定时器，返回后恢复
-document.addEventListener("visibilitychange", restartGreeting);
+document.addEventListener("visibilitychange", syncSession);
 buildPet();

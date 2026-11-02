@@ -1,4 +1,5 @@
 :root {
+    /* 全站语义颜色和渐变，页面按用途引用，保持现有配色 */
     --color-brand: #ff6699;
     --color-brand-hover: #ff8cb0;
     --color-brand-active: #e84b85;
@@ -40,18 +41,61 @@
     --color-cover-pink: #ffecf1;
     --color-cover-green: #e5f0e8;
     --color-cover-purple: #edeaf7;
+    /* 正文和代码字体，以及重复使用的按钮文字规格 */
     --font-body: "PingFang SC", "Microsoft YaHei", Arial, sans-serif;
     --font-mono: Consolas, monospace;
     --font-publish-action: 600 14px / 20px var(--font-body);
+    /* 页面主要容器尺寸，阅读窗口外框与正文宽度分别维护 */
     --editor-content-width: 940px;
+    --reader-width: 880px;
+    --reader-content-width: 760px;
+    --reader-viewport-gap: 48px;
+    --reader-viewport-gap-mobile: 32px;
+    --reader-padding-inline: 48px;
+    --reader-padding-inline-mobile: 20px;
+    --reader-padding-bottom: 40px;
+    --reader-padding-bottom-mobile: 24px;
+    --reader-image-height: 680px;
+    --reader-title-size: 28px;
+    --reader-title-line: 40px;
+    --reader-title-size-mobile: 24px;
+    --reader-title-line-mobile: 34px;
+    --reader-body-size: 16px;
+    --reader-body-line: 28px;
+    --preview-min-height: 280px;
+    --preview-max-height: 640px;
+    --profile-cover-height: 180px;
+    --profile-cover-height-mobile: 160px;
+    --notification-dialog-width: 680px;
+    --people-dialog-width: 640px;
+    --people-result-gap: 24px;
+    /* 首页话题链接与更多按钮共用高度，展开后的每一行保持一致 */
+    --topic-control-height: 32px;
+    /* 手机发布和头像外圈均为 44px，发布图标为 28px，入口之间保留独立间距 */
+    --mobile-account-control: 44px;
+    --mobile-account-icon: 28px;
+    --mobile-account-gap: 8px;
+    /* 资料预览与设置窗口控件尺寸，布局数值在此统一调整 */
     --settings-avatar-size: 80px;
     --settings-cover-width: 420px;
+    --settings-dialog-width: 480px;
+    --settings-control-size: 44px;
+    --settings-switch-width: 40px;
+    --settings-switch-height: 24px;
+    --settings-switch-thumb: 18px;
+    --settings-switch-inset: 2px;
+    --settings-section-gap: 24px;
+    /* 消息与设置工具组共用间距、尺寸和悬停背景 */
+    --navigation-tool-gap: 4px;
+    --navigation-tool-hover: rgba(148, 153, 160, 0.18);
+    /* 控件圆角和阴影，组件只选择适合自身用途的规格 */
     --radius-control: 8px;
     --radius-card: 10px;
     --radius-menu: 12px;
     --shadow-card: 0 1px 3px rgba(24, 25, 28, 0.04), 0 4px 12px rgba(24, 25, 28, 0.07);
     --shadow-card-hover: 0 4px 12px rgba(24, 25, 28, 0.08), 0 12px 32px rgba(24, 25, 28, 0.12);
     --shadow-menu: 0 8px 24px rgba(24, 25, 28, 0.14);
+    /* 原生可定制选择框的展开菜单和选项尺寸 */
     --select-height: 44px;
     --select-option-height: 40px;
     --select-padding: 8px 12px;
@@ -59,6 +103,7 @@
     --select-menu-gap: 8px;
     --select-menu-height: 288px;
     --select-option-radius: 4px;
+    /* 宠物图片、聊天窗口和左耳上方问候气泡的定位参数 */
     --pet-width: 160px;
     --pet-height: 120px;
     --pet-width-mobile: 104px;
@@ -67,9 +112,17 @@
     --pet-message-height: 240px;
     --pet-greeting-anchor: 24%;
     --pet-greeting-offset: 12px;
+    --pet-greeting-width: 220px;
+    --pet-edge-desktop: 20px;
+    --pet-edge-mobile: 12px;
+    /* 动效时长和缓动曲线，减少动态效果的规则由各动效样式处理 */
     --duration-fast: 150ms;
     --duration-press: 120ms;
     --duration-panel: 200ms;
     --duration-modal: 220ms;
+    --duration-image: 300ms;
+    --duration-topbar: 250ms;
+    --duration-skeleton: 1200ms;
+    --duration-spinner: 800ms;
     --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
 }

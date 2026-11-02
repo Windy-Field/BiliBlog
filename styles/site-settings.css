@@ -1,0 +1,187 @@
+/* 通知和设置共用同一规则，横幅与普通页面都继承所属导航的文字颜色 */
+.navigation-tools {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+    gap: var(--navigation-tool-gap);
+}
+body button:is(.notification-bell, .site-settings-button) {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 var(--settings-control-size);
+    width: var(--settings-control-size);
+    height: var(--settings-control-size);
+    min-height: var(--settings-control-size);
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-radius: var(--radius-control);
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+}
+body button:is(.notification-bell, .site-settings-button):not(:disabled):hover {
+    background: var(--navigation-tool-hover);
+    color: inherit;
+}
+.site-settings-navigation {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+body .site-settings-dialog {
+    width: calc(100% - 32px);
+    max-width: var(--settings-dialog-width);
+    max-height: calc(100dvh - 32px);
+    padding: var(--settings-section-gap);
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    background: var(--color-page);
+    color: var(--color-text);
+    box-shadow: var(--shadow-menu);
+    font: 400 14px / 22px var(--font-body);
+    overflow: auto;
+    overscroll-behavior: contain;
+}
+/* 锁定实际滚动根节点，滚轮和触摸都只在设置窗口内滚动 */
+html:has(#site-settings-dialog[open]),
+body:has(#site-settings-dialog[open]) {
+    overflow: hidden;
+    overscroll-behavior: none;
+}
+.site-settings-dialog::backdrop {
+    background: var(--color-overlay);
+}
+.site-settings-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--color-border);
+}
+.site-settings-heading h2 {
+    margin: 0;
+    font-size: 20px;
+    line-height: 28px;
+}
+.site-settings-section {
+    margin-top: var(--settings-section-gap);
+}
+.site-settings-section + .site-settings-section {
+    padding-top: var(--settings-section-gap);
+    border-top: 1px solid var(--color-border);
+}
+.site-settings-section h3 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0 0 8px;
+    color: var(--color-text);
+    font-size: 14px;
+    font-weight: 600;
+}
+.site-settings-section h3 svg {
+    color: var(--color-link);
+}
+body .site-setting-row,
+body .site-settings-link {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    min-height: var(--settings-control-size);
+    margin: 0;
+    color: var(--color-text);
+    font-size: 14px;
+}
+body .site-settings-link {
+    justify-content: flex-start;
+    padding: 8px 12px;
+    border-radius: 6px;
+    background: var(--color-surface);
+}
+body .site-settings-link:hover {
+    background: var(--color-surface-hover);
+}
+.site-settings-link > svg:last-child {
+    margin-left: auto;
+}
+body .site-setting-row input {
+    appearance: none;
+    position: relative;
+    flex: 0 0 var(--settings-switch-width);
+    width: var(--settings-switch-width);
+    height: var(--settings-switch-height);
+    min-height: var(--settings-switch-height);
+    margin: 0;
+    padding: 0;
+    border: 1px solid var(--color-input-border);
+    border-radius: var(--settings-switch-height);
+    background: var(--color-surface-hover);
+    box-shadow: none;
+    cursor: pointer;
+}
+body .site-setting-row input::before {
+    content: "";
+    position: absolute;
+    top: var(--settings-switch-inset);
+    left: var(--settings-switch-inset);
+    width: var(--settings-switch-thumb);
+    height: var(--settings-switch-thumb);
+    border-radius: 50%;
+    background: var(--color-text-secondary);
+}
+body .site-setting-row input:checked {
+    border-color: var(--color-link);
+    background: var(--color-link);
+}
+body .site-setting-row input:checked::before {
+    background: var(--color-page);
+    transform: translateX(calc(var(--settings-switch-width) - var(--settings-switch-thumb) - 2 * var(--settings-switch-inset) - 2px));
+}
+body .site-setting-row input:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+body .site-setting-row input:focus-visible {
+    outline: 2px solid var(--color-focus);
+    outline-offset: 2px;
+    box-shadow: none;
+}
+.site-setting-row:has(input:disabled) {
+    color: var(--color-text-secondary);
+}
+.site-settings-button:focus-visible,
+.site-settings-dialog :focus-visible {
+    outline: 2px solid var(--color-focus);
+    outline-offset: 2px;
+}
+/* 窄屏优先保留首页、账号、消息和设置的完整点击区域 */
+@media (max-width: 479px) {
+    .home-page #guest-links {
+        gap: 8px;
+    }
+    .home-page #guest-links > .primary-button {
+        padding-left: 12px;
+        padding-right: 12px;
+    }
+    .editor-header nav > a:has([data-icon="home"]) {
+        width: 44px;
+        padding: 0;
+        justify-content: center;
+        gap: 0;
+        font-size: 0;
+    }
+    .editor-header nav > a:has([data-icon="home"]) [data-icon] {
+        font-size: 14px;
+    }
+    body[data-mode] .site-header > a:first-child::after {
+        display: none;
+    }
+    body .site-settings-dialog {
+        padding: 16px;
+    }
+}

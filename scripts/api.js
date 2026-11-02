@@ -35,7 +35,7 @@ export async function requestApi(path, method, body, token) {
 // 执行一次真实请求，统一处理超时、JSON 解析和后端错误，供 requestApi 调用
 async function sendRequest(path, method, body, token) {
     const controller = new AbortController();
-    // 请求超过 15 秒后取消，避免网络卡住时界面一直等待
+    // 超过配置的等待时间后取消，避免网络卡住时界面一直等待
     const timeout = window.setTimeout(function cancelRequest() {
         controller.abort();
     }, REQUEST_TIMEOUT_MS);

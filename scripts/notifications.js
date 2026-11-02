@@ -5,7 +5,22 @@ import { makeIcon } from "./icons.js";
 import { NOTIFICATION_PAGE_SIZE, NOTIFICATION_SCAN_SIZE, MAX_PAGE, LOCAL_UNREAD_PREFIX } from "./config.js";
 
 const pageSize = NOTIFICATION_PAGE_SIZE;
+// 顶栏角标的显示上限，更大的实际数量以加号表示
 const BADGE_LIMIT = 99;
+// 筛选选项的值与接口保持一致，调整名称或顺序只修改这里
+const TYPE_OPTIONS = [
+    { value: "", label: "全部类型" },
+    { value: "LIKE", label: "点赞" },
+    { value: "COMMENT", label: "评论" },
+    { value: "REPLY", label: "回复" },
+    { value: "FOLLOW", label: "关注" },
+    { value: "ORDER_PAID", label: "交易" }
+];
+const READ_OPTIONS = [
+    { value: "all", label: "全部消息" },
+    { value: "unread", label: "未读" },
+    { value: "read", label: "已读" }
+];
 const bell = document.querySelector("[data-notifications]");
 const typeNames = {
     LIKE: "点赞",
@@ -241,19 +256,8 @@ function buildDialog() {
     header.append(title, close);
     const tools = textElement("div", "notification-tools", "");
     const filters = textElement("div", "notification-filters", "");
-    typeFilter = makeFilter("消息类型", [
-        { value: "", label: "全部类型" },
-        { value: "LIKE", label: "点赞" },
-        { value: "COMMENT", label: "评论" },
-        { value: "REPLY", label: "回复" },
-        { value: "FOLLOW", label: "关注" },
-        { value: "ORDER_PAID", label: "交易" }
-    ], filters);
-    readFilter = makeFilter("阅读状态", [
-        { value: "all", label: "全部消息" },
-        { value: "unread", label: "未读" },
-        { value: "read", label: "已读" }
-    ], filters);
+    typeFilter = makeFilter("消息类型", TYPE_OPTIONS, filters);
+    readFilter = makeFilter("阅读状态", READ_OPTIONS, filters);
     refresh = makeButton("刷新", refreshNotifications);
     readAll = makeButton("全部已读", markAllRead);
     const toolbarActions = textElement("div", "notification-toolbar-actions", "");
@@ -693,8 +697,9 @@ function refreshSession() {
 }
 
 if (bell) {
-    // 同时调整显示和键盘顺序，让铃铛位于导航最右侧
-    bell.parentElement.appendChild(bell);
+    // 消息放在账号右侧、设置左侧，显示顺序与键盘顺序保持一致
+    const settingsButton = bell.parentElement.querySelector('[aria-controls="site-settings-dialog"]');
+    bell.parentElement.insertBefore(bell, settingsButton);
     buildDialog();
     bell.replaceChildren(makeIcon("bell"), bell.querySelector(".notification-badge"));
     bell.addEventListener("click", openDialog);

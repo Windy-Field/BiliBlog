@@ -5,6 +5,8 @@ import { makeIcon } from "./icons.js";
 import { COMMENT_PAGE_SIZE, MAX_COMMENT_LENGTH } from "./config.js";
 import { copyArticleLink } from "./article-share.js";
 
+// 输入区初始行数只影响显示高度，字数上限继续由接口配置决定
+const COMPOSER_ROWS = 3;
 const pageSize = COMMENT_PAGE_SIZE;
 const section = document.getElementById("comments-section");
 const drafts = new Map();
@@ -107,7 +109,7 @@ function buildSection(state) {
     state.input.id = "comment-body";
     state.input.maxLength = MAX_COMMENT_LENGTH;
     state.input.required = true;
-    state.input.rows = 3;
+    state.input.rows = COMPOSER_ROWS;
     state.input.value = state.draft.text;
     // 记录输入，切换或重建评论区后还能继续编辑
     state.input.addEventListener("input", function saveCommentInput() {
@@ -457,7 +459,7 @@ async function sendComment(state) {
         return;
     }
     if (text.length > MAX_COMMENT_LENGTH) {
-        state.input.setCustomValidity("评论最多 1000 个字符");
+        state.input.setCustomValidity("评论最多 " + MAX_COMMENT_LENGTH + " 个字符");
         state.input.reportValidity();
         return;
     }

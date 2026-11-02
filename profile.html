@@ -6,6 +6,7 @@
   <title>主页 - 小B书</title>
   <link rel="stylesheet" href="/styles/common.css" />
   <link rel="stylesheet" href="/styles/home.css" />
+    <link rel="stylesheet" href="/styles/reader.css" />
   <link rel="stylesheet" href="/styles/profile.css" />
   <link rel="stylesheet" href="/styles/feedback.css" />
   <link rel="stylesheet" href="/styles/notifications.css" />
@@ -58,9 +59,6 @@
             <a href="/index.html?feed=favorites"
               ><span data-icon="bookmark"></span>我的收藏</a
             >
-            <a href="/settings.html"
-              ><span data-icon="write"></span>资料设置</a
-            >
             <button id="logout-button" type="button">
               <span data-icon="logout"></span>退出登录
             </button>
@@ -94,6 +92,7 @@
       </div>
     </div>
   </div>
+  <nav id="profile-mobile-tools" class="profile-mobile-tools" aria-label="个人主页操作"></nav>
   <section id="profile-about" class="profile-about" aria-labelledby="about-heading" hidden>
     <h2 id="about-heading">个人介绍</h2>
     <div id="about-content" class="about-content"></div>

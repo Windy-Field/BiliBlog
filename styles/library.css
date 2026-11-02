@@ -10,7 +10,10 @@
     flex-wrap: wrap;
     gap: 8px;
 }
-.collection-toolbar label { margin: 0; font-size: 14px; }
+.collection-toolbar label {
+    margin: 0;
+    font-size: 14px;
+}
 .collection-toolbar select {
     width: 220px;
     height: var(--select-height);
@@ -49,7 +52,10 @@
     font-size: 12px;
     line-height: 20px;
 }
-.pin-badge svg { width: 14px; height: 14px; }
+.pin-badge svg {
+    width: 14px;
+    height: 14px;
+}
 .home-page .library-dialog {
     width: calc(100% - 32px);
     max-width: 480px;
@@ -62,15 +68,36 @@
     box-shadow: var(--shadow-menu);
     overflow: auto;
 }
-.library-dialog::backdrop { background: var(--color-overlay); }
-.library-dialog h2 { margin: 0 0 20px; font-size: 20px; line-height: 28px; overflow-wrap: anywhere; }
+.library-dialog::backdrop {
+    background: var(--color-overlay);
+}
+.library-dialog h2 {
+    margin: 0 0 20px;
+    font-size: 20px;
+    line-height: 28px;
+    overflow-wrap: anywhere;
+}
 .library-dialog input,
-.library-dialog select { width: 100%; }
-.library-actions { justify-content: flex-end; margin-top: 24px; }
-.detail-collection:empty { display: none; }
-.detail-collection { margin-bottom: 16px; }
+.library-dialog select {
+    width: 100%;
+}
+.library-actions {
+    justify-content: flex-end;
+    margin-top: 24px;
+}
+.detail-collection:empty {
+    display: none;
+}
+.detail-collection {
+    margin-bottom: 16px;
+}
 @media (max-width: 767px) {
     /* 标签和筛选框独占一行，选中文字变化时不挤动下方操作按钮 */
-    .collection-toolbar label { flex: 0 0 56px; }
-    .collection-toolbar select { flex: 1 0 calc(100% - 64px); width: 0; }
+    .collection-toolbar label {
+        flex: 0 0 56px;
+    }
+    .collection-toolbar select {
+        flex: 1 0 calc(100% - 64px);
+        width: 0;
+    }
 }

@@ -11,7 +11,8 @@ export function validateImage(file) {
         throw new Error(file.name + " 不是 JPEG、PNG 或 WebP 图片");
     }
     if (file.size > MAX_IMAGE_BYTES) {
-        throw new Error(file.name + " 超过 5 MiB，请选择较小的图片");
+        const limitMiB = MAX_IMAGE_BYTES / (1024 * 1024);
+        throw new Error(file.name + " 超过 " + limitMiB + " MiB，请选择较小的图片");
     }
 }
 

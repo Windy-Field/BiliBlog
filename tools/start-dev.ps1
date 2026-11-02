@@ -3,12 +3,17 @@ param(
     [switch]$OpenBrowser
 )
 
+# 本地地址与端口需和 npm 启动命令一致，首页标题用于辨认是否为本项目
+$serverHost = '127.0.0.1'
 $serverPort = 5173
+$homeTitle = '<title>首页 - 小B书</title>'
+# 优先使用现有 Node 安装，找不到时再从系统命令中查找
 $preferredNodePath = 'D:\node\node.exe'
+# 服务就绪检查的次数、单次超时（秒）和检查间隔（毫秒）
 $maxReadyAttempts = 20
 $readyTimeoutSeconds = 2
 $readyPollMilliseconds = 250
-$homeUrl = "http://127.0.0.1:$serverPort/index.html"
+$homeUrl = "http://${serverHost}:$serverPort/index.html"
 $projectDirectory = Split-Path -Parent $PSScriptRoot
 $vitePath = Join-Path $projectDirectory 'node_modules\vite\bin\vite.js'
 $nodePath = $preferredNodePath
@@ -31,7 +36,7 @@ if (-not (Test-Path -LiteralPath $vitePath)) {
 $connection = New-Object System.Net.Sockets.TcpClient
 $portOccupied = $false
 try {
-    $connection.Connect('127.0.0.1', $serverPort)
+    $connection.Connect($serverHost, $serverPort)
     $portOccupied = $true
 } catch {
     $portOccupied = $false
@@ -44,7 +49,7 @@ if (-not $portOccupied) {
     $outputLog = Join-Path $logDirectory 'dev-server.log'
     $errorLog = Join-Path $logDirectory 'dev-server-error.log'
     $quotedVitePath = '"' + $vitePath + '"'
-    $serverArguments = @($quotedVitePath, '--host', '127.0.0.1', '--port', [string]$serverPort, '--strictPort')
+    $serverArguments = @($quotedVitePath, '--host', $serverHost, '--port', [string]$serverPort, '--strictPort')
 
     # 复用开机启动方式，在后台运行并记录日志
     try {
@@ -65,11 +70,11 @@ for ($attempt = 0; $attempt -lt $maxReadyAttempts; $attempt = $attempt + 1) {
         # Vite 的 HTML 使用 UTF-8，旧版 PowerShell 不一定能自动识别编码
         $responseBytes = $response.RawContentStream.ToArray()
         $responseText = [System.Text.Encoding]::UTF8.GetString($responseBytes)
-        if ($response.StatusCode -eq 200 -and $responseText -match '<title>首页 - 小B书</title>') {
+        if ($response.StatusCode -eq 200 -and $responseText.Contains($homeTitle)) {
             $ready = $true
             break
         }
-        Write-Host '5173 端口已被其他页面占用，请先关闭对应服务'
+        Write-Host "$serverPort 端口已被其他页面占用，请先关闭对应服务"
         exit 1
     } catch {
         Start-Sleep -Milliseconds $readyPollMilliseconds

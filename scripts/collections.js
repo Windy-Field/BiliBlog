@@ -2,6 +2,7 @@ import { requestApi } from "./api.js";
 import { readSession, clearSession } from "./auth.js";
 import { showMessage, showToast, setBusy, confirmAction } from "./common.js";
 import { MAX_COLLECTIONS, MAX_COLLECTION_NAME_LENGTH } from "./config.js";
+import { makeIcon } from "./icons.js";
 
 // 建立收藏夹管理界面，onChanged 在分组变化后重新读取文章列表
 export function createCollections(onChanged) {
@@ -394,7 +395,8 @@ export function createCollections(onChanged) {
         button.type = "button";
         button.className = "collection-button";
         button.dataset.moveFavorite = note.id;
-        button.textContent = "移动收藏夹";
+        button.append(makeIcon("bookmark"), document.createTextNode("整理收藏"));
+        button.title = "调整这篇文章所在的收藏夹";
         button.hidden = !note.favorited;
         button.disabled = loading || writing || refreshing;
         // 按钮只记录当前文章，实际目标在本人收藏夹列表读取完成后选择
@@ -471,11 +473,17 @@ export function createCollections(onChanged) {
     form.addEventListener("submit", saveName);
     moveForm.addEventListener("submit", moveFavorite);
     filter.addEventListener("change", changeFilter);
-    document.getElementById("new-collection").addEventListener("click", createCollection);
-    document.getElementById("rename-collection").addEventListener("click", renameCollection);
-    document.getElementById("delete-collection").addEventListener("click", deleteSelected);
-    document.getElementById("refresh-collections").addEventListener("click", refresh);
-    document.getElementById("close-collection").addEventListener("click", closeName);
-    document.getElementById("close-move-collection").addEventListener("click", closeMove);
+    const newCollectionElement = document.getElementById("new-collection");
+    newCollectionElement.addEventListener("click", createCollection);
+    const renameCollectionElement = document.getElementById("rename-collection");
+    renameCollectionElement.addEventListener("click", renameCollection);
+    const deleteCollectionElement = document.getElementById("delete-collection");
+    deleteCollectionElement.addEventListener("click", deleteSelected);
+    const refreshCollectionsElement = document.getElementById("refresh-collections");
+    refreshCollectionsElement.addEventListener("click", refresh);
+    const closeCollectionElement = document.getElementById("close-collection");
+    closeCollectionElement.addEventListener("click", closeName);
+    const closeMoveCollectionElement = document.getElementById("close-move-collection");
+    closeMoveCollectionElement.addEventListener("click", closeMove);
     return { panel: panel, load: load, reset: reset, makeMoveButton: makeMoveButton };
 }

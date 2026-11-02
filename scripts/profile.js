@@ -8,6 +8,8 @@ import { makePinButton, makePinBadge } from "./pins.js";
 import { openPeople } from "./people.js";
 
 const pageSize = PROFILE_PAGE_SIZE;
+// 手机将本人编辑入口移到封面下方，切回桌面时放回原来的资料操作区
+const mobileProfile = window.matchMedia("(max-width: 767px)");
 let currentUsername = "";
 let currentYear = null;
 let currentMonth = null;
@@ -19,6 +21,16 @@ let viewerToken = null;
 let followKnown = false;
 let notesRequest = 0;
 let notesPage = 1;
+
+// 移动同一个链接节点，避免窄屏按钮挤入封面，也保留正常链接和键盘顺序
+function positionProfileEdit() {
+    const link = document.getElementById("own-settings-link");
+    let container = document.querySelector(".profile-actions");
+    if (mobileProfile.matches) {
+        container = document.getElementById("profile-mobile-tools");
+    }
+    container.appendChild(link);
+}
 
 // 置顶改变后保留当前月份和页码，按后端排序重新读取文章
 function refreshPinnedNotes() {
@@ -389,7 +401,9 @@ function renderArchives(list) {
         const button = document.createElement("button");
         button.className = "archive-btn";
         button.type = "button";
-        button.textContent = item.year + "/" + String(item.month).padStart(2, "0");
+        const monthText = String(item.month);
+        const paddedMonth = monthText.padStart(2, "0");
+        button.textContent = item.year + "/" + paddedMonth;
         // 按当前归档月份重新读取第一页
         button.addEventListener("click", function showArchiveMonth() {
             currentYear = item.year;
@@ -577,11 +591,15 @@ async function init() {
         return;
     }
     currentUsername = username;
-    document.getElementById("stat-followers").addEventListener("click", showFollowers);
-    document.getElementById("stat-following").addEventListener("click", showFollowing);
+    const statFollowersElement = document.getElementById("stat-followers");
+    statFollowersElement.addEventListener("click", showFollowers);
+    const statFollowingElement = document.getElementById("stat-following");
+    statFollowingElement.addEventListener("click", showFollowing);
     fillIcons();
-    document.getElementById("follow-button").addEventListener("click", toggleFollow);
-    document.getElementById("logout-button").addEventListener("click", logout);
+    const followButtonElement = document.getElementById("follow-button");
+    followButtonElement.addEventListener("click", toggleFollow);
+    const logoutButtonElement = document.getElementById("logout-button");
+    logoutButtonElement.addEventListener("click", logout);
     document.addEventListener("click", closeAccountMenu);
     await loadTopbarProfile();
     const user = await loadUserProfile(username);
@@ -592,9 +610,12 @@ async function init() {
         loadArchives(username),
         loadNotes(username, 1, null, null),
     ]);
-    document.getElementById("pagination").addEventListener("click", handlePageNav);
+    const paginationElement = document.getElementById("pagination");
+    paginationElement.addEventListener("click", handlePageNav);
 }
 
+mobileProfile.addEventListener("change", positionProfileEdit);
+positionProfileEdit();
 init();
 
 // 点击粉丝计数时读取真实名单，不跳到页面中不存在的锚点

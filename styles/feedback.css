@@ -1,6 +1,7 @@
 @import url("./tokens.css");
 @import url("./select.css");
 @import url("./account-menu.css");
+@import url("./site-settings.css");
 
 ::view-transition-old(root),
 ::view-transition-new(root) {
@@ -86,7 +87,7 @@ body .is-busy::after {
     border: 2px solid currentColor;
     border-right-color: transparent;
     border-radius: 50%;
-    animation: feedback-spin 800ms linear infinite;
+    animation: feedback-spin var(--duration-spinner) linear infinite;
     pointer-events: none;
 }
 
@@ -156,16 +157,35 @@ body .share-dialog {
     background: var(--color-page);
     color: var(--color-text);
 }
-.share-dialog::backdrop { background: var(--color-overlay); }
-.share-dialog h2 { margin: 0 0 20px; font-size: 20px; }
-.share-dialog form { display: flex; justify-content: flex-end; margin-top: 20px; }
-body .share-dialog button { width: auto; margin: 0; }
+.share-dialog::backdrop {
+    background: var(--color-overlay);
+}
+.share-dialog h2 {
+    margin: 0 0 20px;
+    font-size: 20px;
+}
+.share-dialog form {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 20px;
+}
+body .share-dialog button {
+    width: auto;
+    margin: 0;
+}
 
 body input,
 body textarea {
     transition: border-color var(--duration-fast) var(--ease-out);
 }
 
+/* 设置开关只移动滑块，外框与文字占位保持不变 */
+body .site-setting-row input {
+    transition: background-color var(--duration-fast) var(--ease-out), border-color var(--duration-fast) var(--ease-out);
+}
+body .site-setting-row input::before {
+    transition: transform var(--duration-fast) var(--ease-out), background-color var(--duration-fast) var(--ease-out);
+}
 body input:user-invalid,
 body textarea:user-invalid {
     border-color: var(--color-error);
@@ -345,6 +365,7 @@ body .confirmation-actions .confirm-danger {
     body .message,
     body input,
     body textarea,
+    body .site-setting-row input::before,
     .account-menu::details-content,
     .account-dropdown {
         transition: none !important;

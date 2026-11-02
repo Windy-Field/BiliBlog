@@ -60,7 +60,7 @@
     font-size: 20px;
     opacity: 0;
     cursor: pointer;
-    transition: opacity 150ms;
+    transition: opacity var(--duration-fast);
 }
 
 .avatar-editor-wrap:hover .avatar-overlay {
@@ -141,7 +141,7 @@
     font-size: 13px;
     opacity: 0;
     cursor: pointer;
-    transition: opacity 150ms;
+    transition: opacity var(--duration-fast);
 }
 
 .cover-editor-wrap:hover .cover-overlay {

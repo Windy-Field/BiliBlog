@@ -3,13 +3,13 @@ import { readSession } from "./auth.js";
 import { makeIcon } from "./icons.js";
 import { SESSION_KEY } from "./config.js";
 
-const shortcuts = [
+// 创作页面账号菜单的入口与顺序，普通链接继续保留编辑页离开提醒
+const SHORTCUTS = [
     { title: "我的主页", icon: "user", address: "/profile.html" },
     { title: "我的文章", icon: "article", address: "/index.html?feed=mine" },
     { title: "草稿箱", icon: "article", address: "/drafts.html" },
     { title: "点赞历史", icon: "heart", address: "/index.html?feed=likes" },
-    { title: "我的收藏", icon: "bookmark", address: "/index.html?feed=favorites" },
-    { title: "资料设置", icon: "write", address: "/settings.html" }
+    { title: "我的收藏", icon: "bookmark", address: "/index.html?feed=favorites" }
 ];
 const navigation = document.querySelector(".editor-header nav");
 const menu = document.createElement("details");
@@ -35,7 +35,7 @@ function buildMenu() {
     dropdown.className = "account-dropdown";
     welcome.className = "account-welcome";
     dropdown.appendChild(welcome);
-    for (const shortcut of shortcuts) {
+    for (const shortcut of SHORTCUTS) {
         let link = profile;
         if (shortcut.title !== "我的主页") {
             link = document.createElement("a");
@@ -52,10 +52,11 @@ function buildMenu() {
     login.href = "/login.html";
     login.textContent = "登录";
     login.hidden = true;
-    // 铃铛保持在右侧，菜单位于导航和消息入口之间
+    // 账号菜单位于普通导航和消息入口之间，最右侧留给网站设置
     const bell = navigation.querySelector("[data-notifications]");
-    navigation.insertBefore(menu, bell);
-    navigation.insertBefore(login, bell);
+    const tools = navigation.querySelector(".navigation-tools") || bell;
+    navigation.insertBefore(menu, tools);
+    navigation.insertBefore(login, tools);
     document.addEventListener("click", closeOutside);
     menu.addEventListener("keydown", closeWithEscape);
     window.addEventListener("storage", accountChanged);

@@ -3,9 +3,10 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseAst } from "rolldown/parseAst";
 
+// 检查范围只包含项目自维护源码，链式调用拆成中间变量后再继续操作
 const PROJECT_ROOT = fileURLToPath(new URL("../", import.meta.url));
 const SOURCE_FOLDERS = ["scripts", "tools"];
-const MAX_CALL_DEPTH = 3;
+const MAX_CALL_DEPTH = 1;
 const problems = [];
 
 // 将 file 中的问题和一行代码的位置记录下来，最后统一输出

@@ -5,6 +5,7 @@ import { fillIcons } from "./icons.js";
 import { DEFAULT_COVER_URL, MAX_PROFILE_LINKS, MAX_LINK_LABEL_LENGTH, MAX_LINK_URL_LENGTH } from "./config.js";
 import { showLocalImage, validateImage } from "./media.js";
 
+// 保存后跳转的总等待时间和倒计时提示时机，单位为毫秒
 const SAVE_COUNTDOWN_MS = 1000;
 const SAVE_REDIRECT_MS = 2000;
 const form = document.getElementById("settings-form");
@@ -237,7 +238,7 @@ function addLink() {
     const list = document.getElementById("links-list");
     const rows = list.querySelectorAll(".link-row");
     if (rows.length >= MAX_PROFILE_LINKS) {
-        showToast("最多添加 5 条链接", true);
+        showToast("最多添加 " + MAX_PROFILE_LINKS + " 条链接", true);
         return;
     }
     showMessage(settingsMessage, "", false);
@@ -321,10 +322,12 @@ async function saveSettings(event) {
         showMessage(settingsMessage, "", false);
         // 倒计时 toast 提示后跳转到个人主页
         const username = encodeURIComponent(updated.username || "");
-        showToast("资料已保存，2 秒后跳转到主页…");
+        const redirectSeconds = SAVE_REDIRECT_MS / 1000;
+        showToast("资料已保存，" + redirectSeconds + " 秒后跳转到主页…");
         // 最后一秒更新提示，保持现有的保存后跳转反馈
         window.setTimeout(function showLastSaveSecond() {
-            showToast("资料已保存，1 秒后跳转到主页…");
+            const remainingSeconds = (SAVE_REDIRECT_MS - SAVE_COUNTDOWN_MS) / 1000;
+            showToast("资料已保存，" + remainingSeconds + " 秒后跳转到主页…");
         }, SAVE_COUNTDOWN_MS);
         // 提示结束后打开本人的公开主页
         window.setTimeout(function openSavedProfile() {
@@ -352,10 +355,14 @@ function init() {
     }
     sessionToken = session.token;
     fillIcons();
-    document.getElementById("avatar-input").addEventListener("change", handleAvatarChange);
-    document.getElementById("cover-input").addEventListener("change", handleCoverChange);
-    document.getElementById("remove-cover").addEventListener("click", handleRemoveCover);
-    document.getElementById("add-link").addEventListener("click", addLink);
+    const avatarInputElement = document.getElementById("avatar-input");
+    avatarInputElement.addEventListener("change", handleAvatarChange);
+    const coverInputElement = document.getElementById("cover-input");
+    coverInputElement.addEventListener("change", handleCoverChange);
+    const removeCoverElement = document.getElementById("remove-cover");
+    removeCoverElement.addEventListener("click", handleRemoveCover);
+    const addLinkElement = document.getElementById("add-link");
+    addLinkElement.addEventListener("click", addLink);
     form.addEventListener("submit", saveSettings);
     loadSettings(sessionToken);
 }

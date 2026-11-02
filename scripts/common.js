@@ -1,3 +1,4 @@
+// 提示的阅读时间与关闭缓冲，单位为毫秒，缓冲需覆盖 CSS 淡出时长
 const TOAST_DURATION_MS = 3000;
 const TOAST_CLOSE_MS = 240;
 let toastElement = null;

@@ -12,12 +12,14 @@ import { createPeopleSearch } from "./people.js";
 import { copyArticleLink } from "./article-share.js";
 import { startReadingProgress, stopReadingProgress } from "./reading-progress.js";
 
+// 首页显示参数：滚动预留高度以像素计，其余控制话题、公告和骨架数量
 const FEED_SCROLL_OFFSET = 80;
 const DESKTOP_TOPIC_LIMIT = 9;
-const MOBILE_TOPIC_LIMIT = 4;
+const MOBILE_TOPIC_LIMIT = 3;
 const NOTICE_LIMIT = 8;
 const SKELETON_COUNT = 9;
 const FEATURE_MIN_ARTICLES = 5;
+const MOBILE_TOPIC_QUERY = "(max-width: 767px)";
 
 const welcome = document.getElementById("welcome");
 const guestLinks = document.getElementById("guest-links");
@@ -44,10 +46,11 @@ const deleteStatus = document.getElementById("delete-status");
 const confirmDeleteButton = document.getElementById("confirm-delete");
 const detailStatus = document.getElementById("detail-status");
 const detailContent = document.getElementById("detail-content");
+const detailCollection = document.getElementById("detail-collection");
 const retryDetail = document.getElementById("retry-detail");
 const topbar = document.getElementById("topbar");
 const pageSize = HOME_PAGE_SIZE;
-const mobileTopics = window.matchMedia("(max-width: 767px)");
+const mobileTopics = window.matchMedia(MOBILE_TOPIC_QUERY);
 let query = new URLSearchParams(window.location.search);
 let feed = "latest";
 let currentPage = 1;
@@ -77,10 +80,9 @@ async function refreshLibrary() {
 
 // 已收藏文章可直接整理到收藏夹，未收藏时保持原来的收藏按钮流程
 function renderDetailCollection(note) {
-    const container = document.getElementById("detail-collection");
-    container.replaceChildren();
+    detailCollection.replaceChildren();
     if (note.favorited) {
-        container.appendChild(collections.makeMoveButton(note));
+        detailCollection.appendChild(collections.makeMoveButton(note));
     }
 }
 
@@ -1143,7 +1145,7 @@ function foldActivityMetadata(body) {
 async function readArticleHash() {
     stopReadingProgress();
     readingNote = null;
-    document.getElementById("detail-collection").replaceChildren();
+    detailCollection.replaceChildren();
     setReactionArticle(null);
     setCommentArticle(null);
     const hash = new URLSearchParams(window.location.hash.slice(1));
@@ -1230,7 +1232,7 @@ async function readArticleHash() {
 function closeArticle() {
     stopReadingProgress();
     readingNote = null;
-    document.getElementById("detail-collection").replaceChildren();
+    detailCollection.replaceChildren();
     setReactionArticle(null);
     setCommentArticle(null);
     detailRequest = detailRequest + 1;
@@ -1284,13 +1286,15 @@ refreshButton.addEventListener("click", loadFeed);
 retryTopics.addEventListener("click", loadTopics);
 moreTopics.addEventListener("click", toggleTopics);
 mobileTopics.addEventListener("change", updateTopicVisibility);
-document.getElementById("back-to-top").addEventListener("click", backToTop);
-document
-    .getElementById("search-form")
-    .addEventListener("submit", searchArticles);
-document.getElementById("close-detail").addEventListener("click", closeArticle);
+const backToTopElement = document.getElementById("back-to-top");
+backToTopElement.addEventListener("click", backToTop);
+const searchFormElement = document.getElementById("search-form");
+searchFormElement.addEventListener("submit", searchArticles);
+const closeDetailElement = document.getElementById("close-detail");
+closeDetailElement.addEventListener("click", closeArticle);
+const shareArticleElement = document.getElementById("share-article");
 // 分享当前文章，地址不保留收藏夹等私人列表条件
-document.getElementById("share-article").addEventListener("click", function shareArticle() {
+shareArticleElement.addEventListener("click", function shareArticle() {
     if (readingNote) {
         copyArticleLink(readingNote.id);
     }
@@ -1328,7 +1332,8 @@ document.addEventListener("article-reaction", updateArticleReaction);
 document.addEventListener("article-comment-count", updateArticleReaction);
 window.addEventListener("storage", resetPrivateLibrary);
 confirmDeleteButton.addEventListener("click", deleteArticle);
-document.getElementById("cancel-delete").addEventListener("click", cancelDelete);
+const cancelDeleteElement = document.getElementById("cancel-delete");
+cancelDeleteElement.addEventListener("click", cancelDelete);
 // Escape 和取消按钮共用关闭流程，请求处理中保持原有保护
 deleteDialog.addEventListener("cancel", function closeDeleteDialog(event) {
     event.preventDefault();

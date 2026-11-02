@@ -27,8 +27,10 @@ import {
     Pin,
     Trash2,
     Link,
+    Settings,
 } from "lucide";
 
+// 全站图标的像素尺寸和线宽，按钮点击区域由样式另行控制
 const ICON_SIZE = 20;
 const ICON_STROKE = 1.8;
 const iconShapes = {
@@ -59,6 +61,7 @@ const iconShapes = {
     pin: Pin,
     trash: Trash2,
     link: Link,
+    settings: Settings,
 };
 
 // 根据名称创建 Lucide 图标，图标旁的按钮或文字负责说明用途

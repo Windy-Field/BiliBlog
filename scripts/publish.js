@@ -7,7 +7,9 @@ import { validateImage } from "./media.js";
 import { createEditorSession, noteFields } from "./editor-session.js";
 import { renderMarkdown } from "./markdown-preview.js";
 import { readLocalDraft, writeLocalDraft, removeLocalDraft } from "./local-draft.js";
+import { autosaveControl } from "./site-settings.js";
 
+// 发布跳转、草稿自动保存和 Markdown 预览的等待时间，单位为毫秒
 const PUBLISH_REDIRECT_MS = 700;
 const AUTOSAVE_DELAY_MS = 2000;
 const PREVIEW_DELAY_MS = 150;
@@ -39,11 +41,11 @@ let libraryPageCount = 1;
 let deletingMedia = false;
 let libraryToken = null;
 
-// 胶囊标签管理
+// 当前输入的话题单独保留，提交时转换为接口要求的标签数组
 const chipTags = [];
 const saveDraftButton = document.getElementById("save-draft");
 const saveState = document.getElementById("save-state");
-const autosaveEnabled = document.getElementById("autosave-enabled");
+const autosaveEnabled = autosaveControl;
 const conflictPanel = document.getElementById("conflict-panel");
 const editor = createEditorSession(readEditorFields, showSaveState, checkEditorIdentity);
 let username = "";
@@ -70,13 +72,25 @@ function localSnapshot() {
             pendingImages = pendingImages + 1;
         }
     }
-    const awaitingCreation = !editor.state.note && Boolean(manualSave || editor.state.pending || editor.state.uncertain || saveState.textContent === "正在保存");
+    const saving = manualSave || editor.state.pending || editor.state.uncertain || saveState.textContent === "正在保存";
+    const awaitingCreation = !editor.state.note && Boolean(saving);
     let baseVersion = null;
     if (editor.state.note) {
         baseVersion = editor.state.note.version;
     }
     const needsComparison = Boolean(editor.state.conflict);
-    return { title: titleInput.value, contentMarkdown: bodyInput.value, tags: chipTags.slice(), pendingTag: tagsTextField.value, images: images, pendingImages: pendingImages, productId: productId, awaitingCreation: awaitingCreation, baseVersion: baseVersion, needsComparison: needsComparison };
+    return {
+        title: titleInput.value,
+        contentMarkdown: bodyInput.value,
+        tags: chipTags.slice(),
+        pendingTag: tagsTextField.value,
+        images: images,
+        pendingImages: pendingImages,
+        productId: productId,
+        awaitingCreation: awaitingCreation,
+        baseVersion: baseVersion,
+        needsComparison: needsComparison
+    };
 }
 
 // 身份确认后才读写本人备份，等待用户选择时不能覆盖待恢复内容
@@ -253,9 +267,10 @@ function updateEditorControls() {
     publishButton.replaceChildren(makeIcon("send"), document.createTextNode(action));
     saveDraftButton.hidden = published;
     autosaveEnabled.disabled = published || manualSave || !sessionToken;
-    const paused = !sessionToken || !initialized || manualSave || uploading || editor.state.blocked || leaving || Boolean(recoveryDraft);
+    const unavailable = !sessionToken || !initialized || manualSave || leaving || Boolean(recoveryDraft);
+    const paused = unavailable || uploading || editor.state.blocked;
     // 恢复选择完成前暂停整个编辑表单，避免新输入与待恢复内容混在一起
-    editorFields.disabled = Boolean(recoveryDraft) || !sessionToken || !initialized || manualSave || leaving;
+    editorFields.disabled = unavailable;
     fileInput.disabled = Boolean(recoveryDraft) || uploading || !sessionToken;
     uploadButton.disabled = paused || !hasPendingImages();
     document.getElementById("open-library").disabled = Boolean(recoveryDraft) || !sessionToken;
@@ -1106,25 +1121,39 @@ titleInput.addEventListener("input", editorChanged);
 tagsTextField.addEventListener("input", editorChanged);
 autosaveEnabled.addEventListener("change", editorChanged);
 saveDraftButton.addEventListener("click", saveDraft);
-document.getElementById("preview-modes").addEventListener("click", changePreviewMode);
-document.getElementById("check-save-result").addEventListener("click", checkSaveResult);
-document.getElementById("reload-conflict").addEventListener("click", reloadConflict);
-document.getElementById("use-server").addEventListener("click", useServerContent);
-document.getElementById("keep-local").addEventListener("click", keepLocalContent);
+const previewModesElement = document.getElementById("preview-modes");
+previewModesElement.addEventListener("click", changePreviewMode);
+const checkSaveResultElement = document.getElementById("check-save-result");
+checkSaveResultElement.addEventListener("click", checkSaveResult);
+const reloadConflictElement = document.getElementById("reload-conflict");
+reloadConflictElement.addEventListener("click", reloadConflict);
+const useServerElement = document.getElementById("use-server");
+useServerElement.addEventListener("click", useServerContent);
+const keepLocalElement = document.getElementById("keep-local");
+keepLocalElement.addEventListener("click", keepLocalContent);
 window.addEventListener("beforeunload", warnBeforeLeaving);
-document.getElementById("check-login").addEventListener("click", checkLogin);
-document.getElementById("retry-publish").addEventListener("click", allowPublishRetry);
+const checkLoginElement = document.getElementById("check-login");
+checkLoginElement.addEventListener("click", checkLogin);
+const retryPublishElement = document.getElementById("retry-publish");
+retryPublishElement.addEventListener("click", allowPublishRetry);
+const openLibraryElement = document.getElementById("open-library");
 // 打开素材窗口后读取当前页
-document.getElementById("open-library").addEventListener("click", function openMediaLibrary() {
+openLibraryElement.addEventListener("click", function openMediaLibrary() {
     mediaDialog.showModal();
     loadMediaLibrary();
 });
-document.getElementById("close-library").addEventListener("click", closeMediaLibrary);
-document.getElementById("media-refresh").addEventListener("click", loadMediaLibrary);
-document.getElementById("media-previous").addEventListener("click", showPreviousMediaPage);
-document.getElementById("media-next").addEventListener("click", showNextMediaPage);
-document.getElementById("restore-local-draft").addEventListener("click", restoreLocalBackup);
-document.getElementById("discard-local-draft").addEventListener("click", discardLocalBackup);
+const closeLibraryElement = document.getElementById("close-library");
+closeLibraryElement.addEventListener("click", closeMediaLibrary);
+const mediaRefreshElement = document.getElementById("media-refresh");
+mediaRefreshElement.addEventListener("click", loadMediaLibrary);
+const mediaPreviousElement = document.getElementById("media-previous");
+mediaPreviousElement.addEventListener("click", showPreviousMediaPage);
+const mediaNextElement = document.getElementById("media-next");
+mediaNextElement.addEventListener("click", showNextMediaPage);
+const restoreLocalDraftElement = document.getElementById("restore-local-draft");
+restoreLocalDraftElement.addEventListener("click", restoreLocalBackup);
+const discardLocalDraftElement = document.getElementById("discard-local-draft");
+discardLocalDraftElement.addEventListener("click", discardLocalBackup);
 window.addEventListener("pagehide", saveLocalBackup);
 // 其他标签页换账号后暂停旧编辑器，移除旧账号素材和备份提示，输入继续保留
 window.addEventListener("storage", function stopOldEditor(event) {

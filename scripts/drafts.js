@@ -4,6 +4,7 @@ import { showMessage, showToast, setBusy, confirmAction } from "./common.js";
 import { fillIcons, makeIcon } from "./icons.js";
 import { DRAFT_PAGE_SIZE, MAX_PAGE, SESSION_KEY } from "./config.js";
 
+// 草稿列表最多展示的摘要字符数，完整正文保留在编辑页面
 const EXCERPT_LENGTH = 160;
 const list = document.getElementById("draft-list");
 const status = document.getElementById("draft-status");
@@ -17,7 +18,8 @@ let pageCount = 1;
 let deleting = false;
 let loading = false;
 let displayedToken = null;
-const searchButton = document.getElementById("draft-search").querySelector("button");
+const searchForm = document.getElementById("draft-search");
+const searchButton = searchForm.querySelector("button");
 
 // 从地址读取搜索词与页码，刷新和前进后退时保持同一组草稿
 function readRoute() {
@@ -341,7 +343,7 @@ function restorePage(event) {
 
 fillIcons();
 readRoute();
-document.getElementById("draft-search").addEventListener("submit", searchDrafts);
+searchForm.addEventListener("submit", searchDrafts);
 refresh.addEventListener("click", loadDrafts);
 pagination.addEventListener("click", changePage);
 window.addEventListener("popstate", restoreRoute);

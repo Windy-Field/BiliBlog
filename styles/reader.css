@@ -1,0 +1,329 @@
+/* 文章阅读窗口、正文与互动区，含对应的手机和减少动态效果规则 */
+.home-page .article-dialog {
+    width: calc(100% - 32px);
+    max-width: var(--reader-width);
+    /* 加载提示和正文共用同一高度，避免文章返回后窗口突然变大 */
+    height: calc(100dvh - var(--reader-viewport-gap));
+    max-height: calc(100dvh - var(--reader-viewport-gap));
+    overflow-y: auto;
+    scrollbar-gutter: stable;
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    padding: 0 var(--reader-padding-inline) var(--reader-padding-bottom);
+    background: var(--color-page);
+    color: var(--color-text);
+    box-shadow: var(--shadow-menu);
+}
+.article-dialog::backdrop {
+    background: var(--color-overlay);
+}
+.home-page:has(.article-dialog[open]) {
+    overflow: hidden;
+}
+.dialog-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    color: var(--color-text-secondary);
+    margin: 0 calc(0px - var(--reader-padding-inline)) 32px;
+    border-bottom: 1px solid var(--color-border);
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    padding: 12px 24px;
+    background: var(--color-page);
+}
+.reader-brand {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 8px;
+    color: var(--color-text);
+    font-size: 18px;
+    font-weight: 700;
+}
+.reader-brand span {
+    color: var(--color-text-secondary);
+    font-size: 12px;
+    font-weight: 400;
+}
+.reader-heading {
+    margin-bottom: 32px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid var(--color-border);
+}
+#detail-content {
+    max-width: var(--reader-content-width);
+    margin: 0 auto;
+}
+.detail-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+.detail-tags a {
+    max-width: 100%;
+    padding: 4px 8px;
+    border-radius: 6px;
+    background: var(--color-selected);
+    color: var(--color-link);
+    font-size: 12px;
+    line-height: 18px;
+    overflow-wrap: anywhere;
+}
+.detail-tags a:hover {
+    background: var(--gradient-selected-soft);
+}
+#detail-title {
+    font-size: var(--reader-title-size);
+    line-height: var(--reader-title-line);
+    font-weight: 600;
+    margin: 0 0 24px;
+    overflow-wrap: anywhere;
+}
+.detail-author,
+.detail-counts {
+    color: var(--color-text-secondary);
+    font-size: 13px;
+    line-height: 22px;
+}
+.detail-author {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 20px;
+}
+.reader-author-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+    max-width: 100%;
+}
+.reader-avatar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    overflow: hidden;
+    background: var(--gradient-selected-soft);
+    color: var(--color-text);
+    font-weight: 600;
+}
+.reader-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+.reader-author-name {
+    color: var(--color-text);
+    font-size: 14px;
+    font-weight: 500;
+    overflow-wrap: anywhere;
+}
+.reader-author-link:hover .reader-author-name {
+    color: var(--color-link);
+}
+.detail-body {
+    font-size: var(--reader-body-size);
+    line-height: var(--reader-body-line);
+    overflow-wrap: anywhere;
+}
+.detail-body > :first-child {
+    margin-top: 0;
+}
+.detail-body p {
+    margin: 0 0 16px;
+}
+.detail-body ul,
+.detail-body ol {
+    padding-left: 24px;
+    margin: 16px 0;
+}
+.detail-body li + li {
+    margin-top: 8px;
+}
+.detail-body h3 {
+    margin: 24px 0 12px;
+    font-size: 20px;
+    line-height: 28px;
+}
+.detail-body hr {
+    margin: 32px 0;
+    border: 0;
+    border-top: 1px solid var(--color-border);
+}
+.detail-body img,
+.detail-gallery img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 6px;
+}
+.detail-gallery:empty {
+    display: none;
+}
+.detail-gallery img {
+    display: block;
+    max-height: var(--reader-image-height);
+    object-fit: contain;
+    margin: 0 auto;
+}
+.detail-gallery {
+    display: grid;
+    gap: 16px;
+    margin-top: 24px;
+}
+.detail-body pre {
+    overflow-x: auto;
+    padding: 16px;
+    background: var(--color-surface);
+    border-radius: 6px;
+}
+.detail-body code {
+    font-family: var(--font-mono);
+}
+.detail-body :not(pre) > code {
+    padding: 2px 6px;
+    border-radius: 4px;
+    background: var(--color-surface);
+    font-size: 14px;
+}
+.detail-body a {
+    color: var(--color-link);
+    text-decoration: underline;
+}
+.detail-body h1,
+.detail-body h2 {
+    font-size: 24px;
+    line-height: 34px;
+    margin: 24px 0 12px;
+}
+.detail-body table {
+    display: block;
+    overflow-x: auto;
+    max-width: 100%;
+}
+.detail-body th,
+.detail-body td {
+    padding: 8px 12px;
+    border: 1px solid var(--color-border);
+}
+.detail-body th {
+    background: var(--color-surface);
+    text-align: left;
+}
+.detail-body blockquote {
+    margin: 16px 0;
+    padding: 12px 16px;
+    border-left: 3px solid var(--color-accent);
+    background: var(--color-surface);
+    color: var(--color-text-secondary);
+}
+.reader-metadata {
+    margin: 24px 0;
+    color: var(--color-text-secondary);
+    font-size: 13px;
+}
+.detail-body blockquote > :last-child {
+    margin-bottom: 0;
+}
+.reader-metadata summary {
+    cursor: pointer;
+    line-height: 32px;
+}
+.reader-metadata pre {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+.reaction-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 32px;
+    padding: 20px 0;
+    border-top: 1px solid var(--color-border);
+}
+.home-page .reaction-button,
+.home-page .detail-collection .collection-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 44px;
+    min-width: 104px;
+    width: 144px;
+    max-width: 100%;
+    padding: 8px 16px;
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    background: var(--color-page);
+    color: var(--color-text);
+    font-size: 14px;
+    line-height: 20px;
+}
+.home-page .reaction-button[aria-pressed="true"] {
+    border-color: var(--color-brand);
+    color: var(--color-text);
+    background: var(--gradient-selected-soft);
+}
+.home-page .reaction-button:disabled {
+    opacity: 0.6;
+    cursor: wait;
+}
+/* 选中反馈只改变图标和颜色，按钮与文字保持原位 */
+.reaction-button svg {
+    transition:
+        transform var(--duration-panel) var(--ease-out),
+        fill var(--duration-fast) var(--ease-out);
+    transform-origin: center;
+}
+.reaction-button[aria-pressed="true"] svg {
+    fill: var(--color-brand);
+    color: var(--color-text);
+    transform: scale(1.12);
+}
+#detail-status.is-busy {
+    padding-left: 32px;
+    min-height: 32px;
+    line-height: 32px;
+}
+@media (max-width: 767px) {
+    .dialog-top {
+        margin: 0 calc(0px - var(--reader-padding-inline-mobile)) 24px;
+        padding: 8px 16px;
+    }
+    .home-page .article-dialog {
+        padding: 0 var(--reader-padding-inline-mobile) var(--reader-padding-bottom-mobile);
+        height: calc(100dvh - var(--reader-viewport-gap-mobile));
+        max-height: calc(100dvh - var(--reader-viewport-gap-mobile));
+    }
+    .home-page .reaction-button,
+    .home-page .detail-collection .collection-button {
+        flex: 1;
+        width: auto;
+        min-width: 0;
+        padding: 8px;
+    }
+    /* 整理入口与上一排的三项操作使用同样的列宽和间隔 */
+    .detail-collection {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 12px;
+    }
+    #detail-title {
+        font-size: var(--reader-title-size-mobile);
+        line-height: var(--reader-title-line-mobile);
+    }
+}
+@media (prefers-reduced-motion: reduce) {
+    .reaction-button svg {
+        transition: none;
+    }
+    .reaction-button[aria-pressed="true"] svg {
+        transform: none;
+    }
+}

@@ -1,7 +1,9 @@
+// 展开动画的清理等待时间以毫秒计，最小高度变化和顶栏阈值以像素计
 const RESIZE_CLEANUP_MS = 300;
 const MIN_HEIGHT_CHANGE = 1;
 const TOPBAR_PIN = 8;
 const TOPBAR_FADE = 88;
+// 公告滚动最短时长与每条公告增加的时长，单位为秒
 const NOTICE_MIN_SECONDS = 24;
 const NOTICE_SECONDS_PER_ITEM = 6;
 // WeakMap 用元素作为键，元素被移除后不会仅因动效记录而一直占用内存

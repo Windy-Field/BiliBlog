@@ -1,4 +1,4 @@
-import { SESSION_KEY } from "./config.js";
+import { SESSION_KEY, SESSION_CHANGED_EVENT } from "./config.js";
 
 // 从 session 中保存 token 和过期时间，密码只用于提交登录请求
 // 本页脚本可以读取 localStorage，凭证在有效期内也需要妥善保护
@@ -18,6 +18,7 @@ export function saveSession(session) {
     try {
         // 将对象转成 JSON 文本保存，刷新页面后仍能读取登录凭证
         localStorage.setItem(SESSION_KEY, JSON.stringify(savedSession));
+        document.dispatchEvent(new Event(SESSION_CHANGED_EVENT));
     } catch {
         throw new Error("浏览器无法保存登录状态，请允许此网站使用本地存储后重试。");
     }
@@ -58,6 +59,7 @@ export function readSession() {
 export function clearSession() {
     try {
         localStorage.removeItem(SESSION_KEY);
+        document.dispatchEvent(new Event(SESSION_CHANGED_EVENT));
         return true;
     } catch {
         return false;
