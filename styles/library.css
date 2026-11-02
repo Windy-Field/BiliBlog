@@ -85,12 +85,6 @@
     justify-content: flex-end;
     margin-top: 24px;
 }
-.detail-collection:empty {
-    display: none;
-}
-.detail-collection {
-    margin-bottom: 16px;
-}
 @media (max-width: 767px) {
     /* 标签和筛选框独占一行，选中文字变化时不挤动下方操作按钮 */
     .collection-toolbar label {

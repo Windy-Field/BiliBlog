@@ -246,7 +246,6 @@
         <div id="detail-gallery" class="detail-gallery"></div>
         <p id="detail-counts" class="detail-counts visually-hidden"></p>
         <div class="reaction-bar" aria-label="文章互动">
-          <button id="share-article" class="reaction-button" type="button"><span data-icon="link"></span>复制链接</button>
           <button
             id="like-button"
             class="reaction-button"
@@ -264,8 +263,8 @@
             <span data-icon="bookmark"></span
             ><span id="favorite-label">收藏</span>
           </button>
+          <button id="share-article" class="reaction-button" type="button" title="复制文章链接"><span data-icon="link"></span>分享</button>
         </div>
-        <div id="detail-collection" class="detail-collection"></div>
         <p
           id="reaction-message"
           class="message reaction-message"
@@ -301,12 +300,12 @@
       </form>
     </dialog>
     <dialog id="move-collection-dialog" class="library-dialog" aria-labelledby="move-collection-title">
-      <h2 id="move-collection-title">移动收藏</h2>
+      <h2 id="move-collection-title">选择收藏夹</h2>
       <form id="move-collection-form">
         <label for="collection-destination">目标收藏夹</label>
         <select id="collection-destination"></select>
         <p id="move-collection-status" class="message" role="status" tabindex="-1"></p>
-        <div class="library-actions"><button id="close-move-collection" type="button">取消</button><button id="move-collection-submit" type="submit">移动</button></div>
+        <div class="library-actions"><button id="close-move-collection" type="button">取消</button><button id="move-collection-submit" type="submit">保存</button></div>
       </form>
     </dialog>
     <dialog

@@ -1,6 +1,9 @@
 @import url("./tokens.css");
 
 .publish-page {
+    /* 顶栏高度和侧栏宽度共用，固定导航与正文留白保持对齐。 */
+    --creator-header-height: 64px;
+    --creator-sidebar-width: 200px;
     background: var(--color-workspace);
     color: var(--color-text);
     font-family: var(--font-body);
@@ -16,15 +19,16 @@
     outline-offset: 2px;
 }
 .editor-header {
-    height: 64px;
+    height: var(--creator-header-height);
     border-bottom: 1px solid var(--color-border);
     display: flex;
     align-items: center;
     justify-content: space-between;
     padding: 0 32px;
     background: var(--color-page);
-    position: relative;
-    z-index: 3;
+    position: sticky;
+    top: 0;
+    z-index: 20;
 }
 .editor-header .editor-brand {
     font-size: 24px;
@@ -57,15 +61,17 @@
     color: var(--color-text-secondary);
 }
 .creator-sidebar {
-    position: absolute;
-    top: 64px;
+    /* 正文滚动时侧栏不移动；矮屏仍可滚动侧栏查看所有入口。 */
+    position: fixed;
+    top: var(--creator-header-height);
     bottom: 0;
     left: 0;
-    width: 200px;
+    width: var(--creator-sidebar-width);
     padding: 32px 20px;
     background: var(--color-page);
     border-right: 1px solid var(--color-border);
-    min-height: calc(100vh - 64px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
 }
 .creator-sidebar .creator-publish {
     display: flex;
@@ -114,9 +120,9 @@
     font-weight: 400;
 }
 .creator-workspace {
-    margin-left: 200px;
+    margin-left: var(--creator-sidebar-width);
     padding: 24px 32px 0;
-    min-height: calc(100vh - 64px);
+    min-height: calc(100dvh - var(--creator-header-height));
 }
 .creator-tabs {
     display: flex;
@@ -509,8 +515,10 @@
     margin-top: 24px;
 }
 @media (max-width: 767px) {
+    .publish-page {
+        --creator-header-height: 56px;
+    }
     .editor-header {
-        height: 56px;
         padding: 0 16px;
     }
     .publish-page .editor-main {
@@ -558,12 +566,13 @@
     }
 }
 @media (min-width: 768px) and (max-width: 1023px) {
+    .publish-page {
+        --creator-sidebar-width: 160px;
+    }
     .creator-sidebar {
-        width: 160px;
         padding: 24px 16px;
     }
     .creator-workspace {
-        margin-left: 160px;
         padding: 20px;
     }
     .creator-sidebar nav {

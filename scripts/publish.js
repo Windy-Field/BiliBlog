@@ -24,6 +24,7 @@ const fileInput = document.getElementById("article-images");
 const imagePreviews = document.getElementById("image-previews");
 const uploadButton = document.getElementById("upload-selected");
 const publishButton = document.getElementById("publish-button");
+const visibilityInput = document.getElementById("article-visibility");
 const publishMessage = document.getElementById("publish-message");
 const uploadMessage = document.getElementById("upload-status");
 const loginActions = document.getElementById("login-actions");
@@ -60,6 +61,19 @@ let localDraftTimer = 0;
 let recoveryDraft = null;
 let localNoteId = "";
 let localStorageFailed = false;
+// 记录上次确认的选项，公开状态的改动只在用户手动保存后生效。
+let savedVisibility = "PUBLISHED";
+
+// 合并正文和公开选项的未保存状态，用于离开提醒和本机备份。
+function hasUnsavedChanges() {
+    return editor.dirty() || visibilityInput.value !== savedVisibility;
+}
+
+// 用户只改变待保存的公开选项，不立即向服务器提交。
+function changeVisibility() {
+    updateEditorControls();
+    editorChanged();
+}
 
 // 本机只保存可恢复的字段，未上传文件仅记录数量，不伪造其恢复结果
 function localSnapshot() {
@@ -87,6 +101,7 @@ function localSnapshot() {
         images: images,
         pendingImages: pendingImages,
         productId: productId,
+        visibility: visibilityInput.value,
         awaitingCreation: awaitingCreation,
         baseVersion: baseVersion,
         needsComparison: needsComparison
@@ -105,7 +120,7 @@ function saveLocalBackup() {
         return;
     }
     try {
-        if (!editor.dirty() && !editor.state.pending && !editor.state.uncertain && !hasPendingImages() && !tagsTextField.value) {
+        if (!hasUnsavedChanges() && !editor.state.pending && !editor.state.uncertain && !hasPendingImages() && !tagsTextField.value) {
             removeLocalDraft(username, localNoteId);
         } else {
             writeLocalDraft(username, localNoteId, localSnapshot());
@@ -148,6 +163,9 @@ function restoreLocalBackup() {
         const draft = recoveryDraft;
         const note = { title: draft.title, contentMarkdown: draft.contentMarkdown, tags: draft.tags, images: draft.images, productId: draft.productId };
         populateEditor(note);
+        if (draft.visibility) {
+            visibilityInput.value = draft.visibility;
+        }
         tagsTextField.value = draft.pendingTag;
         recoveryDraft = null;
         if (draft.awaitingCreation && !editor.state.note) {
@@ -221,6 +239,10 @@ function populateEditor(note) {
     titleInput.value = note.title;
     bodyInput.value = note.contentMarkdown;
     productId = note.productId;
+    if (note.status) {
+        visibilityInput.value = note.status;
+        savedVisibility = note.status;
+    }
     chipTags.length = 0;
     tagsChips.replaceChildren();
     tagsTextField.value = "";
@@ -261,11 +283,17 @@ function updateEditorControls() {
         action = "保存修改";
         stateText = "已发布 · 版本 " + editor.state.note.version;
     }
+    if (visibilityInput.value === "DRAFT") {
+        action = "保存为草稿";
+        if (published) {
+            action = "取消公开并保存";
+        }
+    }
     document.getElementById("editor-title").textContent = heading;
     document.title = heading + " - 小B书";
     document.getElementById("article-state").textContent = stateText;
     publishButton.replaceChildren(makeIcon("send"), document.createTextNode(action));
-    saveDraftButton.hidden = published;
+    saveDraftButton.hidden = published || visibilityInput.value === "DRAFT";
     autosaveEnabled.disabled = published || manualSave || !sessionToken;
     const unavailable = !sessionToken || !initialized || manualSave || leaving || Boolean(recoveryDraft);
     const paused = unavailable || uploading || editor.state.blocked;
@@ -349,7 +377,7 @@ function editorChanged() {
     if (editor.state.blocked) {
         return;
     }
-    if (editor.dirty() || hasPendingImages() || tagsTextField.value.trim()) {
+    if (hasUnsavedChanges() || hasPendingImages() || tagsTextField.value.trim()) {
         saveState.textContent = "有未保存的修改";
     }
     const published = editor.state.note && editor.state.note.status === "PUBLISHED";
@@ -414,6 +442,13 @@ async function saveManually(status) {
         showMessage(publishMessage, "标题或正文超过长度限制", true);
         return;
     }
+    const wasPublished = editor.state.note && editor.state.note.status === "PUBLISHED";
+    if (wasPublished && status === "DRAFT") {
+        const confirmed = window.confirm("取消公开这篇文章？保存后文章移入草稿箱，并取消置顶；已上传图片的公开链接仍然有效。");
+        if (!confirmed) {
+            return;
+        }
+    }
     window.clearTimeout(autosaveTimer);
     manualSave = true;
     saveLocalBackup();
@@ -422,6 +457,8 @@ async function saveManually(status) {
     showMessage(publishMessage, "", false);
     try {
         const note = await editor.save(status, sessionToken);
+        savedVisibility = status;
+        visibilityInput.value = status;
         if (status === "PUBLISHED") {
             leaving = true;
             showToast("文章已保存，正在打开");
@@ -430,7 +467,11 @@ async function saveManually(status) {
                 window.location.replace("/index.html?feed=mine#article=" + encodeURIComponent(note.id));
             }, PUBLISH_REDIRECT_MS);
         } else {
-            showToast("草稿已保存");
+            if (wasPublished) {
+                showToast("文章已取消公开，可在草稿箱中继续管理");
+            } else {
+                showToast("不公开草稿已保存");
+            }
         }
     } catch (error) {
         handleSaveError(error);
@@ -471,7 +512,9 @@ function comparisonText(fields) {
 
 // 展示当前本地内容与已读取的服务器快照，不替换用户的输入
 function renderConflict() {
-    document.getElementById("conflict-local").textContent = comparisonText(readEditorFields());
+    const localFields = readEditorFields();
+    localFields.status = visibilityInput.value;
+    document.getElementById("conflict-local").textContent = comparisonText(localFields);
     let serverText = "正在读取最新内容，读取失败时可重试";
     if (editor.state.conflict) {
         serverText = comparisonText(noteFields(editor.state.conflict));
@@ -527,6 +570,9 @@ async function checkSaveResult() {
     button.disabled = true;
     try {
         await editor.reconcile(sessionToken);
+        if (!editor.state.blocked && !editor.state.uncertain && editor.state.note) {
+            savedVisibility = editor.state.note.status;
+        }
     } catch (error) {
         handleSaveError(error);
     } finally {
@@ -576,7 +622,7 @@ function warnBeforeLeaving(event) {
     if (!initialized || leaving) {
         return;
     }
-    if (editor.dirty() || editor.state.pending || editor.state.blocked || hasPendingImages() || tagsTextField.value.trim()) {
+    if (hasUnsavedChanges() || editor.state.pending || editor.state.blocked || hasPendingImages() || tagsTextField.value.trim()) {
         event.preventDefault();
         event.returnValue = "";
     }
@@ -1066,7 +1112,7 @@ function removeSelectedImage(imageId) {
 // 后端可能已经创建文章但响应丢失，直接重发会产生重复文章
 async function publishArticle(event) {
     event.preventDefault();
-    await saveManually("PUBLISHED");
+    await saveManually(visibilityInput.value);
 }
 
 // 显示正文长度，输入上限与接口一致
@@ -1118,6 +1164,7 @@ uploadButton.addEventListener("click", uploadPendingImages);
 form.addEventListener("submit", publishArticle);
 bodyInput.addEventListener("input", bodyChanged);
 titleInput.addEventListener("input", editorChanged);
+visibilityInput.addEventListener("change", changeVisibility);
 tagsTextField.addEventListener("input", editorChanged);
 autosaveEnabled.addEventListener("change", editorChanged);
 saveDraftButton.addEventListener("click", saveDraft);

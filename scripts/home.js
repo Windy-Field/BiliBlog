@@ -46,7 +46,6 @@ const deleteStatus = document.getElementById("delete-status");
 const confirmDeleteButton = document.getElementById("confirm-delete");
 const detailStatus = document.getElementById("detail-status");
 const detailContent = document.getElementById("detail-content");
-const detailCollection = document.getElementById("detail-collection");
 const retryDetail = document.getElementById("retry-detail");
 const topbar = document.getElementById("topbar");
 const pageSize = HOME_PAGE_SIZE;
@@ -73,16 +72,18 @@ async function refreshLibrary() {
     readRoute();
     updateFeedHeading();
     await loadFeed();
-    if (readingNote && articleDialog.open) {
-        renderDetailCollection(readingNote);
-    }
 }
 
-// 已收藏文章可直接整理到收藏夹，未收藏时保持原来的收藏按钮流程
-function renderDetailCollection(note) {
-    detailCollection.replaceChildren();
-    if (note.favorited) {
-        detailCollection.appendChild(collections.makeMoveButton(note));
+// 本次收藏成功后打开选择窗口；文章关闭、切换或换账号时放弃迟到的弹窗。
+function chooseFavoriteCollection(event) {
+    const note = event.detail.note;
+    const expectedToken = event.detail.token;
+    // 收藏夹读取可能较慢，弹窗显示前还要再次核对当前文章和账号。
+    function isCurrentArticle() {
+        return articleDialog.open && readingNote === note && note.favorited && currentToken() === expectedToken;
+    }
+    if (isCurrentArticle()) {
+        collections.openMove(note, isCurrentArticle);
     }
 }
 
@@ -1145,7 +1146,6 @@ function foldActivityMetadata(body) {
 async function readArticleHash() {
     stopReadingProgress();
     readingNote = null;
-    detailCollection.replaceChildren();
     setReactionArticle(null);
     setCommentArticle(null);
     const hash = new URLSearchParams(window.location.hash.slice(1));
@@ -1206,7 +1206,6 @@ async function readArticleHash() {
         detailStatus.textContent = "";
         detailContent.hidden = false;
         readingNote = note;
-        renderDetailCollection(note);
         setReactionArticle(note);
         setCommentArticle(note);
         startReadingProgress(note.id, articleDialog);
@@ -1232,7 +1231,6 @@ async function readArticleHash() {
 function closeArticle() {
     stopReadingProgress();
     readingNote = null;
-    detailCollection.replaceChildren();
     setReactionArticle(null);
     setCommentArticle(null);
     detailRequest = detailRequest + 1;
@@ -1256,9 +1254,6 @@ function updateArticleReaction(event) {
     // 评论数量变化只同步数字，点赞和收藏操作才可能改变私人列表的内容
     if (event.type === "article-reaction" && (feed === "favorites" || feed === "likes")) {
         loadFeed();
-    }
-    if (event.type === "article-reaction" && readingNote && readingNote.id === note.id) {
-        renderDetailCollection(note);
     }
     document.getElementById("detail-counts").textContent = "点赞 " + note.likeCount + " · 收藏 " + note.favoriteCount + " · 评论 " + note.commentCount;
 }
@@ -1329,6 +1324,7 @@ document.addEventListener("click", handleRouteClick);
 window.addEventListener("scroll", updateTopbar, { passive: true });
 document.addEventListener("click", closeAccountMenu);
 document.addEventListener("article-reaction", updateArticleReaction);
+document.addEventListener("article-favorited", chooseFavoriteCollection);
 document.addEventListener("article-comment-count", updateArticleReaction);
 window.addEventListener("storage", resetPrivateLibrary);
 confirmDeleteButton.addEventListener("click", deleteArticle);

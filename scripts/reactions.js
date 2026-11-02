@@ -94,6 +94,9 @@ async function changeReaction(kind) {
             }
         }
         notifyReactionChange(note);
+        if (kind === "favorite" && active && note.favorited) {
+            notifyFavoriteCreated(note, session.token);
+        }
         // 按钮已显示最新状态，减少连续互动时反复弹出的提示
     } catch (error) {
         const sessionNow = readSession();
@@ -117,6 +120,9 @@ async function changeReaction(kind) {
                 note.favoriteCount = latest.favoriteCount;
                 note.favoriteCollectionId = latest.favoriteCollectionId;
                 notifyReactionChange(note);
+                if (kind === "favorite" && active && note.favorited) {
+                    notifyFavoriteCreated(note, session.token);
+                }
                 // 读取后端最新状态后更新按钮
                 return;
             } catch {
@@ -137,6 +143,11 @@ async function changeReaction(kind) {
 // 通知首页更新卡片和收藏列表，避免详情与列表显示不同计数
 function notifyReactionChange(note) {
     document.dispatchEvent(new CustomEvent("article-reaction", { detail: note }));
+}
+
+// 仅在本次收藏已确认成功时请求选择收藏夹，取消收藏和普通刷新不会弹窗。
+function notifyFavoriteCreated(note, token) {
+    document.dispatchEvent(new CustomEvent("article-favorited", { detail: { note: note, token: token } }));
 }
 
 // 点击点赞，已有点赞时取消

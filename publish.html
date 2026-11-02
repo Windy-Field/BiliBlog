@@ -91,6 +91,14 @@
                 <p class="field-hint">JPEG、PNG 或 WebP，每张不超过 5 MiB，上传图片为公开可见</p>
                 <p id="upload-status" class="message" role="status" tabindex="-1"></p>
                 <div id="image-previews" class="image-previews"></div>
+                <div class="article-visibility">
+                    <label for="article-visibility">公开设置</label>
+                    <select id="article-visibility" aria-describedby="visibility-hint">
+                        <option value="PUBLISHED">公开发布</option>
+                        <option value="DRAFT">不公开（存为草稿）</option>
+                    </select>
+                    <p id="visibility-hint" class="field-hint">保存后生效。不公开的文章在草稿箱中管理，已上传图片的链接仍为公开链接。</p>
+                </div>
                 <div class="editor-actions"><button id="save-draft" type="button"><span data-icon="save"></span>保存草稿</button><button id="publish-button" class="publish-button" type="submit"><span data-icon="send"></span>发布文章</button></div>
             </fieldset>
         </form>

@@ -88,6 +88,8 @@ Blog/
 │   ├── home-mobile.jpg                手机首页
 │   ├── reader-desktop.jpg             桌面文章阅读
 │   ├── reader-mobile.jpg              手机文章阅读
+│   ├── favorite-desktop.jpg           桌面收藏成功后选择收藏夹
+│   ├── favorite-mobile.jpg            手机收藏成功后选择收藏夹
 │   ├── editor-desktop.jpg             桌面 Markdown 写作，使用本机示例内容
 │   ├── editor-mobile.jpg              手机 Markdown 写作，使用本机示例内容
 │   ├── settings-desktop.jpg           桌面统一设置窗口

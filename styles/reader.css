@@ -241,14 +241,14 @@
 }
 .reaction-bar {
     display: flex;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
+    overflow-x: auto;
     gap: 12px;
     margin-top: 32px;
     padding: 20px 0;
     border-top: 1px solid var(--color-border);
 }
-.home-page .reaction-button,
-.home-page .detail-collection .collection-button {
+.home-page .reaction-button {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -256,6 +256,8 @@
     min-height: 44px;
     min-width: 104px;
     width: 144px;
+    flex-shrink: 0;
+    white-space: nowrap;
     max-width: 100%;
     padding: 8px 16px;
     border: 1px solid var(--color-border);
@@ -301,18 +303,16 @@
         height: calc(100dvh - var(--reader-viewport-gap-mobile));
         max-height: calc(100dvh - var(--reader-viewport-gap-mobile));
     }
-    .home-page .reaction-button,
-    .home-page .detail-collection .collection-button {
-        flex: 1;
+    .home-page .reaction-button {
+        flex: 1 0 auto;
         width: auto;
-        min-width: 0;
-        padding: 8px;
+        min-width: 64px;
+        gap: 4px;
+        padding: 8px 4px;
+        font-size: 13px;
     }
-    /* 整理入口与上一排的三项操作使用同样的列宽和间隔 */
-    .detail-collection {
-        display: grid;
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-        gap: 12px;
+    .reaction-bar {
+        gap: 8px;
     }
     #detail-title {
         font-size: var(--reader-title-size-mobile);

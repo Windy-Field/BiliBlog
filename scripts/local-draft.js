@@ -23,6 +23,10 @@ function validDraft(draft) {
     if (draft.productId !== null && typeof draft.productId !== "string") {
         return false;
     }
+    // 旧备份没有公开选项时仍能恢复，新备份只接受后端已有的两种状态。
+    if (draft.visibility !== undefined && draft.visibility !== "PUBLISHED" && draft.visibility !== "DRAFT") {
+        return false;
+    }
     if (typeof draft.awaitingCreation !== "boolean" || typeof draft.needsComparison !== "boolean" || !Number.isInteger(draft.pendingImages) || draft.pendingImages < 0 || draft.pendingImages > MAX_IMAGES) {
         return false;
     }

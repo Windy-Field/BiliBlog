@@ -293,9 +293,9 @@ export function createCollections(onChanged) {
         }
     }
 
-    // 打开移动窗口前重新读取目标列表，避免提交已经删除或来自旧账号的收藏夹
-    async function openMove(note) {
-        if (loading || writing) {
+    // 读取真实收藏夹后再打开选择窗口；isCurrent 用来判断阅读页是否仍在查看同一篇文章。
+    async function openMove(note, isCurrent) {
+        if (writing || (loading && !isCurrent)) {
             return;
         }
         const session = readSession();
@@ -306,6 +306,9 @@ export function createCollections(onChanged) {
         try {
             await load(session.token);
             checkSession(session.token);
+            if (isCurrent && !isCurrent()) {
+                return;
+            }
             moveToken = session.token;
             moveNote = note;
             destination.replaceChildren();
@@ -323,8 +326,11 @@ export function createCollections(onChanged) {
                     destination.value = "default";
                 }
             }
-            document.getElementById("move-collection-title").textContent = "移动收藏：《" + note.title + "》";
+            document.getElementById("move-collection-title").textContent = "选择收藏夹：《" + note.title + "》";
             showMessage(moveStatus, "", false);
+            if (isCurrent) {
+                showMessage(moveStatus, "文章已收藏。取消选择时保留在默认收藏夹。", false);
+            }
             moveDialog.showModal();
         } catch (error) {
             handleError(error, session.token, status);
@@ -384,7 +390,7 @@ export function createCollections(onChanged) {
         }
     }
 
-    // 为已收藏文章创建整理入口，尚未收藏的文章不显示移动操作
+    // 为收藏页卡片创建整理入口，未收藏时不显示。
     function makeMoveButton(note) {
         const session = readSession();
         let renderedToken = null;
@@ -485,5 +491,5 @@ export function createCollections(onChanged) {
     closeCollectionElement.addEventListener("click", closeName);
     const closeMoveCollectionElement = document.getElementById("close-move-collection");
     closeMoveCollectionElement.addEventListener("click", closeMove);
-    return { panel: panel, load: load, reset: reset, makeMoveButton: makeMoveButton };
+    return { panel: panel, load: load, reset: reset, makeMoveButton: makeMoveButton, openMove: openMove };
 }

@@ -149,6 +149,14 @@
     gap: 12px;
     flex-wrap: wrap;
 }
+/* 公开设置与提交按钮相邻，窄屏时下拉框随正文宽度收缩。 */
+.article-visibility {
+    margin-top: 24px;
+}
+.article-visibility select {
+    width: 100%;
+    max-width: 320px;
+}
 .local-recovery {
     padding: 16px 0;
     margin-bottom: 24px;
