@@ -8,12 +8,12 @@ $sourceFolders = @('scripts', 'styles', 'tools', 'assets', 'screenshots', 'docs'
 $requiredFolders = @('scripts', 'styles', 'tools', 'assets', 'screenshots')
 $requiredFiles = @(
     'README.md', 'project-structure.md', 'package.json', 'package-lock.json',
-    'vite.config.js', '.env.example', '.gitignore', 'LICENSE', 'start.cmd', 'package.cmd',
+    'vite.config.js', '.env.example', '.gitignore', 'LICENSE',
     'openapi.json', 'index.html', 'login.html', 'register.html', 'publish.html',
     'drafts.html', 'profile.html', 'settings.html'
 )
 $excludedFolders = @('node_modules', 'dist', '.git', '.claude', '.codex', '.vscode', 'coverage', 'submissions')
-$excludedExtensions = @('.zip', '.7z', '.rar', '.log', '.tmp', '.bak', '.pem', '.key', '.pfx', '.p12')
+$excludedExtensions = @('.zip', '.7z', '.rar', '.log', '.tmp', '.bak', '.pem', '.key', '.pfx', '.p12', '.cmd', '.bat', '.ps1')
 $excludedNames = @('Thumbs.db', '.DS_Store')
 $projectDirectory = Split-Path -Parent $PSScriptRoot
 
@@ -92,6 +92,22 @@ function Get-StreamDigest {
     }
 }
 
+# 读取待打包文件的字节；仅在包内移除依赖 Windows 脚本的打包命令，本地文件保持原样。
+function Get-SubmissionBytes {
+    param([string]$RelativePath)
+
+    $sourcePath = Join-Path $projectDirectory $RelativePath
+    if ($RelativePath -eq 'package.json') {
+        $sourceText = [System.IO.File]::ReadAllText($sourcePath)
+        $package = ConvertFrom-Json -InputObject $sourceText
+        $package.scripts.PSObject.Properties.Remove('package')
+        $packageText = ConvertTo-Json -InputObject $package -Depth 10
+        $encoding = New-Object System.Text.UTF8Encoding($false)
+        return ,($encoding.GetBytes($packageText))
+    }
+    return ,([System.IO.File]::ReadAllBytes($sourcePath))
+}
+
 # 把选取的文件直接写入 ZIP，保留相对目录；文件名使用通用的正斜杠。
 function Write-SubmissionArchive {
     param([string]$ArchivePath, [System.Collections.Generic.List[string]]$Files)
@@ -99,17 +115,23 @@ function Write-SubmissionArchive {
     $archive = [System.IO.Compression.ZipFile]::Open($ArchivePath, [System.IO.Compression.ZipArchiveMode]::Create)
     try {
         foreach ($relativePath in $Files) {
-            $sourcePath = Join-Path $projectDirectory $relativePath
             $portablePath = $relativePath.Replace('\', '/')
             $entryName = $archiveRoot + '/' + $portablePath
-            [System.IO.Compression.ZipFileExtensions]::CreateEntryFromFile($archive, $sourcePath, $entryName) | Out-Null
+            $bytes = Get-SubmissionBytes $relativePath
+            $entry = $archive.CreateEntry($entryName)
+            $entryStream = $entry.Open()
+            try {
+                $entryStream.Write($bytes, 0, $bytes.Length)
+            } finally {
+                $entryStream.Dispose()
+            }
         }
     } finally {
         $archive.Dispose()
     }
 }
 
-# 解压读取每个 ZIP 条目并对照原文件，确认路径、数量和文件内容都正确。
+# 解压读取每个 ZIP 条目并对照提交内容，确认路径、数量和文件内容都正确。
 function Test-SubmissionArchive {
     param([string]$ArchivePath, [System.Collections.Generic.List[string]]$Files)
 
@@ -125,9 +147,11 @@ function Test-SubmissionArchive {
             if ($null -eq $entry) {
                 throw "压缩包缺少文件：$entryName"
             }
-            $sourcePath = Join-Path $projectDirectory $relativePath
-            $fileStream = [System.IO.File]::OpenRead($sourcePath)
+            $bytes = Get-SubmissionBytes $relativePath
+            $fileStream = New-Object System.IO.MemoryStream
             try {
+                $fileStream.Write($bytes, 0, $bytes.Length)
+                $fileStream.Position = 0
                 $fileDigest = Get-StreamDigest $fileStream
             } finally {
                 $fileStream.Dispose()

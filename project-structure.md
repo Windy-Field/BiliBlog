@@ -6,6 +6,8 @@
 
 下面列出项目维护的文件及用途，依赖目录 `node_modules/` 和构建目录 `dist/` 由工具生成，本地课程资料 `markdown-export/` 由 Git 忽略
 
+目录树中的 `start.cmd`、`package.cmd`、`tools/start-dev.ps1` 和 `tools/pack-submission.ps1` 只在本地工作区使用，不放入提交包。解压提交包后使用 `npm ci` 和 `npm run dev` 运行项目
+
 ```text
 Blog/
 ├── start.cmd                          双击启动服务并打开首页
