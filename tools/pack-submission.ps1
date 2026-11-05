@@ -14,7 +14,7 @@ $requiredFiles = @(
 )
 $excludedFolders = @('node_modules', 'dist', '.git', '.claude', '.codex', '.vscode', 'coverage', 'submissions')
 $excludedExtensions = @('.zip', '.7z', '.rar', '.log', '.tmp', '.bak', '.pem', '.key', '.pfx', '.p12', '.cmd', '.bat', '.ps1')
-$excludedNames = @('Thumbs.db', '.DS_Store')
+$excludedNames = @('Thumbs.db', '.DS_Store', 'DONTREADME.md')
 $projectDirectory = Split-Path -Parent $PSScriptRoot
 
 # 检查路径是否为符号链接或目录联接，防止打包时读到项目外的文件。
@@ -210,7 +210,7 @@ try {
     }
     $rootDocuments = Get-ChildItem -LiteralPath $projectDirectory -Filter '*.md' -File
     foreach ($document in $rootDocuments) {
-        if (-not $files.Contains($document.Name)) {
+        if ((Test-SubmissionFile $document.Name) -and -not $files.Contains($document.Name)) {
             Assert-RegularPath $document.FullName
             $files.Add($document.Name)
         }
