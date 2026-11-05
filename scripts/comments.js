@@ -4,6 +4,7 @@ import { showMessage, showToast, setBusy, confirmAction } from "./common.js";
 import { makeIcon } from "./icons.js";
 import { COMMENT_PAGE_SIZE, MAX_COMMENT_LENGTH } from "./config.js";
 import { copyArticleLink } from "./article-share.js";
+import { deletedCommentsControl } from "./site-settings.js";
 
 // 输入区初始行数只影响显示高度，字数上限继续由接口配置决定
 const COMPOSER_ROWS = 3;
@@ -40,6 +41,10 @@ export function setCommentArticle(note) {
         loading: false,
         page: 1,
         pageCount: 1,
+        total: 0,
+        loaded: false,
+        listFailed: false,
+        replyLists: [],
         renderVersion: 0,
         available: true,
         identifying: true
@@ -47,6 +52,46 @@ export function setCommentArticle(note) {
     current = state;
     buildSection(state);
     initializeComments(state);
+}
+
+// 只更改删除占位的可见性，保留回复展开状态、分页和表单输入。
+function applyDeletedCommentsPreference() {
+    if (!current) {
+        return;
+    }
+    for (const row of current.list.querySelectorAll("[data-deleted-comment]")) {
+        const show = deletedCommentsControl.checked;
+        row.querySelector(".comment-deleted-placeholder").hidden = !show;
+        row.hidden = !show && row.dataset.hasReplies !== "true";
+        row.classList.toggle("comment-item", show);
+        row.classList.toggle("comment-thread", !show);
+    }
+    if (current.loaded && !current.loading && !current.listFailed) {
+        updateCommentListStatus(current.list, current.listStatus, current.total, false);
+    }
+    for (const replies of current.replyLists) {
+        if (replies.loaded && !replies.loading && replies.retry.hidden) {
+            updateCommentListStatus(replies.list, replies.status, replies.total, true);
+        }
+    }
+}
+
+// 按实际可见项显示空状态，total 保留服务器分页总数，不将隐藏项当作可见评论。
+function updateCommentListStatus(list, status, total, isReply) {
+    for (const child of list.children) {
+        if (!child.hidden) {
+            status.textContent = "";
+            return;
+        }
+    }
+    let name = "评论";
+    if (isReply) {
+        name = "回复";
+    }
+    status.textContent = "还没有" + name;
+    if (total > 0) {
+        status.textContent = "本页暂无可显示的" + name;
+    }
 }
 
 // 创建常用文字元素，用户输入按纯文字显示
@@ -263,15 +308,16 @@ async function loadComments(state, page) {
         state.page = page;
         state.pageCount = count;
         state.renderVersion = state.renderVersion + 1;
+        state.total = result.total;
+        state.loaded = true;
+        state.listFailed = false;
+        state.replyLists = [];
         state.list.replaceChildren();
         for (const comment of result.items) {
             state.list.appendChild(makeComment(state, comment, false));
         }
         state.available = true;
-        state.listStatus.textContent = "";
-        if (result.items.length === 0) {
-            state.listStatus.textContent = "还没有评论";
-        }
+        applyDeletedCommentsPreference();
     } catch (error) {
         if (current !== state) {
             return;
@@ -279,21 +325,21 @@ async function loadComments(state, page) {
         if (error.status === 404) {
             state.available = false;
         }
+        state.listFailed = true;
         state.listStatus.textContent = "评论读取失败，可点击上方刷新重试";
         handleCommentError(state, error);
     } finally {
         state.loading = false;
         if (current === state) {
+            applyDeletedCommentsPreference();
             updatePager(state.pager, state.page, state.pageCount, false);
             updateComposer(state);
         }
     }
 }
 
-// 创建评论或回复，已删除主评论保留占位和回复入口
-function makeComment(state, comment, isReply) {
-    const row = textElement("article", "comment-item", "");
-    row.dataset.commentId = comment.id;
+// 将后端提供的头像、昵称和发布时间加入 container，正常评论与删除占位共用。
+function appendCommentIdentity(container, comment) {
     const avatar = textElement("span", "comment-avatar", comment.author.displayName.slice(0, 1));
     avatar.setAttribute("aria-hidden", "true");
     if (comment.author.avatarUrl) {
@@ -313,20 +359,37 @@ function makeComment(state, comment, isReply) {
     time.dateTime = comment.createdAt;
     time.textContent = new Date(comment.createdAt).toLocaleString("zh-CN");
     header.appendChild(time);
-    let body = comment.body;
+    container.append(avatar, header);
+}
+
+// 创建评论或回复，删除项保留发布者信息和占位，是否显示由阅读设置决定。
+function makeComment(state, comment, isReply) {
     if (comment.deleted) {
-        body = "该评论已删除";
+        const thread = textElement("article", "comment-item", "");
+        thread.dataset.deletedComment = comment.id;
+        const hasReplies = !isReply && comment.replyCount > 0;
+        thread.dataset.hasReplies = String(hasReplies);
+        const placeholder = textElement("div", "comment-deleted-placeholder", "");
+        appendCommentIdentity(placeholder, comment);
+        placeholder.appendChild(textElement("p", "comment-body comment-muted", "该评论已删除"));
+        thread.appendChild(placeholder);
+        if (hasReplies) {
+            const replyActions = textElement("div", "comment-actions", "");
+            thread.appendChild(replyActions);
+            addReplyList(state, thread, replyActions, comment);
+        }
+        return thread;
     }
-    const content = textElement("p", "comment-body", body);
-    if (comment.deleted) {
-        content.classList.add("comment-muted");
-    }
+    const row = textElement("article", "comment-item", "");
+    row.dataset.commentId = comment.id;
+    appendCommentIdentity(row, comment);
+    const content = textElement("p", "comment-body", comment.body);
     const actions = textElement("div", "comment-actions", "");
     // 评论操作区分享所属文章，阅读窗口只保留一份普通评论列表
     actions.appendChild(actionButton("复制链接", function shareComment() {
         copyArticleLink(state.note.id);
     }));
-    if (!isReply && !comment.deleted) {
+    if (!isReply) {
         // 选择主评论作为回复目标，并把焦点放到输入框
         actions.appendChild(actionButton("回复", function selectReply() {
             if (state.busy || state.draft.pending) {
@@ -338,7 +401,7 @@ function makeComment(state, comment, isReply) {
             state.input.focus();
         }));
     }
-    if (!comment.deleted && state.username === comment.author.username) {
+    if (state.username === comment.author.username) {
         // 本人点击删除时，进入确认和删除流程
         const remove = actionButton("删除", function requestCommentDelete() {
             deleteComment(state, comment);
@@ -346,7 +409,7 @@ function makeComment(state, comment, isReply) {
         remove.classList.add("comment-delete");
         actions.appendChild(remove);
     }
-    row.append(avatar, header, content, actions);
+    row.append(content, actions);
     if (!isReply && comment.replyCount > 0) {
         addReplyList(state, row, actions, comment);
     }
@@ -357,10 +420,12 @@ function makeComment(state, comment, isReply) {
 function addReplyList(state, row, actions, comment) {
     const replyState = {
         page: 1, count: 1, loading: false, version: state.renderVersion,
+        total: 0, loaded: false,
         root: textElement("div", "comment-replies", ""),
         status: textElement("p", "comment-muted", ""),
         list: textElement("div", "", "")
     };
+    state.replyLists.push(replyState);
     replyState.root.hidden = true;
     replyState.status.setAttribute("role", "status");
     // 每个回复列表独立翻页，保留其他主评论的状态
@@ -414,14 +479,13 @@ async function loadReplies(state, parentId, replies, page) {
             return await loadReplies(state, parentId, replies, replies.count);
         }
         replies.page = page;
+        replies.total = result.total;
+        replies.loaded = true;
         replies.list.replaceChildren();
         for (const reply of result.items) {
             replies.list.appendChild(makeComment(state, reply, true));
         }
-        replies.status.textContent = "";
-        if (result.items.length === 0) {
-            replies.status.textContent = "还没有回复";
-        }
+        applyDeletedCommentsPreference();
     } catch (error) {
         if (current === state && state.renderVersion === replies.version) {
             replies.status.textContent = "回复读取失败";
@@ -430,6 +494,9 @@ async function loadReplies(state, parentId, replies, page) {
         }
     } finally {
         replies.loading = false;
+        if (current === state && state.renderVersion === replies.version) {
+            applyDeletedCommentsPreference();
+        }
         updatePager(replies.pager, replies.page, replies.count, false);
     }
 }
@@ -593,3 +660,6 @@ function handleCommentError(state, error) {
     showMessage(state.feedback, error.message, true);
     updateComposer(state);
 }
+
+deletedCommentsControl.addEventListener("change", applyDeletedCommentsPreference);
+deletedCommentsControl.addEventListener("input", applyDeletedCommentsPreference);

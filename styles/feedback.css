@@ -50,20 +50,26 @@ body .page-button,
 body .image-select,
 body .back-to-top,
 body .comment-button,
-body .comment-submit {
+body .comment-submit,
+body .creator-publish,
+body .draft-new,
+body .hero-edit-btn {
     position: relative;
     transition:
         transform var(--duration-press) var(--ease-out),
         background-color var(--duration-fast) var(--ease-out),
         color var(--duration-fast) var(--ease-out),
-        border-color var(--duration-fast) var(--ease-out);
+        border-color var(--duration-fast) var(--ease-out),
+        box-shadow var(--duration-panel) var(--ease-out),
+        opacity var(--duration-fast) var(--ease-out);
 }
 
 body button:not(:disabled):active,
 body .page-button:not([aria-disabled="true"]):active,
-body .back-to-top:active,
-body .comment-button:not(:disabled):active,
-body .comment-submit:not(:disabled):active {
+body .image-select:active,
+body .creator-publish:active,
+body .draft-new:active,
+body .hero-edit-btn:active {
     transform: scale(0.97);
 }
 
@@ -71,11 +77,8 @@ body .comment-submit:not(:disabled):active {
 body .primary-button {
     transition:
         box-shadow var(--duration-panel) var(--ease-out),
-        transform var(--duration-press) var(--ease-out);
-}
-
-body .primary-button:not(:disabled):hover {
-    transform: translateY(-1px);
+        transform var(--duration-press) var(--ease-out),
+        opacity var(--duration-fast) var(--ease-out);
 }
 
 body .primary-button:not(:disabled):active {
@@ -88,10 +91,16 @@ body button:disabled {
 
 body .is-busy {
     position: relative;
-    cursor: wait;
 }
 
-body .is-busy::after {
+/* 按钮静默同步，保留禁用和辅助阅读状态，不显示转圈或等待光标。 */
+body button[aria-busy="true"],
+body fieldset:disabled:has(button[aria-busy="true"]) button {
+    opacity: 1;
+    cursor: pointer;
+}
+
+body .is-busy:not(button)::after {
     content: "";
     position: absolute;
     left: 10px;
@@ -103,10 +112,6 @@ body .is-busy::after {
     border-radius: 50%;
     animation: feedback-spin var(--duration-spinner) linear infinite;
     pointer-events: none;
-}
-
-body .is-busy svg {
-    opacity: 0;
 }
 
 body .message:not(:empty) {
@@ -351,6 +356,9 @@ body .confirmation-actions .confirm-danger {
 }
 
 @media (hover: hover) and (pointer: fine) {
+    body .primary-button:not(:disabled):hover:not(:active) {
+        transform: translateY(-1px);
+    }
     body button:not(:disabled):hover {
         border-color: var(--color-brand);
     }
@@ -376,6 +384,10 @@ body .confirmation-actions .confirm-danger {
     body .primary-button,
     body .page-button,
     body .image-select,
+    body .creator-publish,
+    body .draft-new,
+    body .hero-edit-btn,
+    body button svg,
     body .message,
     body input,
     body textarea,
@@ -385,9 +397,13 @@ body .confirmation-actions .confirm-danger {
         transition: none !important;
     }
     body button:not(:disabled):active,
-    body .primary-button:not(:disabled):hover,
+    body .primary-button:not(:disabled):hover:not(:active),
     body .primary-button:not(:disabled):active,
     body .page-button:active,
+    body .image-select:active,
+    body .creator-publish:active,
+    body .draft-new:active,
+    body .hero-edit-btn:active,
     body dialog,
     body dialog[open],
     .account-menu .account-dropdown {

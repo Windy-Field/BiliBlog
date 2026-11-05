@@ -56,6 +56,45 @@
     max-width: var(--reader-content-width);
     margin: 0 auto;
 }
+/* 等待真实正文时立即占位，不用旋转动画增加弹窗打开时的绘制负担。 */
+.reader-placeholder {
+    max-width: var(--reader-content-width);
+    margin: 0 auto;
+}
+.reader-placeholder > div {
+    border-radius: 6px;
+    background: var(--color-surface-hover);
+}
+.reader-placeholder-title {
+    width: 72%;
+    height: 32px;
+    margin-bottom: 24px;
+}
+.reader-placeholder-author {
+    width: 36%;
+    height: 24px;
+    margin-bottom: 40px;
+}
+.reader-placeholder-line {
+    height: 16px;
+    margin-bottom: 16px;
+}
+.reader-placeholder-short {
+    width: 64%;
+}
+.reader-placeholder-image {
+    aspect-ratio: 16 / 9;
+    margin-top: 24px;
+}
+/* 保留可访问的加载提示，不让提示文字和骨架各占一块高度。 */
+#article-dialog[aria-busy="true"] #detail-status {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+}
 .detail-tags {
     display: flex;
     flex-wrap: wrap;
@@ -163,6 +202,13 @@
     height: auto;
     border-radius: 6px;
 }
+/* 正文插图单独加框，保留图片的原始比例和所在段落顺序。 */
+.detail-body img {
+    padding: 6px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-control);
+    background: var(--color-surface);
+}
 .detail-gallery:empty {
     display: none;
 }
@@ -176,6 +222,17 @@
     display: grid;
     gap: 16px;
     margin-top: 24px;
+    padding: 12px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-control);
+    background: var(--color-surface);
+}
+/* 多图之间用细线区分，整组只保留一层外框。 */
+.detail-gallery img + img {
+    padding-top: 16px;
+    border-top: 1px solid var(--color-border);
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
 }
 .detail-body pre {
     overflow-x: auto;
@@ -249,6 +306,7 @@
     border-top: 1px solid var(--color-border);
 }
 .home-page .reaction-button {
+    isolation: isolate;
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -270,28 +328,42 @@
 .home-page .reaction-button[aria-pressed="true"] {
     border-color: var(--color-brand);
     color: var(--color-text);
+}
+/* 渐变不能直接平滑插值，用独立背景层的透明度表达选中和取消。 */
+.reaction-button::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
     background: var(--gradient-selected-soft);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity var(--duration-fast) var(--ease-out);
+}
+.reaction-button[aria-pressed="true"]::before {
+    opacity: 1;
 }
 .home-page .reaction-button:disabled {
-    opacity: 0.6;
-    cursor: wait;
+    /* 临时等待不闪变整个操作栏，状态仍由禁用属性和加载标记表达。 */
+    opacity: 1;
+    cursor: pointer;
 }
 /* 选中反馈只改变图标和颜色，按钮与文字保持原位 */
-.reaction-button svg {
+body button.reaction-button svg {
+    fill: transparent;
     transition:
         transform var(--duration-panel) var(--ease-out),
-        fill var(--duration-fast) var(--ease-out);
+        fill var(--duration-fast) var(--ease-out),
+        opacity var(--duration-fast) var(--ease-out),
+        color var(--duration-fast) var(--ease-out);
+    transform-box: fill-box;
     transform-origin: center;
 }
 .reaction-button[aria-pressed="true"] svg {
     fill: var(--color-brand);
     color: var(--color-text);
     transform: scale(1.12);
-}
-#detail-status.is-busy {
-    padding-left: 32px;
-    min-height: 32px;
-    line-height: 32px;
 }
 @media (max-width: 767px) {
     .dialog-top {
@@ -320,6 +392,7 @@
     }
 }
 @media (prefers-reduced-motion: reduce) {
+    .reaction-button::before,
     .reaction-button svg {
         transition: none;
     }

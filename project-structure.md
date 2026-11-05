@@ -27,6 +27,7 @@ Blog/
 │   ├── common.js                      页面提示、等待状态和删除确认
 │   ├── config.js                      共用的接口地址、限制、分页和宠物配置
 │   ├── site-settings.js               导航设置窗口、写作偏好和资料设置入口
+│   ├── music.js                       背景音乐、快捷开关、音量及本机播放偏好
 │   ├── media.js                       图片校验和本地预览
 │   ├── motion.js                      面板过渡、公告滚动和导航动效
 │   ├── home.js                        首页、关注分组、筛选、文章阅读与删除
@@ -69,6 +70,7 @@ Blog/
 │   ├── profile.css                    个人主页样式
 │   ├── settings.css                   个人资料设置样式
 │   ├── site-settings.css              全站设置入口、弹窗和开关布局
+│   ├── music.css                      音符开关、音量滑块和窄屏导航布局
 │   ├── feedback.css                   公共动效、提示与对话框反馈
 │   ├── notifications.css              铃铛与消息列表样式
 │   ├── select.css                     全站下拉选择框和原生菜单样式
@@ -77,6 +79,8 @@ Blog/
 │   ├── pet-motion.css                 宠物图片切换和对话窗口开合动画
 │   └── tokens.css                     统一颜色、字体和尺寸
 ├── assets/
+│   ├── audio/
+│   │   └── mirror.m4a                 Mirror 音轨，登录页之外使用
 │   ├── images/                        页面图片素材
 │   │   └── forest-banner.jpg          森林横幅，作为当前首页占位素材
 │   └── pet/                           猫形角色的三张状态图片

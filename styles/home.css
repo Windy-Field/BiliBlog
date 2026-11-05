@@ -20,7 +20,6 @@
 .home-page button {
     font: inherit;
 }
-.home-page button,
 .home-page a {
     -webkit-tap-highlight-color: var(--color-transparent);
 }
@@ -35,9 +34,6 @@
 .top-home svg,
 .desktop-entry svg {
     display: block;
-}
-.home-page button:disabled {
-    cursor: wait;
 }
 .skip-link {
     position: fixed;
@@ -472,7 +468,6 @@
 .notice-track.is-scrolling {
     animation: notice-scroll var(--notice-duration, 30s) linear infinite;
 }
-.notice-track.is-scrolling:hover,
 .notice-track.is-scrolling:focus-within {
     animation-play-state: paused;
 }
@@ -484,6 +479,11 @@
     height: 38px;
 }
 .notice-item {
+    display: block;
+    flex-shrink: 0;
+    max-width: var(--notice-item-max-width);
+    overflow: hidden;
+    text-overflow: ellipsis;
     color: var(--color-text-secondary);
     font-size: 13px;
     line-height: 20px;
@@ -976,7 +976,6 @@ a.card-author-name:hover {
         background: var(--color-page);
     }
 }
-.home-page button,
 .home-page a {
     transition:
         transform var(--duration-press) var(--ease-out),
@@ -1191,6 +1190,16 @@ a.card-author-name:hover {
     }
 }
 @media (prefers-reduced-motion: reduce) {
+    .notice-track.is-scrolling {
+        animation: none;
+    }
+    .notice-group[aria-hidden="true"] {
+        display: none;
+    }
+    .notice-viewport {
+        overflow-x: auto;
+        mask-image: none;
+    }
     .home-page button,
     .home-page a {
         transition: none;

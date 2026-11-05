@@ -71,6 +71,8 @@
     --people-result-gap: 24px;
     /* 首页话题链接与更多按钮共用高度，展开后的每一行保持一致 */
     --topic-control-height: 32px;
+    /* 每条发布公告的最大显示宽度，超出部分显示省略号。 */
+    --notice-item-max-width: 320px;
     /* 手机发布和头像外圈均为 44px，发布图标为 28px，入口之间保留独立间距 */
     --mobile-account-control: 44px;
     --mobile-account-icon: 28px;

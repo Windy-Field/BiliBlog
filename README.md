@@ -4,7 +4,7 @@
 
 [<img src="screenshots/home.png" height="260" alt="桌面首页文章排列">](screenshots/home.png)
 
-开发时，我尤其在意完整博客功能与视觉效果的呈现。因此除了实现了博客的基本功能外，还接入自定义 AI 接口、本机恢复，并反复调整了视觉方面的内容，如：刷新区域、页面切换的平滑动画等
+开发时，我关注了完整博客功能与视觉效果的呈现。因此除了实现了博客的基本功能外，还接入自定义 AI 接口、音乐系统、本机恢复，并反复调整了视觉方面的内容，如：刷新区域、页面切换的平滑动画等
 
 可维护性方面，我采用了模块化的代码结构，将不同的功能和组件分离开来，方便后续的维护和扩展
 
@@ -23,6 +23,12 @@
 猫耳朵上方会轮换显示白底问候气泡
 
 用户可以点击导航栏右上角的齿轮打开设置，关闭动态问候或隐藏宠物
+
+### 背景音乐
+
+除了登录界面外，其它页面均开启了 Mirror 背景音乐（默认）。你可以在设置中控制开关、音量和播放进度
+
+音轨为 `assets/audio/mirror.m4a`，时长约 144 秒，循环播放
 
 ### 平滑动画和局部刷新
 
@@ -53,12 +59,12 @@
 | 画面 | 网页端 | 手机端 |
 | --- | --- | --- |
 | 首页文章排列（[PNG 原图](screenshots/home.png)） | [<img src="screenshots/home-desktop.jpg" height="260" alt="桌面首页文章排列">](screenshots/home-desktop.jpg) | [<img src="screenshots/home-mobile.jpg" height="260" alt="手机首页文章排列">](screenshots/home-mobile.jpg) |
-| 文章阅读：点赞、收藏、分享 | [<img src="screenshots/reader-desktop.jpg" height="260" alt="桌面阅读与点赞收藏分享">](screenshots/reader-desktop.jpg) | [<img src="screenshots/reader-mobile.jpg" height="260" alt="手机阅读与点赞收藏分享">](screenshots/reader-mobile.jpg) |
+| 文章阅读：图片外框与互动 | [<img src="screenshots/reader-desktop.jpg" height="260" alt="桌面图片外框与点赞收藏分享">](screenshots/reader-desktop.jpg) | [<img src="screenshots/reader-mobile.jpg" height="260" alt="手机图片外框与点赞收藏分享">](screenshots/reader-mobile.jpg) |
 | 收藏后选择收藏夹 | [<img src="screenshots/favorite-desktop.jpg" height="260" alt="桌面收藏夹选择窗口">](screenshots/favorite-desktop.jpg) | [<img src="screenshots/favorite-mobile.jpg" height="260" alt="手机收藏夹选择窗口">](screenshots/favorite-mobile.jpg) |
 | Markdown 写作与预览（示例内容） | [<img src="screenshots/editor-desktop.jpg" height="260" alt="桌面 Markdown 分栏编辑">](screenshots/editor-desktop.jpg) | [<img src="screenshots/editor-mobile.jpg" height="260" alt="手机 Markdown 编辑与上下预览">](screenshots/editor-mobile.jpg) |
 | 统一设置 | [<img src="screenshots/settings-desktop.jpg" height="260" alt="桌面设置窗口">](screenshots/settings-desktop.jpg) | [<img src="screenshots/settings-mobile.jpg" height="260" alt="手机设置窗口">](screenshots/settings-mobile.jpg) |
 
-阅读区保留“点赞、收藏、分享”三个按钮。点击收藏成功后自动打开收藏夹选择窗口，选好后保存；取消选择时保留在默认收藏夹。取消收藏不会弹窗，之后可以在“我的收藏”的文章卡片中重新整理分组
+首页每条公告最多显示 320px，超出部分用省略号表示，鼠标移上后继续滚动。阅读区图片带浅色外框，无图片时不显示空框；保留“点赞、收藏、分享”三个按钮。点击收藏成功后自动打开收藏夹选择窗口，选好后保存；取消选择时保留在默认收藏夹。取消收藏不会弹窗，之后可以在“我的收藏”的文章卡片中重新整理分组
 
 ### 异常情况
 
@@ -88,7 +94,7 @@
 | 关注 | 关注与取消、粉丝数同步、按作者分组的关注文章、关注和粉丝分页名单 |
 | 通知 | 未读角标、类型与阅读状态筛选、分页、单条及全部已读、本机标记未读、跳转文章或作者 |
 | 宠物 AI | Octorange 文字对话、Markdown 回复、引用展示、三种角色状态、拖动、问候与显示设置 |
-| 设置 | 支持设置是否自动保存草稿、宠物的显示状态等 |
+| 设置 | 草稿自动保存、宠物显示、显示已删除评论（默认开启，显示发布者信息和删除占位），偏好保存在本机 |
 
 未筛选的首页最新文章，第一页最多显示 22 篇，其余每页最多 20 篇；搜索、话题和私人列表每页最多 20 篇。首页会随屏幕宽度调整为 1～5 列
 

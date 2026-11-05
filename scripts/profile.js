@@ -17,6 +17,7 @@ let selfUsername = "";
 let followState = false;
 let followCount = 0;
 let followLoading = false;
+let pendingFollow = null;
 let viewerToken = null;
 let followKnown = false;
 let notesRequest = 0;
@@ -198,6 +199,7 @@ function showFollowMessage(text, isError) {
 
 // 只清理发生失效的那次登录，保留其他标签页新登录的账号
 function resetViewer(token) {
+    pendingFollow = null;
     const session = readSession();
     if (session && session.token === token) {
         clearSession();
@@ -230,10 +232,17 @@ function renderFollowControl() {
     button.removeAttribute("aria-pressed");
     button.removeAttribute("title");
     setBusy(button, followLoading);
+    let displayedFollow = followState;
+    let displayedCount = followCount;
+    if (pendingFollow) {
+        displayedFollow = pendingFollow.active;
+        displayedCount = pendingFollow.count;
+    }
+    document.querySelector("#stat-followers strong").textContent = displayedCount;
     if (viewerToken && followKnown) {
-        button.setAttribute("aria-pressed", String(followState));
-        button.dataset.following = String(followState);
-        if (followState) {
+        button.setAttribute("aria-pressed", String(displayedFollow));
+        button.dataset.following = String(displayedFollow);
+        if (displayedFollow) {
             button.textContent = "已关注";
             button.title = "点击取消关注";
         } else {
@@ -284,7 +293,7 @@ async function refreshFollowState(token) {
     }
 }
 
-// 切换关注关系，以服务器返回值更新按钮和粉丝数
+// 关注先显示点击目标，服务器确认后更新真实值，失败时恢复。
 async function toggleFollow() {
     if (followLoading) {
         return;
@@ -314,6 +323,14 @@ async function toggleFollow() {
             return;
         }
         const newActive = !followState;
+        let displayedCount = followCount;
+        if (newActive) {
+            displayedCount = displayedCount + 1;
+        } else {
+            displayedCount = Math.max(0, displayedCount - 1);
+        }
+        pendingFollow = { active: newActive, count: displayedCount };
+        renderFollowControl();
         const result = await requestApi(
             "/users/" + encodeURIComponent(currentUsername) + "/follow",
             "POST",
@@ -346,6 +363,7 @@ async function toggleFollow() {
         }
     } finally {
         followLoading = false;
+        pendingFollow = null;
         renderFollowControl();
     }
 }

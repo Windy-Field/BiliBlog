@@ -41,7 +41,8 @@ export function makePinButton(note, onChanged) {
     if (note.pinnedAt) {
         label = "取消置顶";
     }
-    button.append(makeIcon("pin"), document.createTextNode(label));
+    const labelNode = document.createTextNode(label);
+    button.append(makeIcon("pin"), labelNode);
     button.setAttribute("aria-label", label + "：" + note.title);
     button.setAttribute("aria-pressed", String(Boolean(note.pinnedAt)));
     // 先从服务器查全局置顶数，再设置明确的目标状态，不能只数当前页的卡片
@@ -57,6 +58,12 @@ export function makePinButton(note, onChanged) {
         writing = true;
         updateButtons();
         setBusy(button, true);
+        const nextPinned = !note.pinnedAt;
+        labelNode.textContent = "置顶";
+        if (nextPinned) {
+            labelNode.textContent = "取消置顶";
+        }
+        button.setAttribute("aria-pressed", String(nextPinned));
         let sent = false;
         // 同一浏览器的标签页共用账号锁，两个页面同时点击时也按顺序核对数量
         async function performPin() {
@@ -76,8 +83,9 @@ export function makePinButton(note, onChanged) {
                 throw new Error("最多置顶 " + MAX_PINNED_NOTES + " 篇文章，请先取消一篇置顶");
             }
             sent = true;
-            await requestApi("/notes/" + encodeURIComponent(note.id) + "/pin", "POST", { active: !pinned }, session.token);
+            const saved = await requestApi("/notes/" + encodeURIComponent(note.id) + "/pin", "POST", { active: !pinned }, session.token);
             checkSession(session.token);
+            note.pinnedAt = saved.pinnedAt;
             onChanged();
             let message = "文章已置顶";
             if (pinned) {
@@ -111,6 +119,13 @@ export function makePinButton(note, onChanged) {
         } finally {
             writing = false;
             setBusy(button, false);
+            // 本地只预览目标；列表回读负责确认状态，失败时原按钮恢复原文案。
+            labelNode.textContent = "置顶";
+            if (note.pinnedAt) {
+                labelNode.textContent = "取消置顶";
+            }
+            button.setAttribute("aria-label", labelNode.textContent + "：" + note.title);
+            button.setAttribute("aria-pressed", String(Boolean(note.pinnedAt)));
             updateButtons();
         }
     });

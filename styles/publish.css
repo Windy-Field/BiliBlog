@@ -82,11 +82,6 @@
     border-radius: var(--radius-control);
     font-weight: 600;
     box-shadow: 0 2px 8px rgba(232, 75, 133, 0.28);
-    transition: box-shadow var(--duration-panel) var(--ease-out), transform var(--duration-press) var(--ease-out);
-}
-.creator-sidebar .creator-publish:hover {
-    box-shadow: 0 4px 14px rgba(232, 75, 133, 0.36);
-    transform: translateY(-1px);
 }
 .creator-sidebar nav {
     margin: 32px -20px 0;
@@ -442,17 +437,30 @@
     margin: 0;
     border-color: transparent;
     font-weight: 600;
-    letter-spacing: 0.02em;
     box-shadow: 0 2px 8px rgba(232, 75, 133, 0.30);
-    transition: box-shadow var(--duration-panel) var(--ease-out), transform var(--duration-press) var(--ease-out), background var(--duration-panel) var(--ease-out);
-}
-.publish-page .publish-button:not(:disabled):hover {
-    box-shadow: 0 4px 16px rgba(232, 75, 133, 0.40);
-    transform: translateY(-1px);
 }
 .publish-page .publish-button:not(:disabled):active {
     transform: scale(0.97);
     box-shadow: 0 2px 6px rgba(232, 75, 133, 0.25);
+}
+/* 悬停位移只用于鼠标，触屏点击不会留下悬停的抬起状态。 */
+@media (hover: hover) and (pointer: fine) {
+    .creator-sidebar .creator-publish:hover:not(:active) {
+        box-shadow: 0 4px 14px rgba(232, 75, 133, 0.36);
+        transform: translateY(-1px);
+    }
+    .publish-page .publish-button:not(:disabled):hover:not(:active) {
+        box-shadow: 0 4px 16px rgba(232, 75, 133, 0.40);
+        transform: translateY(-1px);
+    }
+}
+@media (prefers-reduced-motion: reduce) {
+    .creator-sidebar .creator-publish:hover:not(:active),
+    .creator-sidebar .creator-publish:active,
+    .publish-page .publish-button:not(:disabled):hover:not(:active),
+    .publish-page .publish-button:not(:disabled):active {
+        transform: none;
+    }
 }
 /* 发布页入口和提交按钮沿用同一套白字半透明渐变 */
 .publish-page .creator-publish,

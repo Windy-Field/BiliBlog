@@ -63,6 +63,11 @@ function scheduleSave() {
 // 图片加载导致高度变化时再次对齐原进度，用户开始操作后停止自动调整
 function restoreProgress() {
     if (current && current.restoring) {
+        // 新文章从顶部开始即可，不需要读取正文高度触发立即排版。
+        if (current.ratio === 0) {
+            current.dialog.scrollTop = 0;
+            return;
+        }
         current.dialog.scrollTop = current.ratio * readingHeight();
     }
 }

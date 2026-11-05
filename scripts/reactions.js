@@ -1,6 +1,6 @@
 import { requestApi } from "./api.js";
 import { readSession, clearSession } from "./auth.js";
-import { showMessage, showToast, setBusy } from "./common.js";
+import { showMessage, showToast } from "./common.js";
 
 const likeButton = document.getElementById("like-button");
 const favoriteButton = document.getElementById("favorite-button");
@@ -8,31 +8,44 @@ const message = document.getElementById("reaction-message");
 const loginLink = document.getElementById("reaction-login");
 let currentNote = null;
 let busy = false;
-let busyKind = "";
+let pendingReaction = null;
+let needsCheck = false;
 let articleToken = null;
 
-// 用后端返回的状态和数量更新按钮
-// 使用服务器结果能让重复设置保持一致，避免前端累加出错误计数
+// 按钮先展示本次点击的目标，真实文章对象只在服务器确认后更新。
 function renderReactions() {
     if (!currentNote) {
         return;
     }
     let likeText = "点赞";
     let favoriteText = "收藏";
-    if (currentNote.liked) {
+    let liked = currentNote.liked;
+    let favorited = currentNote.favorited;
+    let likeCount = currentNote.likeCount;
+    let favoriteCount = currentNote.favoriteCount;
+    if (pendingReaction) {
+        if (pendingReaction.kind === "like") {
+            liked = pendingReaction.active;
+            likeCount = pendingReaction.count;
+        } else {
+            favorited = pendingReaction.active;
+            favoriteCount = pendingReaction.count;
+        }
+    }
+    if (liked) {
         likeText = "已点赞";
     }
-    if (currentNote.favorited) {
+    if (favorited) {
         favoriteText = "已收藏";
     }
-    document.getElementById("like-label").textContent = likeText + " " + currentNote.likeCount;
-    document.getElementById("favorite-label").textContent = favoriteText + " " + currentNote.favoriteCount;
-    likeButton.setAttribute("aria-pressed", String(currentNote.liked));
-    favoriteButton.setAttribute("aria-pressed", String(currentNote.favorited));
-    likeButton.disabled = busy;
-    favoriteButton.disabled = busy;
-    setBusy(likeButton, busy && busyKind === "like");
-    setBusy(favoriteButton, busy && busyKind === "favorite");
+    document.getElementById("like-label").textContent = likeText + " " + likeCount;
+    document.getElementById("favorite-label").textContent = favoriteText + " " + favoriteCount;
+    likeButton.setAttribute("aria-pressed", String(liked));
+    favoriteButton.setAttribute("aria-pressed", String(favorited));
+    likeButton.disabled = busy || needsCheck;
+    favoriteButton.disabled = busy || needsCheck;
+    likeButton.setAttribute("aria-busy", String(busy));
+    favoriteButton.setAttribute("aria-busy", String(busy));
 }
 
 // 详情加载后接收最新文章，关闭或切换文章时传 null，防止迟到的响应改错文章
@@ -44,15 +57,18 @@ export function setReactionArticle(note) {
     }
     currentNote = note;
     busy = false;
-    busyKind = "";
+    pendingReaction = null;
+    needsCheck = false;
     showMessage(message, "", false);
     loginLink.hidden = true;
+    loginLink.textContent = "登录后重新读取文章";
+    loginLink.href = "/login.html";
     renderReactions();
 }
 
-// 设置或取消一种互动；失败保留原状态，结果不明时重新读取后端详情
+// 立即反馈点击目标，失败恢复原值；结果不明时只回读，不重复发送写入请求。
 async function changeReaction(kind) {
-    if (!currentNote || busy) {
+    if (!currentNote || busy || needsCheck) {
         return;
     }
     const session = readSession();
@@ -67,11 +83,18 @@ async function changeReaction(kind) {
     }
     const note = currentNote;
     let active = !note.liked;
+    let count = note.likeCount;
     if (kind === "favorite") {
         active = !note.favorited;
+        count = note.favoriteCount;
+    }
+    if (active) {
+        count = count + 1;
+    } else {
+        count = Math.max(0, count - 1);
     }
     busy = true;
-    busyKind = kind;
+    pendingReaction = { kind: kind, active: active, count: count };
     renderReactions();
     showMessage(message, "", false);
     try {
@@ -126,15 +149,26 @@ async function changeReaction(kind) {
                 // 读取后端最新状态后更新按钮
                 return;
             } catch {
-                if (currentNote !== note) {
+                const latestSession = readSession();
+                if (currentNote !== note || !latestSession || latestSession.token !== session.token) {
                     return;
                 }
+                needsCheck = true;
+                showMessage(message, "暂时无法确认操作结果，请重新读取文章后再操作", true);
+                loginLink.textContent = "重新读取文章";
+                loginLink.href = window.location.href;
+                loginLink.hidden = false;
             }
         }
         showToast(error.message + "，请重新读取文章确认状态", true);
     } finally {
+        const finalSession = readSession();
         if (currentNote === note) {
             busy = false;
+            pendingReaction = null;
+            if (!finalSession || finalSession.token !== session.token) {
+                needsCheck = true;
+            }
             renderReactions();
         }
     }

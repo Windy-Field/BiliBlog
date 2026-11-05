@@ -46,6 +46,7 @@ const deleteStatus = document.getElementById("delete-status");
 const confirmDeleteButton = document.getElementById("confirm-delete");
 const detailStatus = document.getElementById("detail-status");
 const detailContent = document.getElementById("detail-content");
+const readerPlaceholder = document.getElementById("reader-placeholder");
 const retryDetail = document.getElementById("retry-detail");
 const topbar = document.getElementById("topbar");
 const pageSize = HOME_PAGE_SIZE;
@@ -956,6 +957,7 @@ function renderNotices(notes) {
                 "于" + formatNoticeDate(note.createdAt) + "发布了《" + note.title + "》",
             ),
         );
+        text.title = text.textContent;
         group.appendChild(text);
     }
     track.replaceChildren(group);
@@ -1142,6 +1144,42 @@ function foldActivityMetadata(body) {
     }
 }
 
+// 正文图片异步解码，第一张附图优先请求，后续附图按阅读位置加载。
+function prepareReaderImages(body, gallery, note) {
+    for (const image of body.querySelectorAll("img")) {
+        image.decoding = "async";
+    }
+    const images = document.createDocumentFragment();
+    for (let index = 0; index < note.images.length; index = index + 1) {
+        const item = note.images[index];
+        const image = document.createElement("img");
+        image.decoding = "async";
+        image.alt = note.title;
+        if (index === 0) {
+            image.loading = "eager";
+        } else {
+            image.loading = "lazy";
+        }
+        image.src = item.url;
+        images.appendChild(image);
+    }
+    gallery.replaceChildren(images);
+}
+
+// 正文先进入浏览器绘制队列，再创建评论表单和发起评论身份检查。
+function scheduleReaderComments(note, requestNumber, token) {
+    // 等正文获得一次绘制机会，再在后续任务中建立评论区。
+    window.requestAnimationFrame(function waitForReaderPaint() {
+        // 请求编号同时保护动画帧和定时任务，关闭文章后不再创建评论。
+        window.setTimeout(function initializeReaderComments() {
+            if (requestNumber !== detailRequest || !articleDialog.open || readingNote !== note || currentToken() !== token) {
+                return;
+            }
+            setCommentArticle(note);
+        }, 0);
+    });
+}
+
 // 根据链接中的文章 ID 读取详情，支持直接打开链接和刷新
 async function readArticleHash() {
     stopReadingProgress();
@@ -1153,22 +1191,22 @@ async function readArticleHash() {
     detailRequest = detailRequest + 1;
     const requestNumber = detailRequest;
     if (!currentArticleId) {
+        readerPlaceholder.hidden = true;
+        articleDialog.setAttribute("aria-busy", "false");
         if (articleDialog.open) {
             articleDialog.close();
         }
         return;
     }
+    detailContent.hidden = true;
+    retryDetail.hidden = true;
+    readerPlaceholder.hidden = false;
+    articleDialog.setAttribute("aria-busy", "true");
+    detailStatus.textContent = "正在读取文章……";
     if (!articleDialog.open) {
-        detailContent.hidden = true;
-        retryDetail.hidden = true;
-        detailStatus.textContent = "";
         articleDialog.showModal();
     }
-    detailContent.hidden = true;
     articleDialog.scrollTop = 0;
-    retryDetail.hidden = true;
-    detailStatus.textContent = "正在读取文章……";
-    setBusy(detailStatus, true);
     const token = currentToken();
     try {
         const path = "/notes/" + encodeURIComponent(currentArticleId);
@@ -1188,14 +1226,7 @@ async function readArticleHash() {
         body.innerHTML = note.contentHtml;
         foldActivityMetadata(body);
         const gallery = document.getElementById("detail-gallery");
-        gallery.replaceChildren();
-        for (const item of note.images) {
-            const image = document.createElement("img");
-            image.src = item.url;
-            image.alt = note.title;
-            image.loading = "lazy";
-            gallery.appendChild(image);
-        }
+        prepareReaderImages(body, gallery, note);
         document.getElementById("detail-counts").textContent =
             "点赞 " +
             note.likeCount +
@@ -1204,11 +1235,12 @@ async function readArticleHash() {
             " · 评论 " +
             note.commentCount;
         detailStatus.textContent = "";
+        readerPlaceholder.hidden = true;
         detailContent.hidden = false;
         readingNote = note;
         setReactionArticle(note);
-        setCommentArticle(note);
         startReadingProgress(note.id, articleDialog);
+        scheduleReaderComments(note, requestNumber, token);
     } catch (error) {
         if (requestNumber !== detailRequest) {
             return;
@@ -1219,10 +1251,11 @@ async function readArticleHash() {
             document.getElementById("reaction-login").hidden = false;
         }
         detailStatus.textContent = "无法读取文章：" + error.message;
+        readerPlaceholder.hidden = true;
         retryDetail.hidden = false;
     } finally {
         if (requestNumber === detailRequest) {
-            setBusy(detailStatus, false);
+            articleDialog.setAttribute("aria-busy", "false");
         }
     }
 }
@@ -1234,6 +1267,8 @@ function closeArticle() {
     setReactionArticle(null);
     setCommentArticle(null);
     detailRequest = detailRequest + 1;
+    readerPlaceholder.hidden = true;
+    articleDialog.setAttribute("aria-busy", "false");
     const address = window.location.pathname + window.location.search;
     window.history.replaceState(null, "", address);
     articleDialog.close();

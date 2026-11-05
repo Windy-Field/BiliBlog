@@ -169,6 +169,12 @@
 
 #follow-button:not(:disabled):active {
     background: var(--gradient-publish-active);
+    transform: scale(0.97);
+}
+@media (prefers-reduced-motion: reduce) {
+    #follow-button:not(:disabled):active {
+        transform: none;
+    }
 }
 
 #follow-button[data-following="true"] {
@@ -197,7 +203,6 @@
     border: 1px solid rgba(255,255,255,0.55);
     background: rgba(255,255,255,0.12);
     backdrop-filter: blur(4px);
-    transition: background var(--duration-fast), border-color var(--duration-fast);
     white-space: nowrap;
 }
 
@@ -293,7 +298,6 @@
     cursor: pointer;
     white-space: nowrap;
     flex-shrink: 0;
-    transition: border-color var(--duration-fast), background-color var(--duration-fast), color var(--duration-fast);
 }
 
 .archive-btn:hover {

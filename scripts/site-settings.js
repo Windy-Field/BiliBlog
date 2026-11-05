@@ -1,11 +1,13 @@
 import { makeIcon } from "./icons.js";
 import { showMessage } from "./common.js";
-import { DRAFT_AUTOSAVE_KEY } from "./config.js";
+import { DRAFT_AUTOSAVE_KEY, DELETED_COMMENTS_KEY } from "./config.js";
+import { initializeMusic } from "./music.js";
 
 const dialog = document.createElement("dialog");
 const button = document.createElement("button");
 const message = document.createElement("p");
 export const autosaveControl = document.createElement("input");
+export const deletedCommentsControl = document.createElement("input");
 
 // 通过导航右侧的独立入口打开设置，原生弹窗管理焦点和 Escape 关闭
 function buildSettings() {
@@ -73,8 +75,19 @@ function buildSettings() {
     autosaveControl.addEventListener("change", saveAutosavePreference);
     writing.append(document.createTextNode("自动保存草稿"), autosaveControl);
     addSettingsSection("写作", writing);
+    const reading = document.createElement("label");
+    reading.className = "site-setting-row";
+    deletedCommentsControl.id = "show-deleted-comments";
+    deletedCommentsControl.type = "checkbox";
+    deletedCommentsControl.setAttribute("role", "switch");
+    deletedCommentsControl.checked = readDeletedCommentsPreference();
+    deletedCommentsControl.addEventListener("change", saveDeletedCommentsPreference);
+    reading.append(document.createTextNode("显示已删除评论"), deletedCommentsControl);
+    addSettingsSection("阅读", reading);
+    window.addEventListener("storage", syncDeletedCommentsPreference);
     dialog.addEventListener("close", settingsClosed);
     document.body.appendChild(dialog);
+    initializeMusic(tools, addSettingsSection);
 }
 
 // 添加所属模块的设置分区，直接使用原控件，保留它已有的事件和禁用状态
@@ -85,12 +98,41 @@ export function addSettingsSection(title, content) {
     let icon = "user";
     if (title === "写作") {
         icon = "write";
-    } else if (title === "宠物助手") {
+    } else if (title === "音乐") {
+        icon = "music";
+    } else if (title === "宠物助手" || title === "阅读") {
         icon = "comment";
     }
     heading.append(makeIcon(icon), document.createTextNode(title));
     section.append(heading, content);
     dialog.appendChild(section);
+}
+
+// 没有设置或存储不可用时默认显示删除占位，不恢复被删除的正文。
+function readDeletedCommentsPreference() {
+    try {
+        return localStorage.getItem(DELETED_COMMENTS_KEY) !== "false";
+    } catch {
+        return true;
+    }
+}
+
+// 保存阅读偏好；保存失败时当前页面仍按所选值显示。
+function saveDeletedCommentsPreference() {
+    try {
+        localStorage.setItem(DELETED_COMMENTS_KEY, String(deletedCommentsControl.checked));
+        showMessage(message, "", false);
+    } catch {
+        showMessage(message, "当前设置仅本页有效，浏览器未能保存偏好", true);
+    }
+}
+
+// 其他标签页更改或清空偏好后同步开关，通过 input 事件通知阅读模块。
+function syncDeletedCommentsPreference(event) {
+    if (event.key === DELETED_COMMENTS_KEY || event.key === null) {
+        deletedCommentsControl.checked = readDeletedCommentsPreference();
+        deletedCommentsControl.dispatchEvent(new Event("input"));
+    }
 }
 
 // 未保存偏好时默认自动保存，存储受限时仍允许用户在本页切换

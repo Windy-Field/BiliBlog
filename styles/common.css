@@ -89,13 +89,31 @@ button {
     cursor: pointer;
 }
 
+/* 操作控件不产生文字选区，正文、输入框和普通文章链接仍可复制。 */
+button,
+[role="button"],
+.primary-button,
+.page-button,
+.icon-button,
+.topic-button,
+.topic-list a,
+.creator-publish,
+.draft-new,
+.hero-edit-btn,
+.image-select,
+.account-menu summary {
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+}
+
 button:hover {
     background: #dddddd;
 }
 
 button:disabled {
     opacity: 0.6;
-    cursor: wait;
+    cursor: default;
 }
 
 button[type="submit"] {

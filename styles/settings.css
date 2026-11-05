@@ -209,8 +209,6 @@
     border: 1px solid var(--color-border);
     border-radius: var(--radius-control);
     cursor: pointer;
-    transition: color var(--duration-fast) var(--ease-out),
-        border-color var(--duration-fast) var(--ease-out);
 }
 
 .link-row .remove-link:hover {

@@ -28,6 +28,7 @@ import {
     Trash2,
     Link,
     Settings,
+    Music2,
 } from "lucide";
 
 // 全站图标的像素尺寸和线宽，按钮点击区域由样式另行控制
@@ -62,6 +63,7 @@ const iconShapes = {
     trash: Trash2,
     link: Link,
     settings: Settings,
+    music: Music2,
 };
 
 // 根据名称创建 Lucide 图标，图标旁的按钮或文字负责说明用途

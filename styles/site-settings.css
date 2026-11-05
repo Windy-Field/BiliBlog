@@ -1,11 +1,13 @@
-/* 通知和设置共用同一规则，横幅与普通页面都继承所属导航的文字颜色 */
+@import url("./music.css");
+
+/* 导航工具共用同一规则，横幅与普通页面都继承所属导航的文字颜色 */
 .navigation-tools {
     display: flex;
     align-items: center;
     flex-shrink: 0;
     gap: var(--navigation-tool-gap);
 }
-body button:is(.notification-bell, .site-settings-button) {
+body button:is(.notification-bell, .site-settings-button, .music-toggle) {
     position: relative;
     display: inline-flex;
     align-items: center;
@@ -22,7 +24,7 @@ body button:is(.notification-bell, .site-settings-button) {
     color: inherit;
     cursor: pointer;
 }
-body button:is(.notification-bell, .site-settings-button):not(:disabled):hover {
+body button:is(.notification-bell, .site-settings-button, .music-toggle):not(:disabled):hover {
     background: var(--navigation-tool-hover);
     color: inherit;
 }

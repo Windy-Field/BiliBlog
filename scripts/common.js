@@ -21,8 +21,8 @@ export function showMessage(element, text, isError) {
     }
 }
 
-// 根据 busy 添加或移除按钮等待标记，禁用状态由调用方控制
-// 同时更新 aria-busy，让辅助阅读工具也能识别等待状态
+// 记录后台请求状态，按钮不显示加载动画，禁用及重复提交保护由调用方控制。
+// 非按钮提示仍可显示加载标记，辅助阅读工具通过 aria-busy 识别等待状态。
 export function setBusy(element, busy) {
     element.setAttribute("aria-busy", String(busy));
     element.classList.toggle("is-busy", busy);

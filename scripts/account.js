@@ -49,10 +49,8 @@ async function submitAccount(event) {
         password: password.value
     };
     let path = "/auth/login";
-    let idleText = "登录";
     if (isRegister) {
         path = "/auth/register";
-        idleText = "注册并登录";
         credentials.displayName = displayName.value.trim();
     }
 
@@ -60,7 +58,6 @@ async function submitAccount(event) {
     submitting = true;
     fields.disabled = true;
     setBusy(submitButton, true);
-    submitButton.textContent = "正在提交……";
     showMessage(message, "", false);
 
     try {
@@ -76,7 +73,6 @@ async function submitAccount(event) {
         submitting = false;
         fields.disabled = false;
         setBusy(submitButton, false);
-        submitButton.textContent = idleText;
     }
 }
 

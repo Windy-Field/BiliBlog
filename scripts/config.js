@@ -28,6 +28,14 @@ export const READING_SAVE_DELAY_MS = 300;
 // 草稿备份与自动保存偏好的存储键，输入停止后的备份延迟以毫秒计
 export const LOCAL_DRAFT_PREFIX = "BiliBlog-local-draft-";
 export const DRAFT_AUTOSAVE_KEY = "BiliBlog-draft-autosave";
+// 阅读偏好仅保存在本机，未设置时显示已删除评论的占位。
+export const DELETED_COMMENTS_KEY = "BiliBlog-show-deleted-comments";
+// 音乐偏好保存在本机，播放进度只在当前标签页延续，音量范围为 0 到 1。
+export const MUSIC_STORAGE_KEY = "BiliBlog-music-settings";
+export const MUSIC_POSITION_KEY = "BiliBlog-music-position";
+export const MUSIC_DEFAULT_VOLUME = 0.03;
+export const MUSIC_POSITION_SAVE_MS = 2000;
+export const MUSIC_SOURCE = new URL("../assets/audio/mirror.m4a", import.meta.url).href;
 export const LOCAL_DRAFT_DELAY_MS = 400;
 // 文章、图片和个人资料的接口限制，容量单位为字节
 export const MAX_TAGS = 5;
